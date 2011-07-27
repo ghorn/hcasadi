@@ -1,14 +1,13 @@
 -- Hom.hs
 
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wall #-}
 
-module Hom (State(..), Action(..), Ode(..), eulerStep, rk4Step, dA, dB,
+module Hom (State, Action, Ode, eulerStep, rk4Step, dA, dB,
             cx, cu, cxx, cuu, cxu,
             qx, qu, qxx, quu, qxu, Quad(..), evalQuad) where
 
 import Numeric.AD
-import Data.Traversable
-import Numeric.LinearAlgebra
 
 type State a = [a]
 type Action a = [a]
@@ -21,6 +20,7 @@ eulerStep dxdt x u dt = map (*dt) (dxdt x u)
 rk4Step :: (Floating a) => Ode a -> State a -> Action a -> a -> State a
 rk4Step dxdt x u dt = map (/6) $ addLists [k1, twok2, twok3, k4]
   where
+    addLists [] = []
     addLists (a:as) = foldl (\acc y -> zipWith (+) acc y) a as
     
     k1 = map (*dt) $ dxdt x u
@@ -32,31 +32,31 @@ rk4Step dxdt x u dt = map (/6) $ addLists [k1, twok2, twok3, k4]
     twok3 = map (*2) k3
 
 -- linearize dynamics f ~= f0 + dA*(x-x0) + dB*(u - u0)
-dA :: Floating a => (forall s a. (Floating a, Mode s) =>
-                     [AD s a] -> [AD s a] -> [AD s a]) -> (State a -> Action a -> [[a]])
+dA :: Floating a => (forall s b. (Floating b, Mode s) =>
+                     [AD s b] -> [AD s b] -> [AD s b]) -> (State a -> Action a -> [[a]])
 dA f x u = jacobian g x
   where
     g x' = f x' (map lift u)
 
 
-dB :: Floating a => (forall s a. (Floating a, Mode s) =>
-                     [AD s a] -> [AD s a] -> [AD s a]) -> (State a -> Action a -> [[a]])
+dB :: Floating a => (forall s b. (Floating b, Mode s) =>
+                     [AD s b] -> [AD s b] -> [AD s b]) -> (State a -> Action a -> [[a]])
 dB f x u = jacobian g u
   where
     g u' = f (map lift x) u'
 
 
 ---------- quadratic expansion of cost(x,u) ----------
-cx :: Floating a => (forall s a. (Floating a, Mode s) =>
-                     [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [a])
-cu :: Floating a => (forall s a. (Floating a, Mode s) =>
-                     [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [a])
-cxx :: Floating a => (forall s a. (Floating a, Mode s) =>
-                      [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [[a]])
-cuu :: Floating a => (forall s a. (Floating a, Mode s) =>
-                      [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [[a]])
-cxu :: Floating a => (forall s a. (Floating a, Mode s) =>
-                      [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [[a]])
+cx :: Floating a => (forall s b. (Floating b, Mode s) =>
+                     [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [a])
+cu :: Floating a => (forall s b. (Floating b, Mode s) =>
+                     [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [a])
+cxx :: Floating a => (forall s b. (Floating b, Mode s) =>
+                      [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [[a]])
+cuu :: Floating a => (forall s b. (Floating b, Mode s) =>
+                      [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [[a]])
+cxu :: Floating a => (forall s b. (Floating b, Mode s) =>
+                      [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [[a]])
 
 
 cx cost x u = grad g x
@@ -82,37 +82,37 @@ cxu cost x u = jacobian g u
 
 -------- quadratic expansion of q function (unmaximized value function) -------
 qx :: forall a. Floating a =>
-       (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> AD s a)
-       -> (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> State (AD s a))
+       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [a]
 qu :: forall a. Floating a =>
-       (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> AD s a)
-       -> (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> State (AD s a))
+       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [a]
 qxx :: forall a. Floating a =>
-       (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> AD s a)
-       -> (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> State (AD s a))
+       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [[a]]
 quu :: forall a. Floating a =>
-       (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> AD s a)
-       -> (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> State (AD s a))
+       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [[a]]
 
 qxu :: forall a. Floating a =>
-       (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> AD s a)
-       -> (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> State (AD s a))
+       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
        -> State a
        -> Action a
        -> Quad a
@@ -191,6 +191,6 @@ evalQuad (Quad h g a x0) x = constTerm + linearTerm + quadraticTerm
      quadraticTerm = (*0.5) $ dotLists x' $ map (\y -> dotLists y x') h -- put length check here
 
      dotLists :: Floating a => [a] -> [a] -> a
-     dotLists x0 x1 = sum (zipWith (*) x0 x1)
+     dotLists xa xb = sum (zipWith (*) xa xb)
 
      x' = zipWith (-) x x0

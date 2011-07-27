@@ -1,5 +1,7 @@
 -- spring.hs
 
+{-# OPTIONS_GHC -Wall #-}
+
 module Main where
 
 import Hom
@@ -65,3 +67,6 @@ sQu  = qu  sCost (\x u -> sEuler x u dtTestQ)
 sQxx = qxx sCost (\x u -> sEuler x u dtTestQ)
 sQuu = quu sCost (\x u -> sEuler x u dtTestQ)
 sQxu = qxu sCost (\x u -> sEuler x u dtTestQ)
+
+main :: IO ()
+main = do print "hi"
