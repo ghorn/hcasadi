@@ -1,6 +1,6 @@
 -- Hom.hs
 
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
 module Hom (q,State(..), Action(..), Ode(..), eulerStep, rk4Step, dA, dB, qx, qu, qxx, quu, qxu, Quad(..), evalQuad) where
 
@@ -79,16 +79,16 @@ qxu cost x u = jacobian g u
     g u' = (qx cost) (map lift x) u'
 
 
-qx' :: Floating a => (forall s a. (Floating a, Mode s) =>
-       ([AD s a] -> [AD s a] -> AD s a) -> ([AD s a] -> [AD s a] -> [AD s a]))
-     -> [a]
-     -> [a]
-     -> Quad a
-     -> [a]
+qx' :: forall a. Floating a =>
+       (forall s a. (Floating a, Mode s) => ([AD s a] -> [AD s a] -> AD s a))
+       -> (forall s a. (Floating a, Mode s) => ([AD s a] -> [AD s a] -> [AD s a]))
+       -> [a]
+       -> [a]
+       -> Quad a
+       -> [a]
 
 qx' cost dode x u (Quad vxx vx v0 x0) = grad g x
   where
---    g :: [AD s a] -> AD s a
     g x' = q' x' (map lift u) (Quad vxx' vx' v0' x0')
       where
         vxx' = map (map lift) vxx
@@ -96,6 +96,7 @@ qx' cost dode x u (Quad vxx vx v0 x0) = grad g x
         v0' = lift v0
         x0' = map lift x0
     
+    q' :: forall s. Mode s => [AD s a] -> [AD s a] -> Quad (AD s a) -> AD s a
     q' = q cost dode
 
 
