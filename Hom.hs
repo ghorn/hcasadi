@@ -1,10 +1,17 @@
+-- Hom.hs
+
 {-# LANGUAGE RankNTypes #-}
 
-module Hom (eulerStep, rk4Step, dA, dB, qx, qu, qxx, quu, qxu, Quad(..), evalQuad) where
+module Hom (q,State(..), Action(..), Ode(..), eulerStep, rk4Step, dA, dB, qx, qu, qxx, quu, qxu, Quad(..), evalQuad) where
 
 import Numeric.AD
 import Data.Traversable
 import Numeric.LinearAlgebra
+
+
+type State a = [a]
+type Action a = [a]
+type Ode a = [a] -> Action a -> [a]
 
 ---------------- general stuff -----------------
 eulerStep :: (Floating a) => ([a] -> [a] -> [a]) -> [a] -> [a] -> a -> [a]
@@ -50,6 +57,7 @@ quu :: Floating a => (forall s a. (Floating a, Mode s) =>
 qxu :: Floating a => (forall s a. (Floating a, Mode s) =>
                       [AD s a] -> [AD s a] -> AD s a) -> ([a] -> [a] -> [[a]])
 
+
 qx cost x u = grad g x
   where
     g x' = cost x' (map lift u)
@@ -71,83 +79,42 @@ qxu cost x u = jacobian g u
     g u' = (qx cost) (map lift x) u'
 
 
+qx' :: Floating a => (forall s a. (Floating a, Mode s) =>
+       ([AD s a] -> [AD s a] -> AD s a) -> ([AD s a] -> [AD s a] -> [AD s a]))
+     -> [a]
+     -> [a]
+     -> Quad a
+     -> [a]
 
-data Quad = Quad [[Double]] [Double] Double
+qx' cost dode x u (Quad vxx vx v0 x0) = grad g x
+  where
+--    g :: [AD s a] -> AD s a
+    g x' = q' x' (map lift u) (Quad vxx' vx' v0' x0')
+      where
+        vxx' = map (map lift) vxx
+        vx' = map lift vx
+        v0' = lift v0
+        x0' = map lift x0
+    
+    q' = q cost dode
 
-evalQuad :: Quad -> [Double] -> Double
-evalQuad (Quad h g a) x = constTerm + linearTerm + quadraticTerm
+
+q :: Floating a => ([a] -> [a] -> a) -> ([a] -> [a] -> [a]) -> ([a] -> [a] -> Quad a -> a)
+q cost dode = \x u v -> (cost x u) + (nextValue x u v)
+  where
+    nextValue x u (Quad vxx vx v0 x0) = evalQuad (Quad vxx vx v0 x0) (dode x u)
+
+
+data Quad a = Quad [[a]] [a] a [a] deriving (Show)
+
+evalQuad :: Floating a => Quad a -> [a] -> a
+evalQuad (Quad h g a x0) x = constTerm + linearTerm + quadraticTerm
    where
      constTerm = a
-     linearTerm = dotLists g x -- put length check here
-     quadraticTerm = (*0.5) $ dotLists x $ map (\y -> dotLists y x) h -- put length check here
-    
-     dotLists :: [Double] -> [Double] -> Double
+     linearTerm = dotLists g x' -- put length check here
+     quadraticTerm = (*0.5) $ dotLists x' $ map (\y -> dotLists y x') h -- put length check here
+ 
+     dotLists :: Floating a => [a] -> [a] -> a
      dotLists x0 x1 = sum (zipWith (*) x0 x1)
-
-
--------------- spring specifically --------------
-springDxdt :: (Floating a) => [a] -> [a] -> [a]
-springDxdt state action = [v, (-k*x - b*v + u)/mass] where
-  x    = state  !! 0
-  v    = state  !! 1
-  u    = action !! 0
-  k    = 10
-  b    = 0.1
-  mass = 1
-
-springEuler :: (Floating a) => [a] -> [a] -> a -> [a]
-springEuler x u dt = eulerStep springDxdt x u dt
-
-springRk4 :: (Floating a) => [a] -> [a] -> a -> [a]
-springRk4 x u dt = rk4Step springDxdt x u dt
-
-springA :: (Floating a) => [a] -> [a] -> [[a]]
-springA = dA springDxdt
-
-springB :: (Floating a) => [a] -> [a] -> [[a]]
-springB = dB springDxdt
-
-springCost :: (Floating a) => [a] -> [a] -> a
-springCost x u = 7*position*position + 2*velocity*velocity + 4*force*force
-  where
-    position = x !! 0
-    velocity = x !! 1
-    force = u !! 0
-
-springQx :: (Floating a) => [a] -> [a] -> [a]
-springQu :: (Floating a) => [a] -> [a] -> [a]
-springQxx :: (Floating a) => [a] -> [a] -> [[a]]
-springQuu :: (Floating a) => [a] -> [a] -> [[a]]
-springQxu :: (Floating a) => [a] -> [a] -> [[a]]
-
-springQx = qx springCost
-springQu = qu springCost
-springQxx = qxx springCost
-springQuu = quu springCost
-springQxu = qxu springCost
-
-
      
-    
-----
-----quadraticApprox :: (Floating a, Mode s) => ([AD s a] -> AD s a) -> Quad b c d
-------quadraticApprox :: (Floating a) => ([a] -> a) -> Quad b c d
-------quadraticApprox f = Quad [[1]] [1] 1
-----quadraticApprox f = Quad h g c
-----  where
-----    c = f x
-    
---springCost' = 
---costQ = Quad
-
---qFcn x u v0 vx vxx = springCost x u + valueCost v0 vx vxx
-
-
---cost :: (Floating a) => [a] -> a
---cost x = 7*position*position + 2*velocity*velocity
---  where
---    position = x !! 0
---    velocity = x !! 1
-
---q x = grad cost x
---h x = hessian cost x
+     x' = zipWith (-) x x0
