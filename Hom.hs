@@ -11,13 +11,13 @@ import Numeric.LinearAlgebra
 
 type State a = [a]
 type Action a = [a]
-type Ode a = [a] -> Action a -> [a]
+type Ode a = State a -> Action a -> State a
 
 ---------------- general stuff -----------------
-eulerStep :: (Floating a) => ([a] -> [a] -> [a]) -> [a] -> [a] -> a -> [a]
+eulerStep :: (Floating a) => Ode a -> State a -> Action a -> a -> State a
 eulerStep dxdt x u dt = map (*dt) (dxdt x u)
 
-rk4Step :: (Floating a) => ([a] -> [a] -> [a]) -> [a] -> [a] -> a -> [a]
+rk4Step :: (Floating a) => Ode a -> State a -> Action a -> a -> State a
 rk4Step dxdt x u dt = map (/6) $ addLists [k1, twok2, twok3, k4]
   where
     addLists (a:as) = foldl (\acc y -> zipWith (+) acc y) a as
@@ -32,14 +32,14 @@ rk4Step dxdt x u dt = map (/6) $ addLists [k1, twok2, twok3, k4]
 
 -- linearize dynamics f ~= f0 + dA*(x-x0) + dB*(u - u0)
 dA :: Floating a => (forall s a. (Floating a, Mode s) =>
-                     [AD s a] -> [AD s a] -> [AD s a]) -> ([a] -> [a] -> [[a]])
+                     [AD s a] -> [AD s a] -> [AD s a]) -> (State a -> Action a -> [[a]])
 dA f x u = jacobian g x
   where
     g x' = f x' (map lift u)
 
 
 dB :: Floating a => (forall s a. (Floating a, Mode s) =>
-                     [AD s a] -> [AD s a] -> [AD s a]) -> ([a] -> [a] -> [[a]])
+                     [AD s a] -> [AD s a] -> [AD s a]) -> (State a -> Action a -> [[a]])
 dB f x u = jacobian g u
   where
     g u' = f (map lift x) u'
@@ -47,15 +47,15 @@ dB f x u = jacobian g u
 
 ---- quadratic expansion of cost(x,u)
 qx :: Floating a => (forall s a. (Floating a, Mode s) =>
-                     [AD s a] -> [AD s a] -> AD s a) -> ([a] -> [a] -> [a])
+                     [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [a])
 qu :: Floating a => (forall s a. (Floating a, Mode s) =>
-                     [AD s a] -> [AD s a] -> AD s a) -> ([a] -> [a] -> [a])
+                     [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [a])
 qxx :: Floating a => (forall s a. (Floating a, Mode s) =>
-                      [AD s a] -> [AD s a] -> AD s a) -> ([a] -> [a] -> [[a]])
+                      [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [[a]])
 quu :: Floating a => (forall s a. (Floating a, Mode s) =>
-                      [AD s a] -> [AD s a] -> AD s a) -> ([a] -> [a] -> [[a]])
+                      [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [[a]])
 qxu :: Floating a => (forall s a. (Floating a, Mode s) =>
-                      [AD s a] -> [AD s a] -> AD s a) -> ([a] -> [a] -> [[a]])
+                      [AD s a] -> [AD s a] -> AD s a) -> (State a -> Action a -> [[a]])
 
 
 qx cost x u = grad g x
@@ -80,10 +80,10 @@ qxu cost x u = jacobian g u
 
 
 qx' :: forall a. Floating a =>
-       (forall s a. (Floating a, Mode s) => ([AD s a] -> [AD s a] -> AD s a))
-       -> (forall s a. (Floating a, Mode s) => ([AD s a] -> [AD s a] -> [AD s a]))
-       -> [a]
-       -> [a]
+       (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> AD s a)
+       -> (forall s a. (Floating a, Mode s) => State (AD s a) -> Action (AD s a) -> State (AD s a))
+       -> State a
+       -> Action a
        -> Quad a
        -> [a]
 
@@ -96,11 +96,11 @@ qx' cost dode x u (Quad vxx vx v0 x0) = grad g x
         v0' = lift v0
         x0' = map lift x0
     
-    q' :: forall s. Mode s => [AD s a] -> [AD s a] -> Quad (AD s a) -> AD s a
+    q' :: forall s. Mode s => State (AD s a) -> Action (AD s a) -> Quad (AD s a) -> AD s a
     q' = q cost dode
 
 
-q :: Floating a => ([a] -> [a] -> a) -> ([a] -> [a] -> [a]) -> ([a] -> [a] -> Quad a -> a)
+q :: Floating a => (State a -> Action a -> a) -> Ode a -> (State a -> Action a -> Quad a -> a)
 q cost dode = \x u v -> (cost x u) + (nextValue x u v)
   where
     nextValue x u (Quad vxx vx v0 x0) = evalQuad (Quad vxx vx v0 x0) (dode x u)
