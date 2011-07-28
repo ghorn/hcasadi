@@ -54,6 +54,7 @@ sCuu = cuu sCost
 sCxu = cxu sCost
 
 -- q fcn quadratic expansion
+sQ0  :: Floating a => State a -> Action a -> Quad a -> a
 sQx  :: Floating a => State a -> Action a -> Quad a -> [a]
 sQu  :: Floating a => State a -> Action a -> Quad a -> [a]
 sQxx :: Floating a => State a -> Action a -> Quad a -> [[a]]
@@ -62,11 +63,15 @@ sQxu :: Floating a => State a -> Action a -> Quad a -> [[a]]
 
 dtTestQ :: Floating a => a
 dtTestQ = 0.1
+
+sQ0  = q0  sCost (\x u -> sEuler x u dtTestQ)
 sQx  = qx  sCost (\x u -> sEuler x u dtTestQ)
 sQu  = qu  sCost (\x u -> sEuler x u dtTestQ)
 sQxx = qxx sCost (\x u -> sEuler x u dtTestQ)
 sQuu = quu sCost (\x u -> sEuler x u dtTestQ)
 sQxu = qxu sCost (\x u -> sEuler x u dtTestQ)
+
+
 
 main :: IO ()
 main = do print "hi"

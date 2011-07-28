@@ -5,7 +5,7 @@
 
 module Hom (State, Action, Ode, eulerStep, rk4Step, dA, dB,
             cx, cu, cxx, cuu, cxu,
-            qx, qu, qxx, quu, qxu, Quad(..), evalQuad) where
+            q0, qx, qu, qxx, quu, qxu, Quad(..), evalQuad) where
 
 import Numeric.AD
 
@@ -83,28 +83,28 @@ cxu cost x u = jacobian g u
 -------- quadratic expansion of q function (unmaximized value function) -------
 qx :: forall a. Floating a =>
        (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
-       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
+       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [a]
 qu :: forall a. Floating a =>
        (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
-       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
+       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [a]
 qxx :: forall a. Floating a =>
        (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
-       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
+       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [[a]]
 quu :: forall a. Floating a =>
        (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
-       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
+       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
@@ -112,7 +112,7 @@ quu :: forall a. Floating a =>
 
 qxu :: forall a. Floating a =>
        (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
-       -> (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> State (AD s b))
+       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
@@ -128,7 +128,7 @@ qx cost dode x u (Quad vxx vx v0 x0) = grad g x
         x0' = map lift x0
 
     q' :: forall s. Mode s => State (AD s a) -> Action (AD s a) -> Quad (AD s a) -> AD s a
-    q' = q cost dode
+    q' = q0 cost dode
 
 qu cost dode x u (Quad vxx vx v0 x0) = grad g u
   where
@@ -140,7 +140,7 @@ qu cost dode x u (Quad vxx vx v0 x0) = grad g u
         x0' = map lift x0
 
     q' :: forall s. Mode s => State (AD s a) -> Action (AD s a) -> Quad (AD s a) -> AD s a
-    q' = q cost dode
+    q' = q0 cost dode
 
 qxx cost dode x u (Quad vxx vx v0 x0) = hessian g x
   where
@@ -152,7 +152,7 @@ qxx cost dode x u (Quad vxx vx v0 x0) = hessian g x
         x0' = map lift x0
 
     q' :: forall s. Mode s => State (AD s a) -> Action (AD s a) -> Quad (AD s a) -> AD s a
-    q' = q cost dode
+    q' = q0 cost dode
 
 quu cost dode x u (Quad vxx vx v0 x0) = hessian g u
   where
@@ -164,7 +164,7 @@ quu cost dode x u (Quad vxx vx v0 x0) = hessian g u
         x0' = map lift x0
 
     q' :: forall s. Mode s => State (AD s a) -> Action (AD s a) -> Quad (AD s a) -> AD s a
-    q' = q cost dode
+    q' = q0 cost dode
 
 qxu cost dode x u (Quad vxx vx v0 x0) = jacobian g u
   where
@@ -175,10 +175,11 @@ qxu cost dode x u (Quad vxx vx v0 x0) = jacobian g u
         v0' = lift v0
         x0' = map lift x0
 
-q :: Floating a => (State a -> Action a -> a) -> Ode a -> (State a -> Action a -> Quad a -> a)
-q cost dode = \x u v -> (cost x u) + (nextValue x u v)
+q0 :: Floating a => (State a -> Action a -> a) -> Ode a -> (State a -> Action a -> Quad a -> a)
+q0 cost dode = \x u v -> (cost x u) + (nextValue x u v)
   where
     nextValue x u (Quad vxx vx v0 x0) = evalQuad (Quad vxx vx v0 x0) (dode x u)
+
 
 
 data Quad a = Quad [[a]] [a] a [a] deriving (Show)
