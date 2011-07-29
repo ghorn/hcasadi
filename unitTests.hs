@@ -1,4 +1,4 @@
--- spring.hs
+-- unitTests.hs
 
 {-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wall #-}
@@ -7,7 +7,6 @@ module Main where
 
 import Hom
 import Ddp
-import Graphics.Gnuplot.Simple
 
 -- spring ode
 sDt :: Floating a => a
@@ -38,9 +37,6 @@ sEuler x u dt = eulerStep sDxdt x u dt
 -- rk4 step
 sRk4 :: Floating a => State a -> Action a -> a -> State a
 sRk4 x u dt = rk4Step sDxdt x u dt
-
-sDode :: Floating a => State a -> Action a -> State a
-sDode x u = sEuler x u sDt
 
 -- dynamics linearizations dA/dB
 -- f ~= dA*(x-x0) + dB*(u-u0) + f0
@@ -77,31 +73,3 @@ sQu  = qu  sCost (\x u -> sRk4 x u sDt)
 sQxx = qxx sCost (\x u -> sRk4 x u sDt)
 sQuu = quu sCost (\x u -> sRk4 x u sDt)
 sQxu = qxu sCost (\x u -> sRk4 x u sDt)
-
-
--- ddp
-main :: IO ()
-main = do let n = 100
-              x0 = [10,0]
-              u0 = [0]
-              time :: [Double]
-              time = take n [0,sDt..]
-              
-              xTraj0 = replicate n x0
-              uTraj0 = replicate n u0
-              
-              backsweepTrajectory :: [(Quad Double, [[Double]], [Double])]
-              backsweepTrajectory = backSweep sCost sDode xTraj0 uTraj0
-
-              forwardsweepTrajectory :: [(State Double, Action Double)]
-              forwardsweepTrajectory = forwardSweep sDode x0 backsweepTrajectory
-              (xTraj, uTraj) = unzip forwardsweepTrajectory
-
-              pos = map (!! 0) xTraj
-              vel = map (!! 1) xTraj
-              force = map (!! 0) uTraj
-          
-          plotLists [] [zip time pos, zip time vel, zip time force]
-          print $ "total cost: " ++ (show (sum (map (\(x,u) -> sCost x u) forwardsweepTrajectory)))
-                                     
-
