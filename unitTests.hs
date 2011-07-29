@@ -3,7 +3,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Main where
+module UnitTests where
 
 import Hom
 import Ddp
