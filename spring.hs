@@ -1,12 +1,12 @@
 -- spring.hs
 
---{-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module Main where
 
 import Hom
 import Ddp
-import Data.List(mapAccumL, intersperse)
 import Graphics.Gnuplot.Simple
 
 -- spring ode
@@ -38,6 +38,9 @@ sEuler x u dt = eulerStep sDxdt x u dt
 -- rk4 step
 sRk4 :: Floating a => State a -> Action a -> a -> State a
 sRk4 x u dt = rk4Step sDxdt x u dt
+
+sDode :: Floating a => State a -> Action a -> State a
+sDode x u = sEuler x u sDt
 
 -- dynamics linearizations dA/dB
 -- f ~= dA*(x-x0) + dB*(u-u0) + f0
@@ -77,9 +80,6 @@ sQxu = qxu sCost (\x u -> sRk4 x u sDt)
 
 
 -- ddp
-bp :: State Double -> Action Double -> Quad Double -> (Quad Double, [[Double]], [Double])
-bp = backPropagate sCost (\x u -> sEuler x u sDt)
-
 main :: IO ()
 main = do let n = 100
               x0 = [10,0]
@@ -90,45 +90,18 @@ main = do let n = 100
               xTraj0 = replicate n x0
               uTraj0 = replicate n u0
               
-              v0 = Quad (sCxx x0 u0) (sCx x0 u0) (sCost x0 u0) x0
-              
-              bs :: [(Quad Double, [[Double]], [Double])]
+              backsweepTrajectory :: [(Quad Double, [[Double]], [Double])]
+              backsweepTrajectory = backSweep sCost sDode xTraj0 uTraj0
 
-              bs = foldr bpSweep [] (zip xTraj0 uTraj0)
-              
-              fs :: [(State Double, Action Double)]
-              (_,fs) = mapAccumL fSweep x0 bs
-              (xTraj, uTraj) = unzip fs
+              forwardsweepTrajectory :: [(State Double, Action Double)]
+              forwardsweepTrajectory = forwardSweep sDode x0 backsweepTrajectory
+              (xTraj, uTraj) = unzip forwardsweepTrajectory
 
               pos = map (!! 0) xTraj
               vel = map (!! 1) xTraj
               force = map (!! 0) uTraj
           
           plotLists [] [zip time pos, zip time vel, zip time force]
-          print $ "total cost: " ++ (show (sum (map (\(x,u) -> sCost x u) fs)))
+          print $ "total cost: " ++ (show (sum (map (\(x,u) -> sCost x u) forwardsweepTrajectory)))
                                      
 
-bpSweep :: (State Double, Action Double) -> [(Quad Double, [[Double]], [Double])] -> [(Quad Double, [[Double]], [Double])]
-bpSweep (x,u) [] = [bp x u (Quad vxx vx v0 x0)] -- end step - Vnext is 0 so q fcn is cost function
-  where
-    x0 = vx
-    vxx = replicate (length x) vx
-    vx = replicate (length x) v0
-    v0 = 0
-bpSweep (x,u) acc@((v,_,_):_) = (bp x u v):acc
-
-
-fSweep :: Floating a => State a -> (Quad a, [[a]], [a]) -> (State a, (State a, Action a))
-fSweep x (Quad _ _ _ x0, feedbackGain, uOpenLoop) = (xNext, (x, u))
-  where
-    u = controller x x0 feedbackGain uOpenLoop
-    xNext = sEuler x u sDt
-
-controller :: Floating a => State a -> State a -> [[a]] -> Action a -> Action a
-controller x x0 feedbackMatrix uOpenLoop = u
-  where
-    u = zipWith (+) uOpenLoop uClosedLoop
-    uClosedLoop = map (\a -> dotLists a deltaX) feedbackMatrix
-      where
-        dotLists xa xb = sum (zipWith (*) xa xb)
-        deltaX = zipWith (-) x x0
