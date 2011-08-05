@@ -3,7 +3,7 @@
 {-# LANGUAGE RankNTypes, ScopedTypeVariables, FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Ddp(ddp', backSweep, forwardSweep, q0, qx, qu, qxx, quu, qxu) where
+module Ddp(ddp, backSweep, forwardSweep, q0, qx, qu, qxx, quu, qxu) where
 
 import Hom
 import Numeric.AD
@@ -13,36 +13,21 @@ import Data.List(mapAccumL)
 type BacksweepOutput a = (Quad a, [[a]], [a])
 
 ----------------------- convenience function -----------------------
-ddp' :: forall a. (Floating a, Field a, Num (Vector a)) =>
+ddp :: forall a. (Floating a, Field a, Num (Vector a)) =>
           (forall s b. (Floating b, Mode s) => Cost (AD s b))
        -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
-       -> Ode a
        -> [State a] -> [Action a] -> ([State a], [Action a], [BacksweepOutput a])
-ddp' cost dode dode' xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
+ddp cost dode xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
   where
     backsweepTrajectory :: [BacksweepOutput a]
     backsweepTrajectory = backSweep cost dode xTraj0 uTraj0
 
+    dode' :: Ode a
+    dode' x u = map unprobe $ dode (map lift x) (map lift u)
+
     forwardsweepTrajectory :: [(State a, Action a)]
     forwardsweepTrajectory = forwardSweep dode' (head xTraj0) backsweepTrajectory
     (xTraj, uTraj) = unzip forwardsweepTrajectory
-
-
---ddp :: forall a. (Floating a, Field a, Num (Vector a)) =>
---          (forall s b. (Floating b, Mode s) => Cost (AD s b))
---       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
---       -> [State a] -> [Action a] -> ([State a], [Action a], [BacksweepOutput a])
---ddp cost dode xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
---  where
---    backsweepTrajectory :: [BacksweepOutput a]
---    backsweepTrajectory = backSweep cost dode xTraj0 uTraj0
---
---    dode' :: Ode a
---    dode' = dode
---
---    forwardsweepTrajectory :: [(State a, Action a)]
---    forwardsweepTrajectory = forwardSweep dode' (head xTraj0) backsweepTrajectory
---    (xTraj, uTraj) = unzip forwardsweepTrajectory
 
 
 
@@ -135,8 +120,6 @@ backPropagate' q0' qx'' qu'' qxx'' quu'' qxu'' x0 u0 = (Quad vxx vx v0 x0, feedb
     
     -- open loop control
     openLoopControl = zipWith (+) u0 $ toList $ - (inv quu') <> qu';
-
-
 
 
 -------- quadratic expansion of q function (unmaximized value function) -------
