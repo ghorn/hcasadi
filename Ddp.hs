@@ -140,43 +140,13 @@ q0 cost dode = \x u v -> (cost x u) + (nextValue x u v)
   where
     nextValue x u (Quad vxx vx v0 x0) = evalQuad (Quad vxx vx v0 x0) (dode x u)
 
-qx :: forall a. Floating a =>
+qx,qu :: forall a. Floating a =>
        (forall s b. (Floating b, Mode s) => Cost (AD s b))
        -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [a]
-qu :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => Cost (AD s b))
-       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
-       -> State a
-       -> Action a
-       -> Quad a
-       -> [a]
-qxx :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => Cost (AD s b))
-       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
-       -> State a
-       -> Action a
-       -> Quad a
-       -> [[a]]
-quu :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => Cost (AD s b))
-       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
-       -> State a
-       -> Action a
-       -> Quad a
-       -> [[a]]
-
-qxu :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => Cost (AD s b))
-       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
-       -> State a
-       -> Action a
-       -> Quad a
-       -> [[a]]
-
 qx cost dode x u (Quad vxx vx v0 x0) = grad g x
   where
     g x' = q' x' (map lift u) (Quad vxx' vx' v0' x0')
@@ -201,6 +171,13 @@ qu cost dode x u (Quad vxx vx v0 x0) = grad g u
     q' :: forall s. Mode s => State (AD s a) -> Action (AD s a) -> Quad (AD s a) -> AD s a
     q' = q0 cost dode
 
+qxx,qxu,quu :: forall a. Floating a =>
+       (forall s b. (Floating b, Mode s) => Cost (AD s b))
+       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
+       -> State a
+       -> Action a
+       -> Quad a
+       -> [[a]]
 qxx cost dode x u (Quad vxx vx v0 x0) = hessian g x
   where
     g x' = q' x' (map lift u) (Quad vxx' vx' v0' x0')

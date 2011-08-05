@@ -17,10 +17,10 @@ type Ode a = State a -> Action a -> State a
 type Cost a = State a -> Action a -> a
 
 --------------------- timesteps --------------------------
-eulerStep :: (Floating a) => Ode a -> State a -> Action a -> a -> State a
+eulerStep :: Floating a => Ode a -> State a -> Action a -> a -> State a
 eulerStep dxdt x u dt = zipWith (+) x $ map (*dt) (dxdt x u)
 
-rk4Step :: (Floating a) => Ode a -> State a -> Action a -> a -> State a
+rk4Step :: Floating a => Ode a -> State a -> Action a -> a -> State a
 rk4Step dxdt x u dt = zipWith (+) x $ map (/6) $ addLists [k1, twok2, twok3, k4]
   where
     addLists [] = []
@@ -51,12 +51,7 @@ dB f x u = jacobian g u
 
 
 -------------- quadratic expansion of cost(x,u) ------------------
-cx :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [a])
-cu :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [a])
-cxx :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [[a]])
-cuu :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [[a]])
-cxu :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [[a]])
-
+cx,cu :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [a])
 cx cost x u = grad g x
   where
     g x' = cost x' (map lift u)
@@ -65,6 +60,7 @@ cu cost x u = grad g u
   where
     g u' = cost (map lift x) u'
 
+cxx,cuu,cxu :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [[a]])
 cxx cost x u = hessian g x
   where
     g x' = cost x' (map lift u)
@@ -75,7 +71,7 @@ cuu cost x u = hessian g u
 
 cxu cost x u = jacobian g u
   where
-    g u' = (cx cost) (map lift x) u'
+    g u' = cx cost (map lift x) u'
 
 
 ------------- quadratic data type -----------
