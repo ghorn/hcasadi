@@ -59,10 +59,12 @@ mimoController :: Floating a => State a -> State a -> [[a]] -> Action a -> Actio
 mimoController x x0 feedbackMatrix uOpenLoop = u
   where
     u = zipWith (+) uOpenLoop uClosedLoop
-    uClosedLoop = map (\a -> dotLists a deltaX) feedbackMatrix
+    uClosedLoop = mvMult feedbackMatrix deltaX
       where
-        dotLists xa xb = sum (zipWith (*) xa xb)
         deltaX = zipWith (-) x x0
+        mvMult m v = map (\a -> dotLists a v) m
+          where
+            dotLists xa xb = sum (zipWith (*) xa xb)
 
 
 
