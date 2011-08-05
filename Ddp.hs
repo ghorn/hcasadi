@@ -3,7 +3,7 @@
 {-# LANGUAGE RankNTypes, ScopedTypeVariables, FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Ddp(ddp) where
+module Ddp(ddp, q0, qx, qu, qxx, quu, qxu) where
 
 import Hom
 import Numeric.AD

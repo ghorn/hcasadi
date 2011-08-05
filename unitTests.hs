@@ -40,7 +40,7 @@ sRk4 x u dt = rk4Step sDxdt x u dt
 
 -- dynamics linearizations dA/dB
 -- f ~= dA*(x-x0) + dB*(u-u0) + f0
-sA, SB :: Floating a => State a -> Action a -> [[a]]
+sA, sB :: Floating a => State a -> Action a -> [[a]]
 sA = dA sDxdt
 sB = dB sDxdt
 

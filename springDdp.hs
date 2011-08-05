@@ -6,7 +6,7 @@
 module Main where
 
 import Hom
-import Ddp
+import Ddp(ddp)
 import Graphics.Gnuplot.Simple
 
 -- ode

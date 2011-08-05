@@ -6,7 +6,7 @@
 module Main where
 
 import Hom
-import Ddp
+import Ddp(ddp)
 import Vis
 import Graphics.Gnuplot.Simple
 import qualified Data.Map as DM
