@@ -38,26 +38,21 @@ sDode x u = rk4Step sDxdt x u sDt
 -- run ddp
 main :: IO ()
 main = do let n = 100
-              x0 = [10,0]
-              u0 = [0]
+              x0 = [10,0 :: Double]
+              u0 = [0 :: Double]
               time :: [Double]
               time = take n [0,sDt..]
               
               xTraj0 = replicate n x0
               uTraj0 = replicate n u0
               
-              backsweepTrajectory :: [(Quad Double, [[Double]], [Double])]
-              backsweepTrajectory = backSweep sCost sDode xTraj0 uTraj0
-
-              forwardsweepTrajectory :: [(State Double, Action Double)]
-              forwardsweepTrajectory = forwardSweep sDode x0 backsweepTrajectory
-              (xTraj, uTraj) = unzip forwardsweepTrajectory
+              (xTraj, uTraj, _) = ddp' sCost sDode sDode xTraj0 uTraj0
 
               pos = map (!! 0) xTraj
               vel = map (!! 1) xTraj
               force = map (!! 0) uTraj
-          
+
           plotLists [] [zip time pos, zip time vel, zip time force]
-          print $ "total cost: " ++ (show (sum (map (\(x,u) -> sCost x u) forwardsweepTrajectory)))
+          print $ "total cost: " ++ (show (sum (map (\(x,u) -> sCost x u) (zip xTraj uTraj))))
                                      
 

@@ -3,16 +3,51 @@
 {-# LANGUAGE RankNTypes, ScopedTypeVariables, FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Ddp(backSweep, forwardSweep, q0, qx, qu, qxx, quu, qxu) where
+module Ddp(ddp', backSweep, forwardSweep, q0, qx, qu, qxx, quu, qxu) where
 
 import Hom
 import Numeric.AD
 import Numeric.LinearAlgebra
 import Data.List(mapAccumL)
 
+type BacksweepOutput a = (Quad a, [[a]], [a])
+
+----------------------- convenience function -----------------------
+ddp' :: forall a. (Floating a, Field a, Num (Vector a)) =>
+          (forall s b. (Floating b, Mode s) => Cost (AD s b))
+       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
+       -> Ode a
+       -> [State a] -> [Action a] -> ([State a], [Action a], [BacksweepOutput a])
+ddp' cost dode dode' xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
+  where
+    backsweepTrajectory :: [BacksweepOutput a]
+    backsweepTrajectory = backSweep cost dode xTraj0 uTraj0
+
+    forwardsweepTrajectory :: [(State a, Action a)]
+    forwardsweepTrajectory = forwardSweep dode' (head xTraj0) backsweepTrajectory
+    (xTraj, uTraj) = unzip forwardsweepTrajectory
+
+
+--ddp :: forall a. (Floating a, Field a, Num (Vector a)) =>
+--          (forall s b. (Floating b, Mode s) => Cost (AD s b))
+--       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
+--       -> [State a] -> [Action a] -> ([State a], [Action a], [BacksweepOutput a])
+--ddp cost dode xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
+--  where
+--    backsweepTrajectory :: [BacksweepOutput a]
+--    backsweepTrajectory = backSweep cost dode xTraj0 uTraj0
+--
+--    dode' :: Ode a
+--    dode' = dode
+--
+--    forwardsweepTrajectory :: [(State a, Action a)]
+--    forwardsweepTrajectory = forwardSweep dode' (head xTraj0) backsweepTrajectory
+--    (xTraj, uTraj) = unzip forwardsweepTrajectory
+
+
 
 -------------------------- forward sweep -----------------------------
-forwardSweep :: (Floating a) => Ode a -> State a -> [(Quad a, [[a]], [a])]
+forwardSweep :: (Floating a) => Ode a -> State a -> [BacksweepOutput a]
                 -> [(State a, Action a)]
 forwardSweep dode x0 backsweepTrajectory = snd $ mapAccumL (fSweep dode) x0 backsweepTrajectory
 
@@ -39,13 +74,13 @@ mimoController x x0 feedbackMatrix uOpenLoop = u
 backSweep :: (Floating a, Field a, Num (Vector a)) =>
              (forall s b. (Floating b, Mode s) => Cost (AD s b))
              -> (forall s b. (Floating b, Mode s) => Ode (AD s b)) 
-             -> ([State a] -> [Action a] -> [(Quad a, [[a]], [a])])
+             -> [State a] -> [Action a] -> [BacksweepOutput a]
 backSweep cost dode xTraj0 uTraj0 = foldr (\x acc -> backSweep' cost dode x acc) [] (zip xTraj0 uTraj0)
-    
+
 backSweep' :: (Floating a, Field a, Num (Vector a)) =>
               (forall s b. (Floating b, Mode s) => Cost (AD s b))
               -> (forall s b. (Floating b, Mode s) => Ode (AD s b)) 
-              -> (State a, Action a) -> [(Quad a, [[a]], [a])] -> [(Quad a, [[a]], [a])]
+              -> (State a, Action a) -> [(Quad a, [[a]], [a])] -> [BacksweepOutput a]
 -- end step - Vnext is 0 so q fcn is cost function
 backSweep' cost dode (x,u) [] = [(backPropagate cost dode) x u (Quad vxx vx v0 x0)]
   where
@@ -61,7 +96,7 @@ backSweep' cost dode (x,u) acc@((v,_,_):_) = ((backPropagate cost dode) x u v):a
 backPropagate :: (Floating a, Field a, Num (Vector a)) => 
                  (forall s b. (Floating b, Mode s) => Cost (AD s b))
                  -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
-                 -> State a -> Action a -> Quad a -> (Quad a, [[a]], [a])
+                 -> State a -> Action a -> Quad a -> BacksweepOutput a
 backPropagate cost dode x u (Quad vxx' vx' v0' x0') = (value, feedbackGains, openLoopControl)
   where
     qx'  = qx  cost dode x u (Quad vxx' vx' v0' x0')
@@ -79,8 +114,8 @@ backPropagate cost dode x u (Quad vxx' vx' v0' x0') = (value, feedbackGains, ope
     (value, feedbackGains, openLoopControl) = backPropagate' q0' qx' qu' qxx' quu' qxu' x u
 
 -- convert lists to matrix/vectors, apply the q function back propogation math, convert back to lists
-backPropagate' :: (Field a, Num (Vector a)) => a -> [a] -> [a] -> [[a]] -> [[a]] -> [[a]] -> State a -> Action a
-                  -> (Quad a, [[a]], [a])
+backPropagate' :: (Field a, Num (Vector a)) => a -> [a] -> [a] -> [[a]] -> [[a]] -> [[a]]
+                  -> State a -> Action a -> BacksweepOutput a
 backPropagate' q0' qx'' qu'' qxx'' quu'' qxu'' x0 u0 = (Quad vxx vx v0 x0, feedbackGains, openLoopControl)
   where
     -- q functions lists to matrices/vectors
