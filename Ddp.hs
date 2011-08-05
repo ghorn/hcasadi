@@ -36,12 +36,12 @@ mimoController x x0 feedbackMatrix uOpenLoop = u
 
 
 -------------------------- backward sweep --------------------------
-backSweep :: (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+backSweep :: (forall s b. (Floating b, Mode s) => Cost (AD s b))
              -> (forall s b. (Floating b, Mode s) => Ode (AD s b)) 
              -> ([State Double] -> [Action Double] -> [(Quad Double, [[Double]], [Double])])
 backSweep cost dode xTraj0 uTraj0 = foldr (\x acc -> backSweep' cost dode x acc) [] (zip xTraj0 uTraj0)
     
-backSweep' :: (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+backSweep' :: (forall s b. (Floating b, Mode s) => Cost (AD s b))
            -> (forall s b. (Floating b, Mode s) => Ode (AD s b)) 
            -> (State Double, Action Double) -> [(Quad Double, [[Double]], [Double])] -> [(Quad Double, [[Double]], [Double])]
 backSweep' cost dode (x,u) [] = [(backPropagate cost dode) x u (Quad vxx vx v0 x0)] -- end step - Vnext is 0 so q fcn is cost function
@@ -54,12 +54,12 @@ backSweep' cost dode (x,u) acc@((v,_,_):_) = ((backPropagate cost dode) x u v):a
 
 
 ---- back propogate value fcn one step
-backPropagate :: (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+backPropagate :: (forall s b. (Floating b, Mode s) => Cost (AD s b))
                  -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
                  -> State Double -> Action Double -> Quad Double -> (Quad Double, [[Double]], [Double])
 -- more general type (commented out cause it's more confusing to the user)                 
 -- backPropagate :: forall a. (Floating a, Field a, Num (Vector a)) => 
---                  (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+--                  (forall s b. (Floating b, Mode s) => Cost (AD s b))
 --                  -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
 --                  -> State a -> Action a -> Quad a -> (Quad a, [[a]], [a])
 backPropagate cost dode x u (Quad vxx' vx' v0' x0') = (value, feedbackGains, openLoopControl)
@@ -105,34 +105,34 @@ backPropagate' q0' qx'' qu'' qxx'' quu'' qxu'' x0 u0 = (Quad vxx vx v0 x0, feedb
 
 
 -------- quadratic expansion of q function (unmaximized value function) -------
-q0 :: Floating a => (State a -> Action a -> a) -> Ode a -> (State a -> Action a -> Quad a -> a)
+q0 :: Floating a => Cost a -> Ode a -> (State a -> Action a -> Quad a -> a)
 q0 cost dode = \x u v -> (cost x u) + (nextValue x u v)
   where
     nextValue x u (Quad vxx vx v0 x0) = evalQuad (Quad vxx vx v0 x0) (dode x u)
 
 qx :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       (forall s b. (Floating b, Mode s) => Cost (AD s b))
        -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [a]
 qu :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       (forall s b. (Floating b, Mode s) => Cost (AD s b))
        -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [a]
 qxx :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       (forall s b. (Floating b, Mode s) => Cost (AD s b))
        -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
        -> Quad a
        -> [[a]]
 quu :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       (forall s b. (Floating b, Mode s) => Cost (AD s b))
        -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a
@@ -140,7 +140,7 @@ quu :: forall a. Floating a =>
        -> [[a]]
 
 qxu :: forall a. Floating a =>
-       (forall s b. (Floating b, Mode s) => State (AD s b) -> Action (AD s b) -> AD s b)
+       (forall s b. (Floating b, Mode s) => Cost (AD s b))
        -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> State a
        -> Action a

@@ -3,7 +3,9 @@
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Hom (State, Action, Ode, eulerStep, rk4Step, dA, dB,
+module Hom (State, Action, Ode, Cost,
+            eulerStep, rk4Step,
+            dA, dB,
             cx, cu, cxx, cuu, cxu,
             Quad(..), evalQuad) where
 
@@ -12,8 +14,9 @@ import Numeric.AD
 type State a = [a]
 type Action a = [a]
 type Ode a = State a -> Action a -> State a
+type Cost a = State a -> Action a -> a
 
----------------- general stuff -----------------
+--------------------- timesteps --------------------------
 eulerStep :: (Floating a) => Ode a -> State a -> Action a -> a -> State a
 eulerStep dxdt x u dt = zipWith (+) x $ map (*dt) (dxdt x u)
 
@@ -31,7 +34,8 @@ rk4Step dxdt x u dt = zipWith (+) x $ map (/6) $ addLists [k1, twok2, twok3, k4]
     twok2 = map (*2) k2
     twok3 = map (*2) k3
 
--- linearize dynamics f ~= f0 + dA*(x-x0) + dB*(u - u0)
+
+-------- linearize dynamics f ~= f0 + dA*(x-x0) + dB*(u - u0) ---------
 dA :: Floating a => (forall s b. (Floating b, Mode s) =>
                      [AD s b] -> [AD s b] -> [AD s b]) -> (State a -> Action a -> [[a]])
 dA f x u = jacobian g x
@@ -46,18 +50,12 @@ dB f x u = jacobian g u
     g u' = f (map lift x) u'
 
 
----------- quadratic expansion of cost(x,u) ----------
-cx :: Floating a => (forall s b. (Floating b, Mode s) =>
-                     [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [a])
-cu :: Floating a => (forall s b. (Floating b, Mode s) =>
-                     [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [a])
-cxx :: Floating a => (forall s b. (Floating b, Mode s) =>
-                      [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [[a]])
-cuu :: Floating a => (forall s b. (Floating b, Mode s) =>
-                      [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [[a]])
-cxu :: Floating a => (forall s b. (Floating b, Mode s) =>
-                      [AD s b] -> [AD s b] -> AD s b) -> (State a -> Action a -> [[a]])
-
+-------------- quadratic expansion of cost(x,u) ------------------
+cx :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [a])
+cu :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [a])
+cxx :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [[a]])
+cuu :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [[a]])
+cxu :: Floating a => (forall s b. (Floating b, Mode s) => Cost (AD s b)) -> (State a -> Action a -> [[a]])
 
 cx cost x u = grad g x
   where
@@ -80,9 +78,7 @@ cxu cost x u = jacobian g u
     g u' = (cx cost) (map lift x) u'
 
 
-
-
-
+------------- quadratic data type -----------
 data Quad a = Quad [[a]] [a] a [a] deriving (Show)
 
 evalQuad :: Floating a => Quad a -> [a] -> a
