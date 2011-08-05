@@ -12,8 +12,8 @@ import Data.List(mapAccumL)
 
 
 -------------------------- forward sweep -----------------------------
-forwardSweep :: Ode Double -> State Double -> [(Quad Double, [[Double]], [Double])]
-                -> [(State Double, Action Double)]
+forwardSweep :: (Floating a) => Ode a -> State a -> [(Quad a, [[a]], [a])]
+                -> [(State a, Action a)]
 forwardSweep dode x0 backsweepTrajectory = snd $ mapAccumL (fSweep dode) x0 backsweepTrajectory
 
 
@@ -36,32 +36,32 @@ mimoController x x0 feedbackMatrix uOpenLoop = u
 
 
 -------------------------- backward sweep --------------------------
-backSweep :: (forall s b. (Floating b, Mode s) => Cost (AD s b))
+backSweep :: (Floating a, Field a, Num (Vector a)) =>
+             (forall s b. (Floating b, Mode s) => Cost (AD s b))
              -> (forall s b. (Floating b, Mode s) => Ode (AD s b)) 
-             -> ([State Double] -> [Action Double] -> [(Quad Double, [[Double]], [Double])])
+             -> ([State a] -> [Action a] -> [(Quad a, [[a]], [a])])
 backSweep cost dode xTraj0 uTraj0 = foldr (\x acc -> backSweep' cost dode x acc) [] (zip xTraj0 uTraj0)
     
-backSweep' :: (forall s b. (Floating b, Mode s) => Cost (AD s b))
-           -> (forall s b. (Floating b, Mode s) => Ode (AD s b)) 
-           -> (State Double, Action Double) -> [(Quad Double, [[Double]], [Double])] -> [(Quad Double, [[Double]], [Double])]
-backSweep' cost dode (x,u) [] = [(backPropagate cost dode) x u (Quad vxx vx v0 x0)] -- end step - Vnext is 0 so q fcn is cost function
+backSweep' :: (Floating a, Field a, Num (Vector a)) =>
+              (forall s b. (Floating b, Mode s) => Cost (AD s b))
+              -> (forall s b. (Floating b, Mode s) => Ode (AD s b)) 
+              -> (State a, Action a) -> [(Quad a, [[a]], [a])] -> [(Quad a, [[a]], [a])]
+-- end step - Vnext is 0 so q fcn is cost function
+backSweep' cost dode (x,u) [] = [(backPropagate cost dode) x u (Quad vxx vx v0 x0)]
   where
     x0 = vx
     vxx = replicate (length x) vx
     vx = replicate (length x) v0
     v0 = 0
+-- all non-end steps
 backSweep' cost dode (x,u) acc@((v,_,_):_) = ((backPropagate cost dode) x u v):acc
 
 
 ---- back propogate value fcn one step
-backPropagate :: (forall s b. (Floating b, Mode s) => Cost (AD s b))
+backPropagate :: (Floating a, Field a, Num (Vector a)) => 
+                 (forall s b. (Floating b, Mode s) => Cost (AD s b))
                  -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
-                 -> State Double -> Action Double -> Quad Double -> (Quad Double, [[Double]], [Double])
--- more general type (commented out cause it's more confusing to the user)                 
--- backPropagate :: forall a. (Floating a, Field a, Num (Vector a)) => 
---                  (forall s b. (Floating b, Mode s) => Cost (AD s b))
---                  -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
---                  -> State a -> Action a -> Quad a -> (Quad a, [[a]], [a])
+                 -> State a -> Action a -> Quad a -> (Quad a, [[a]], [a])
 backPropagate cost dode x u (Quad vxx' vx' v0' x0') = (value, feedbackGains, openLoopControl)
   where
     qx'  = qx  cost dode x u (Quad vxx' vx' v0' x0')
