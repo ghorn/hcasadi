@@ -1,0 +1,7 @@
+Hopt-o-mex is currently an incomplete Haskell port of my "opt-o-mex" c++ optimal control software.
+
+So far I've implemented euler/rk4 integrators, dynamics linearization functions, and differential dynamic programming (using automatic differentiations from Edward Kmett's ad package).
+
+For a quick demo run springDdp.hs
+
+I'm also working on a 3d visualizer - try running vis/vis.hs and pan/rotate/zoom with the mouse.
