@@ -46,7 +46,7 @@ main = do let n = 100
               xTraj0 = replicate n x0
               uTraj0 = replicate n u0
               
-              (xTraj, uTraj, _) = ddp sCost sDode xTraj0 uTraj0
+              (xTraj, uTraj, _) = head $ ddp sCost sDode xTraj0 uTraj0
 
               pos = map (!! 0) xTraj
               vel = map (!! 1) xTraj

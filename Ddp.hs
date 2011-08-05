@@ -13,11 +13,23 @@ import Data.List(mapAccumL)
 type BacksweepOutput a = (Quad a, [[a]], [a])
 
 ----------------------- convenience function -----------------------
+-- iterate ddp'
 ddp :: forall a. (Floating a, Field a, Num (Vector a)) =>
           (forall s b. (Floating b, Mode s) => Cost (AD s b))
        -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
+       -> [State a] -> [Action a] -> [([State a], [Action a], [BacksweepOutput a])]
+ddp cost dode xTraj0 uTraj0 = iterate f x0
+  where
+    f (xTraj, uTraj, _) = ddp' cost dode xTraj uTraj
+    x0 = ddp' cost dode xTraj0 uTraj0
+
+
+-- just one backsweep then forwardsweep
+ddp' :: forall a. (Floating a, Field a, Num (Vector a)) =>
+          (forall s b. (Floating b, Mode s) => Cost (AD s b))
+       -> (forall s b. (Floating b, Mode s) => Ode (AD s b))
        -> [State a] -> [Action a] -> ([State a], [Action a], [BacksweepOutput a])
-ddp cost dode xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
+ddp' cost dode xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
   where
     backsweepTrajectory :: [BacksweepOutput a]
     backsweepTrajectory = backSweep cost dode xTraj0 uTraj0
