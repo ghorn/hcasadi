@@ -258,7 +258,6 @@ vis userSimFun userDrawFun x0' ts = do
    motionCallback $= Just (motion camera)
                  
    let timerFreqMillis :: Int
-       timerFreqMillis = round $ (1e-3/ts)
-
+       timerFreqMillis = round $ ts*1000
    addTimerCallback timerFreqMillis (timer state userSimFun timerFreqMillis)
    mainLoop
