@@ -3,7 +3,7 @@
 {-# LANGUAGE RankNTypes, ScopedTypeVariables, FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Ddp(ddp, backSweep, forwardSweep, q0, qx, qu, qxx, quu, qxu) where
+module Ddp(ddp) where
 
 import Hom
 import Numeric.AD

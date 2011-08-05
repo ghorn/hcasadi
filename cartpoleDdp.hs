@@ -7,7 +7,11 @@ module Main where
 
 import Hom
 import Ddp
+import Vis
 import Graphics.Gnuplot.Simple
+import qualified Data.Map as DM
+import Data.Maybe (fromJust)
+import Graphics.UI.GLUT
 
 -- ode
 dxdt :: Floating a => Ode a
@@ -15,7 +19,7 @@ dxdt state action = state'
   where
     (state',_) = cartpole state action
   
-cartpole :: Floating a => State a -> Action a -> (State a, [(String, a)])
+cartpole :: Floating a => State a -> Action a -> (State a, DM.Map String a)
 cartpole state action = (state', outputs)
   where
     [x, x', theta, theta'] = state
@@ -32,13 +36,36 @@ cartpole state action = (state', outputs)
 
     state' = [x', x'', theta', theta'']
 
-    bob_x = x + len*sin(theta)
-    bob_y = -len*cos(theta)
-    outputs = [("cart_x", x),
-               ("cart_y", 0),
-               ("bob_x", bob_x),
-               ("bob_y", bob_y)]
-              
+    outputs = DM.fromList [("cart_x", x),
+                           ("cart_y", 0),
+                           ("bob_x", bob_x),
+                           ("bob_y", bob_y),
+                           ("len", len)]
+      where
+        bob_x = x + 0.5*len*sin(theta)
+        bob_y = 0.5*len*cos(theta)
+  
+makeShapes :: State Double -> Action Double -> [VisShape GLdouble]
+makeShapes x u = shapes
+  where
+    (_,outputs) = cartpole x u
+    [_,_,theta,_] = map realToFrac x
+    
+    getOutput key = realToFrac $ fromJust $ DM.lookup key outputs
+    bob_x = getOutput "bob_x"
+    bob_y = getOutput "bob_y"
+    len = getOutput "len"
+    
+    shapes = [((Cylinder' 0.1 len 10 10), (bob_x, 0, bob_y), (cos(0.5*theta),0,sin(0.5*theta),0), (0,1,1))]
+
+simFun :: State Double -> State Double
+simFun x = dode x [0]
+
+drawFun :: State Double -> IO ()
+drawFun x = do
+  postRedisplay Nothing
+  drawShapes (makeShapes x [0])
+
 -- cost fcn
 cost :: Floating a => State a -> Action a -> a
 cost state action = x*x + x'*x' + theta*theta + theta'*theta' + u*u
@@ -56,7 +83,7 @@ dode x u = rk4Step dxdt x u dt
 -- run ddp
 main :: IO ()
 main = do let n = 100
-              x0 = [1,2,3,4::Double]
+              x0 = [0,0,3.1,0::Double]
               u0 = [0::Double]
               time :: [Double]
               time = take n [0,dt..]
@@ -71,8 +98,8 @@ main = do let n = 100
               theta  = map (!! 2) xTraj
               theta' = map (!! 3) xTraj
               u      = map (!! 0) uTraj
+              
+          vis simFun drawFun x0 dt
           
           plotLists [] $ map (zip time) [x, x', theta, theta', u]
           print $ "total cost: " ++ (show (sum (map (\(xi,ui) -> cost xi ui) (zip xTraj uTraj))))
-                                     
-
