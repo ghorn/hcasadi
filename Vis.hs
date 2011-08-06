@@ -9,8 +9,6 @@ import System.Exit ( exitWith, ExitCode(ExitSuccess) )
 import Graphics.UI.GLUT
 import Data.Time.Clock
 import System.Posix.Unistd(usleep)
-import Control.Concurrent
-import Control.Monad
 import Hom
 
 type VisShape a = (Object, (a,a,a), (a,a,a,a), (GLfloat,GLfloat,GLfloat))
@@ -126,8 +124,8 @@ drawShapes shapes = do
             renderObject Solid object
 
 
-display :: Floating a => MVar (State a) -> Camera -> (State a -> IO ()) -> DisplayCallback
-display state camera userDrawFun = do
+display :: Floating a => IORef (State a) -> Camera -> (State a -> IO ()) -> DisplayCallback
+display stateRef camera userDrawFun = do
    clear [ ColorBuffer, DepthBuffer ]
    
    -- draw the scene
@@ -149,8 +147,8 @@ display state camera userDrawFun = do
      drawAxes 0.5 5
      
      -- call user function
-     state' <- readMVar state
-     userDrawFun state'
+     state <- get stateRef
+     userDrawFun state
 
      ---- draw the torus
      --color (Color3 0 1 1 :: Color3 GLfloat)
@@ -171,13 +169,10 @@ reshape size@(Size w h) = do
    postRedisplay Nothing
 
 
-keyboardMouse :: ThreadId -> Camera -> KeyboardMouseCallback
-keyboardMouse simThreadId camera key keyState _ _ = do
+keyboardMouse :: Camera -> KeyboardMouseCallback
+keyboardMouse camera key keyState _ _ = do
   case (key, keyState) of
-    (Char '\27', Down) -> do 
-      -- kill sim thread when main loop finishes
-      killThread simThreadId
-      exitWith ExitSuccess
+    (Char '\27', Down) -> exitWith ExitSuccess
 
     (SpecialKey KeyLeft, Down)  -> print "left"
     (SpecialKey KeyRight, Down) -> print "right"
@@ -254,40 +249,35 @@ vis userSimFun userDrawFun x0' ts = do
   myInit progName
    
   -- create internal state
-  state <- newMVar x0'
+  state <- newIORef x0'
   camera <- makeCamera
+  t0 <- getCurrentTime
+  lastTime <- newIORef t0
 
-  -- start sim thread
-  simThreadId <- forkIO $ simThread state userSimFun ts
-  
   -- setup callbacks
   displayCallback $= display state camera userDrawFun
+  idleCallback $= Just (simCallback state userSimFun ts lastTime)
   reshapeCallback $= Just reshape
-  keyboardMouseCallback $= Just (keyboardMouse simThreadId camera)
+  keyboardMouseCallback $= Just (keyboardMouse camera)
   motionCallback $= Just (motion camera)
                  
   -- start drawing loop
   mainLoop
   
 
-simThread :: Floating a => MVar (State a) -> (State a -> State a) -> Double -> IO ()
-simThread state userSimFun ts = do
-  t0 <- getCurrentTime
-  lastTime' <- newIORef t0
-  
-  forever $ do
-    currentTime <- getCurrentTime
-    lastTime <- get lastTime'
-    let usRemaining :: Int
-        usRemaining = round $ 1e6*(ts - (realToFrac (diffUTCTime currentTime lastTime)))
+simCallback :: Floating a => IORef (State a) -> (State a -> State a) -> Double -> IORef UTCTime-> IO ()
+simCallback stateRef userSimFun ts lastTimeRef = do
+  currentTime <- getCurrentTime
+  lastTime <- get lastTimeRef
+  let usRemaining :: Int
+      usRemaining = round $ 1e6*(ts - (realToFrac (diffUTCTime currentTime lastTime)))
     
-    if usRemaining <= 0
-      then do
-        state' <- readMVar state
-        let nextState = userSimFun state'
-        _ <- takeMVar state
-        putMVar state nextState
-        postRedisplay Nothing
-        lastTime' $= addUTCTime (realToFrac ts) lastTime
-      else do
-        usleep usRemaining
+  if usRemaining <= 0
+    then do
+      state <- get stateRef
+      let nextState = userSimFun state
+      stateRef $= nextState
+      postRedisplay Nothing
+      lastTimeRef $= addUTCTime (realToFrac ts) lastTime
+    else do
+      usleep usRemaining

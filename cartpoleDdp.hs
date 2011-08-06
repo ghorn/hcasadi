@@ -18,7 +18,7 @@ dxdt :: Floating a => Ode a
 dxdt state action = state'
   where
     (state',_) = cartpole state action
-  
+
 cartpole :: Floating a => State a -> Action a -> (State a, DM.Map String a)
 cartpole state action = (state', outputs)
   where
