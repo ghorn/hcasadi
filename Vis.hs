@@ -9,7 +9,6 @@ import System.Exit ( exitWith, ExitCode(ExitSuccess) )
 import Graphics.UI.GLUT
 import Data.Time.Clock
 import System.Posix.Unistd(usleep)
-import Hom
 
 type VisShape a = (Object, (a,a,a), (a,a,a,a), (GLfloat,GLfloat,GLfloat))
 
@@ -124,7 +123,7 @@ drawShapes shapes = do
             renderObject Solid object
 
 
-display :: Floating a => IORef (State a) -> Camera -> (State a -> IO ()) -> DisplayCallback
+display :: IORef a -> Camera -> (a -> IO ()) -> DisplayCallback
 display stateRef camera userDrawFun = do
    clear [ ColorBuffer, DepthBuffer ]
    
@@ -242,7 +241,7 @@ motion camera (Position x y) = do
    postRedisplay Nothing
 
 
-vis :: Floating a => (State a -> State a) -> (State a -> IO ()) -> State a -> Double -> IO ()
+vis :: (a -> a) -> (a -> IO ()) -> a -> Double -> IO ()
 vis userSimFun userDrawFun x0' ts = do
   -- init glut/scene
   (progName, _args) <- getArgsAndInitialize
@@ -265,7 +264,7 @@ vis userSimFun userDrawFun x0' ts = do
   mainLoop
   
 
-simCallback :: Floating a => IORef (State a) -> (State a -> State a) -> Double -> IORef UTCTime-> IO ()
+simCallback :: IORef a -> (a -> a) -> Double -> IORef UTCTime-> IO ()
 simCallback stateRef userSimFun ts lastTimeRef = do
   currentTime <- getCurrentTime
   lastTime <- get lastTimeRef
