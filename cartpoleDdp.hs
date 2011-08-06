@@ -1,7 +1,7 @@
 -- cartpoleDdp.hs
 
 {-# LANGUAGE RankNTypes #-}
-{-# OPTIONS_GHC -Wall #-}
+--{-# OPTIONS_GHC -Wall #-}
 
 module Main where
 
@@ -63,7 +63,6 @@ simFun x = dode x [0]
 
 drawFun :: State Double -> IO ()
 drawFun x = do
-  postRedisplay Nothing
   drawShapes (makeShapes x [0])
 
 -- cost fcn
@@ -101,5 +100,5 @@ main = do let n = 100
               
           vis simFun drawFun x0 dt
           
-          plotLists [] $ map (zip time) [x, x', theta, theta', u]
-          print $ "total cost: " ++ (show (sum (map (\(xi,ui) -> cost xi ui) (zip xTraj uTraj))))
+--          plotLists [] $ map (zip time) [x, x', theta, theta', u]
+--          print $ "total cost: " ++ (show (sum (map (\(xi,ui) -> cost xi ui) (zip xTraj uTraj))))

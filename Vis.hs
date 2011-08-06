@@ -1,12 +1,16 @@
 -- Vis.hs
 
---{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module Vis(vis, VisShape, drawShapes) where
 
 import Data.IORef ( IORef, newIORef )
 import System.Exit ( exitWith, ExitCode(ExitSuccess) )
 import Graphics.UI.GLUT
+import Data.Time.Clock
+import System.Posix.Unistd(usleep)
+import Control.Concurrent
+import Control.Monad
 import Hom
 
 type VisShape a = (Object, (a,a,a), (a,a,a,a), (GLfloat,GLfloat,GLfloat))
@@ -22,11 +26,6 @@ data Camera = Camera { phi :: IORef GLdouble,
                        leftButton :: IORef GLint,
                        rightButton :: IORef GLint
                      }
-
-makeState :: Floating a => State a -> IO (IORef (State a))
-makeState x0' = do
-  x <- newIORef x0'
-  return x
 
 makeCamera :: IO Camera
 makeCamera = do
@@ -52,19 +51,24 @@ makeCamera = do
                     rightButton = rightButton'
                   }
 
-myInit :: IO ()
-myInit = do
-   clearColor $= Color4 0 0 0 0
-   shadeModel $= Smooth
-   depthFunc $= Just Less
-   lighting $= Enabled
-   light (Light 0) $= Enabled
-   ambient (Light 0) $= Color4 1 1 1 1
+myInit :: String -> IO ()
+myInit progName = do
+  initialDisplayMode $= [ DoubleBuffered, RGBMode, WithDepthBuffer ]
+  initialWindowSize $= Size 500 500
+  initialWindowPosition $= Position 100 600
+  _ <- createWindow progName
+
+  clearColor $= Color4 0 0 0 0
+  shadeModel $= Smooth
+  depthFunc $= Just Less
+  lighting $= Enabled
+  light (Light 0) $= Enabled
+  ambient (Light 0) $= Color4 1 1 1 1
    
-   materialDiffuse Front $= Color4 0.5 0.5 0.5 1
-   materialSpecular Front $= Color4 1 1 1 1
-   materialShininess Front $= 25
-   colorMaterial $= Just (Front, Diffuse)
+  materialDiffuse Front $= Color4 0.5 0.5 0.5 1
+  materialSpecular Front $= Color4 1 1 1 1
+  materialShininess Front $= 25
+  colorMaterial $= Just (Front, Diffuse)
 
 drawAxes :: GLdouble -> GLdouble -> IO ()
 drawAxes size aspectRatio = do
@@ -122,7 +126,7 @@ drawShapes shapes = do
             renderObject Solid object
 
 
-display :: (HasGetter g, Floating a) => g (State a) -> Camera -> (State a -> IO ()) -> DisplayCallback
+display :: Floating a => MVar (State a) -> Camera -> (State a -> IO ()) -> DisplayCallback
 display state camera userDrawFun = do
    clear [ ColorBuffer, DepthBuffer ]
    
@@ -145,7 +149,7 @@ display state camera userDrawFun = do
      drawAxes 0.5 5
      
      -- call user function
-     state' <- get state
+     state' <- readMVar state
      userDrawFun state'
 
      ---- draw the torus
@@ -164,12 +168,17 @@ reshape size@(Size w h) = do
    perspective 40 (fromIntegral w / fromIntegral h) 1 20
    matrixMode $= Modelview 0
    loadIdentity
+   postRedisplay Nothing
 
-keyboardMouse :: Camera -> KeyboardMouseCallback
-keyboardMouse camera key keyState _ _ = do
+
+keyboardMouse :: ThreadId -> Camera -> KeyboardMouseCallback
+keyboardMouse simThreadId camera key keyState _ _ = do
   case (key, keyState) of
-    (Char '\27', Down) -> exitWith ExitSuccess
-    
+    (Char '\27', Down) -> do 
+      -- kill sim thread when main loop finishes
+      killThread simThreadId
+      exitWith ExitSuccess
+
     (SpecialKey KeyLeft, Down)  -> print "left"
     (SpecialKey KeyRight, Down) -> print "right"
     (SpecialKey KeyUp, Down)    -> print "up"
@@ -198,9 +207,9 @@ keyboardMouse camera key keyState _ _ = do
             rho camera $~ (* factor)
             postRedisplay Nothing
             
+
 motion :: Camera -> MotionCallback
 motion camera (Position x y) = do
-   postRedisplay Nothing
    x0' <- get (x0 camera)
    y0' <- get (y0 camera)
    bx <- get (ballX camera)
@@ -234,30 +243,51 @@ motion camera (Position x y) = do
    
    ballX camera $= x
    ballY camera $= y
-
-timer :: Floating a => IORef (State a) -> (State a -> State a) -> Timeout -> TimerCallback
-timer state userSimFun timerFreqMillis = do
+   
    postRedisplay Nothing
-   x <- get state
-   state $= userSimFun x
-   addTimerCallback timerFreqMillis (timer state userSimFun timerFreqMillis)
+
 
 vis :: Floating a => (State a -> State a) -> (State a -> IO ()) -> State a -> Double -> IO ()
 vis userSimFun userDrawFun x0' ts = do
-   (progName, _args) <- getArgsAndInitialize
-   initialDisplayMode $= [ DoubleBuffered, RGBMode, WithDepthBuffer ]
-   initialWindowSize $= Size 500 500
-   initialWindowPosition $= Position 100 100
-   _ <- createWindow progName
-   state <- makeState x0'
-   camera <- makeCamera
-   myInit
-   displayCallback $= display state camera userDrawFun
-   reshapeCallback $= Just reshape
-   keyboardMouseCallback $= Just (keyboardMouse camera)
-   motionCallback $= Just (motion camera)
+  -- init glut/scene
+  (progName, _args) <- getArgsAndInitialize
+  myInit progName
+   
+  -- create internal state
+  state <- newMVar x0'
+  camera <- makeCamera
+
+  -- start sim thread
+  simThreadId <- forkIO $ simThread state userSimFun ts
+  
+  -- setup callbacks
+  displayCallback $= display state camera userDrawFun
+  reshapeCallback $= Just reshape
+  keyboardMouseCallback $= Just (keyboardMouse simThreadId camera)
+  motionCallback $= Just (motion camera)
                  
-   let timerFreqMillis :: Int
-       timerFreqMillis = round $ ts*1000
-   addTimerCallback timerFreqMillis (timer state userSimFun timerFreqMillis)
-   mainLoop
+  -- start drawing loop
+  mainLoop
+  
+
+simThread :: Floating a => MVar (State a) -> (State a -> State a) -> Double -> IO ()
+simThread state userSimFun ts = do
+  t0 <- getCurrentTime
+  lastTime' <- newIORef t0
+  
+  forever $ do
+    currentTime <- getCurrentTime
+    lastTime <- get lastTime'
+    let usRemaining :: Int
+        usRemaining = round $ 1e6*(ts - (realToFrac (diffUTCTime currentTime lastTime)))
+    
+    if usRemaining <= 0
+      then do
+        state' <- readMVar state
+        let nextState = userSimFun state'
+        _ <- takeMVar state
+        putMVar state nextState
+        postRedisplay Nothing
+        lastTime' $= addUTCTime (realToFrac ts) lastTime
+      else do
+        usleep usRemaining
