@@ -49,7 +49,7 @@ forwardSweep :: (Floating a) => Ode a -> State a -> [BacksweepOutput a]
 forwardSweep dode x0 backsweepTrajectory = snd $ mapAccumL (fSweep dode) x0 backsweepTrajectory
 
 
-fSweep :: Floating a => Ode a -> State a -> (Quad a, [[a]], [a]) -> (State a, (State a, Action a))
+fSweep :: Floating a => Ode a -> State a -> BacksweepOutput a -> (State a, (State a, Action a))
 fSweep dode x (Quad _ _ _ x0, feedbackGain, uOpenLoop) = (xNext, (x, u))
   where
     u = mimoController x x0 feedbackGain uOpenLoop
