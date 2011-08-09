@@ -9,6 +9,9 @@ import System.Exit ( exitWith, ExitCode(ExitSuccess) )
 import Graphics.UI.GLUT
 import Data.Time.Clock
 import System.Posix.Unistd(usleep)
+import Control.Concurrent
+import Control.Monad
+import Control.DeepSeq
 
 type VisShape a = (Object, (a,a,a), (a,a,a,a), (GLfloat,GLfloat,GLfloat))
 
@@ -48,8 +51,8 @@ makeCamera = do
                     rightButton = rightButton'
                   }
 
-myInit :: String -> IO ()
-myInit progName = do
+myGlInit :: String -> IO ()
+myGlInit progName = do
   initialDisplayMode $= [ DoubleBuffered, RGBMode, WithDepthBuffer ]
   initialWindowSize $= Size 500 500
   initialWindowPosition $= Position 100 600
@@ -123,8 +126,8 @@ drawShapes shapes = do
             renderObject Solid object
 
 
-display :: IORef a -> Camera -> (a -> IO ()) -> DisplayCallback
-display stateRef camera userDrawFun = do
+display :: MVar a -> Camera -> (a -> IO ()) -> DisplayCallback
+display stateMVar camera userDrawFun = do
    clear [ ColorBuffer, DepthBuffer ]
    
    -- draw the scene
@@ -146,7 +149,7 @@ display stateRef camera userDrawFun = do
      drawAxes 0.5 5
      
      -- call user function
-     state <- get stateRef
+     state <- readMVar stateMVar
      userDrawFun state
 
      ---- draw the torus
@@ -168,10 +171,13 @@ reshape size@(Size w h) = do
    postRedisplay Nothing
 
 
-keyboardMouse :: Camera -> KeyboardMouseCallback
-keyboardMouse camera key keyState _ _ = do
+keyboardMouse :: ThreadId -> Camera -> KeyboardMouseCallback
+keyboardMouse simThreadId camera key keyState _ _ = do
   case (key, keyState) of
-    (Char '\27', Down) -> exitWith ExitSuccess
+    (Char '\27', Down) -> do
+      -- kill sim thread when main loop finishes
+      killThread simThreadId
+      exitWith ExitSuccess
 
     (SpecialKey KeyLeft, Down)  -> print "left"
     (SpecialKey KeyRight, Down) -> print "right"
@@ -241,42 +247,55 @@ motion camera (Position x y) = do
    postRedisplay Nothing
 
 
-vis :: (a -> a) -> (a -> IO ()) -> a -> Double -> IO ()
+vis :: (NFData a, Show a) => (a -> a) -> (a -> IO ()) -> a -> Double -> IO ()
 vis userSimFun userDrawFun x0' ts = do
   -- init glut/scene
   (progName, _args) <- getArgsAndInitialize
-  myInit progName
+  myGlInit progName
    
   -- create internal state
-  state <- newIORef x0'
+  stateMVar <- newMVar x0'
   camera <- makeCamera
-  t0 <- getCurrentTime
-  lastTime <- newIORef t0
+
+  -- start sim thread
+  simThreadId <- forkIO $ simThread stateMVar userSimFun ts
 
   -- setup callbacks
-  displayCallback $= display state camera userDrawFun
-  idleCallback $= Just (simCallback state userSimFun ts lastTime)
+  displayCallback $= display stateMVar camera userDrawFun
   reshapeCallback $= Just reshape
-  keyboardMouseCallback $= Just (keyboardMouse camera)
+  keyboardMouseCallback $= Just (keyboardMouse simThreadId camera)
   motionCallback $= Just (motion camera)
-                 
-  -- start drawing loop
-  mainLoop
-  
 
-simCallback :: IORef a -> (a -> a) -> Double -> IORef UTCTime-> IO ()
-simCallback stateRef userSimFun ts lastTimeRef = do
-  currentTime <- getCurrentTime
-  lastTime <- get lastTimeRef
-  let usRemaining :: Int
-      usRemaining = round $ 1e6*(ts - (realToFrac (diffUTCTime currentTime lastTime)))
-    
-  if usRemaining <= 0
-    then do
-      state <- get stateRef
-      let nextState = userSimFun state
-      stateRef $= nextState
-      postRedisplay Nothing
-      lastTimeRef $= addUTCTime (realToFrac ts) lastTime
-    else do
-      usleep usRemaining
+  -- start main loop
+  mainLoop
+
+
+simThread :: NFData a => MVar a -> (a -> a) -> Double -> IO ()
+simThread stateMVar userSimFun ts = do
+  t0 <- getCurrentTime
+  lastTimeRef <- newIORef t0
+
+  forever $ do
+    -- calculate how much longer to sleep before taking a timestep
+    currentTime <- getCurrentTime
+    lastTime <- get lastTimeRef
+    let usRemaining :: Int
+        usRemaining = round $ 1e6*(ts - (realToFrac (diffUTCTime currentTime lastTime)))
+    if usRemaining <= 0
+      -- slept for long enough, do a sim iteration
+      then do
+        lastTimeRef $= addUTCTime (realToFrac ts) lastTime
+
+        let getNextState = do
+              state <- readMVar stateMVar
+              return $ userSimFun state
+
+        let putState state = do
+              swapMVar stateMVar state
+
+        nextState <- getNextState
+        _ <- nextState `deepseq` (putState nextState)
+        postRedisplay Nothing
+
+      else do -- need to sleep longer
+        usleep usRemaining

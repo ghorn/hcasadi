@@ -11,7 +11,6 @@ import Vis
 import qualified Data.Map as DM
 import Data.Maybe (fromJust)
 import Graphics.UI.GLUT
-import Debug.Trace
 
 type SimState a = (State a, [State a], [Action a])
 
@@ -84,7 +83,7 @@ drawFun (x, xTraj, uTraj) = do
 
 
 simFun :: SimState Double -> SimState Double
-simFun (x, xTraj0, uTraj0) = traceShow (head u) (dode x u, xTraj, uTraj)
+simFun (x, xTraj0, uTraj0) = (dode x u, xTraj, uTraj)
   where
     xTraj0' = x:(drop 2 xTraj0) ++ [last xTraj0]
     uTraj0' = (tail uTraj0) ++ [last uTraj0]
@@ -115,7 +114,6 @@ main = do let n = 10
               xTraj0 = replicate n x0
               uTraj0 = replicate n u0
               
---              (xTraj, uTraj, _) = head $ ddp cost dode xTraj0 uTraj0
               (xTraj, uTraj, _) = head $ drop 2 $ ddp cost dode xTraj0 uTraj0
 
           vis simFun drawFun (x0, xTraj, uTraj) dt
