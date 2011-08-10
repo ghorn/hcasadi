@@ -1,0 +1,100 @@
+\documentclass[10 pt]{article}
+\bibliographystyle{plain}	% (uses file "plain.bst")
+%
+% Packages
+%
+\usepackage{setspace}    % Needed for multiple spacing (single and double)
+\usepackage[left=1in,top=1in,right=1in,nohead]{geometry}
+\doublespacing
+
+\begin{document}
+
+\section*{Optimal Control Problem}
+A nonlinear dynamical system can be described as
+\begin{equation}
+x_{k+1}=f(x_k,u_k)
+\end{equation}
+For a phase space trajectory of N time steps $[(x_0, u_0), (x_1, u_1), ... (x_{N-1},u_{N-1})]$, the value function at a certain state is defined as the total cost to get from that state to the final state assuming optimal control policies $u^*$ are used at each time step:
+\begin{eqnarray*}
+V(x_k)&=&\sum_{i=k}^{N-1} C(x_i,u_i^*)\\
+      &=&C(x_k,u_k^*)+V(x_{k+1})
+\end{eqnarray*}
+where $C(x,u)$ is the cost associated with a given state and action. Assuming that the value function at $x_{k+1}$ is known, the optimal control policy at state $x_k$ maximizes $V(x_k)$:
+\begin{eqnarray}
+u_k^* &=& \arg\max_{uk} \left(C(x_k,u_k)+V(x_{k+1})\right)\\
+\label{eq:solve_me}
+     &=& \arg\max_{uk} Q(x_k,u_k)
+\end{eqnarray}
+where the Q function $Q(x_k,u_k)$ is defined as the un-optimized value function at $x_k$:
+\begin{equation}
+\label{eq:Q_function}
+Q(x_k,u_k)= C(x_k,u_k)+V^{k+1}(f(x_k,u_k)).
+\end{equation}
+
+
+
+\section*{DDP (Differential Dynamic Programming)}
+In DDP, a quadratic approximation of the value function is maintained
+
+\begin{equation}
+V(x+\delta x) \approx V_0 + V_x^T\delta x + \frac{1}{2}\delta x^T V_{xx} \delta x.
+\end{equation}
+The Q function is quadratically expanded analytically, numerically, or with automatic differentiation
+\begin{equation}
+\label{eq:Q_coeffs}
+Q(x_k+\delta x,u_k+\delta u) \approx Q_0 +Q_x^T\delta x +Q_u^T\delta u+
+\frac{1}{2}
+(\begin{array}{rr}\delta x & \delta u\end{array})^T
+\left(\begin{array}{rr}Q_{xx} & Q_{xu}\\Q_{xu}^T & Q_{uu}\end{array}\right)
+\left(\begin{array}{rr}\delta x \\ \delta u\end{array}\right)
+\end{equation}
+where subscripts denote derivatives. The optimal action $u_k^*$ is solved for by maximizing the Q function with respect to $\delta u$
+\begin{eqnarray*}
+0 &=& \nabla_{\delta u}Q(x,u) = Q_u + Q_{xu}^T\delta x + Q_{uu}\delta u\\
+\delta u^* &=& -Q_{uu}^{-1}(Q_u+Q_{xu}^T\delta x)\\
+u^* &=& u_k + \delta u^*
+\end{eqnarray*}
+
+Plugging the optimal $\delta u^*$ back into (\ref{eq:Q_coeffs}) yields the value function at $x_k$
+\[
+V(x_k)=\left(Q_0-Q_u^TQ_{uu}^{-1}Q_u\right)+\left(Q_x^T-Q_u^TQ_{uu}^{-1}Q_{xu}^T\right)\delta x+\frac{1}{2}\delta x^T\left(Q_{xx}-Q_{xu}Q_{uu}^{-1}Q_{xu}^T\right)\delta x
+\]
+
+
+%\section*{ILQR (Iterative LQR)}
+%The cost function is approximated quadratically
+%%
+%\begin{eqnarray*}
+%C(x_k,u_k) &\approx&
+%\frac{1}{2}
+%(\begin{array}{rr}x_k & u_k \end{array})^T
+%\left(\begin{array}{rr}Q_k & N_k\\N_k^T & R_k\end{array}\right)
+%\left(\begin{array}{rr}x_k \\ u_k\end{array}\right)
+%+
+%(\begin{array}{rr}q_k & r_k \end{array})^T
+%\left(\begin{array}{rr}x_k \\ u_k\end{array}\right)
+%+
+%C_{0k}
+%\end{eqnarray*}
+%
+%
+%The coefficients of (\ref{eq:Q_coeffs}) are found by quadratically expanding (\ref{eq:Q_function}):
+%\begin{eqnarray*}
+%C(x_k,u_k) &\approx& C(x_k,u_k) + C_x^T\delta x + C_u^T\delta u + \frac{1}{2}\delta x_k^T C_{xx}\delta x_k
+%+ \frac{1}{2}\delta u_k^T C_{uu}\delta u_k + \delta u_k^T C_{ux}\delta x_k \\
+%V^{k+1}(f(x_k,u_k)) &\approx& V^{k+1}+(V_x^{k+1})^T(A_k\delta x_k+B_k\delta u_k)
+%+ \frac{1}{2}\left((A_k\,\delta x)^T~(B_k\,\delta u)^T\right)V_{xx}^{k+1}\left(\begin{array}{c}A_k\,\delta x\\B_k\,\delta u\end{array}\right)\\
+%&& + \frac{1}{2}\left(\delta x^T~\delta u^T\right)
+%H
+%\left(\begin{array}{c}\delta x\\\delta u\end{array}\right)
+%\end{eqnarray*}
+%where elements of $H$ are given by
+%\[
+%H_{ij}=\sum_{l}\frac{\partial V^{k+1}}{\partial x_l}\frac{\partial^2f(x_k)_l}{\partial x_i\partial x_j}.
+%\]
+
+
+
+\bibliography{myrefs}		% expects file "myrefs.bib"
+
+\end{document}
