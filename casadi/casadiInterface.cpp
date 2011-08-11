@@ -14,8 +14,7 @@
 using namespace std;
 using namespace CasADi;
 
-SX * sxNewDouble(double in)
-{
+SX * sxNewDouble(double in){
   SX * sx = new SX(in);
   #ifdef COUT_MEMORY_MANAGEMENT
   cout << "(cpp) new sx at " << sx << ", val: " << *sx << endl;
@@ -23,8 +22,7 @@ SX * sxNewDouble(double in)
   return sx;
 }
 
-SX * sxNewInt(int in)
-{
+SX * sxNewInt(int in){
   SX * sx = new SX(in);
   #ifdef COUT_MEMORY_MANAGEMENT
   cout << "(cpp) new sx at " << sx << ", val: " << *sx << endl;
@@ -32,16 +30,14 @@ SX * sxNewInt(int in)
   return sx;
 }
 
-void sxDelete(SX * const sx)
-{
+void sxDelete(SX * const sx){
   #ifdef COUT_MEMORY_MANAGEMENT
   cout << "(cpp) deleting sx at " << sx << endl;
   #endif
   delete sx;
 }
 
-void sxShow(char * stringOut, int strLen, const SX & sx)
-{
+void sxShow(char * stringOut, int strLen, const SX & sx){
   ostringstream sxOutStream;
   sxOutStream << sx;
   strncpy(stringOut, sxOutStream.str().c_str(), strLen);
@@ -50,38 +46,35 @@ void sxShow(char * stringOut, int strLen, const SX & sx)
     cerr << "(cpp) ERROR - sxShow trying to write " << sxOutStream.str().length() << " characters to output string with capacity of " << strLen << " characters\n";
 }
 
-int sxEqual(const SX & sx0, const SX & sx1)
-{
+int sxEqual(const SX & sx0, const SX & sx1){
   return sx0.isEqual(sx1);
 }
 
-void sxPlus(const SX & sx0, const SX & sx1, SX & sxOut)
-{
+void sxPlus(const SX & sx0, const SX & sx1, SX & sxOut){
   sxOut = sx0 + sx1;
 }
 
-void sxTimes(const SX & sx0, const SX & sx1, SX & sxOut)
-{
-  sxOut = sx0 * sx1;
-}
-
-void sxMinus(const SX & sx0, const SX & sx1, SX & sxOut)
-{
+void sxMinus(const SX & sx0, const SX & sx1, SX & sxOut){
   sxOut = sx0 - sx1;
 }
 
-void sxNegate(const SX & sxIn, SX & sxOut)
-{
+void sxTimes(const SX & sx0, const SX & sx1, SX & sxOut){
+  sxOut = sx0 * sx1;
+}
+
+void sxDivide(const SX & sx0, const SX & sx1, SX & sxOut){
+  sxOut = sx0 / sx1;
+}
+
+void sxNegate(const SX & sxIn, SX & sxOut){
   sxOut = -sxIn;
 }
 
-void sxAbs(const SX & sxIn, SX & sxOut)
-{
+void sxAbs(const SX & sxIn, SX & sxOut){
   sxOut = fabs(sxIn);
 }
 
-int sxSignum(const SX & sxIn)
-{
+int sxSignum(const SX & sxIn){
   SX sxInSimp( sxIn );
   simplify( sxInSimp );
 
@@ -92,3 +85,49 @@ int sxSignum(const SX & sxIn)
     return 1;
   return -1;
 }
+
+
+void sxPi(SX & sxOut){
+  sxOut = SX(M_PI);
+}
+
+void sxExp(const SX & sxIn, SX & sxOut){
+  sxOut = exp(sxIn);
+}
+
+void sxSqrt(const SX & sxIn, SX & sxOut){
+  sxOut = sqrt(sxIn);
+}
+
+void sxLog(const SX & sxIn, SX & sxOut){
+  sxOut = log(sxIn);
+}
+
+void sxPow(const SX & sxBase, const SX & sxExponent, SX & sxOut){
+  sxOut = pow(sxBase, sxExponent);
+}
+
+void sxSin(const SX & sxIn, SX & sxOut){
+  sxOut = sin(sxIn);
+}
+
+void sxCos(const SX & sxIn, SX & sxOut){
+  sxOut = cos(sxIn);
+}
+
+void sxTan(const SX & sxIn, SX & sxOut){
+  sxOut = tan(sxIn);
+}
+
+void sxArcsin(const SX & sxIn, SX & sxOut){
+  sxOut = asin(sxIn);
+}
+
+void sxArccos(const SX & sxIn, SX & sxOut){
+  sxOut = acos(sxIn);
+}
+
+void sxArctan(const SX & sxIn, SX & sxOut){
+  sxOut = atan(sxIn);
+}
+
