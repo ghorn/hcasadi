@@ -1,7 +1,7 @@
-// casadiInterface.hpp
+// sxInterface.hpp
 
-#ifndef __CASADI_INTERFACE_H__
-#define __CASADI_INTERFACE_H__
+#ifndef __SX_INTERFACE_H__
+#define __SX_INTERFACE_H__
 
 #include <casadi/sx/sx.hpp>
 
@@ -45,4 +45,4 @@ extern "C"{
 #endif
 
 
-#endif //__CASADI_INTERFACE_H__
+#endif //__SX_INTERFACE_H__

@@ -1,9 +1,9 @@
--- Casadi.hs
+-- SX.hs
 
 --{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module Casadi(SX) where
+module SX(SX) where
 --module Main where
 import Foreign.C
 import Foreign.Ptr

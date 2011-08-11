@@ -1,4 +1,4 @@
-// casadiInterface.cpp
+// sxInterface.cpp
 
 #include "math.h"
 #include <cstdio>
@@ -7,7 +7,7 @@
 
 #include <casadi/sx/sx.hpp>
 #include <casadi/sx/sx_tools.hpp>
-#include "casadiInterface.hpp"
+#include "sxInterface.hpp"
 
 //#define COUT_MEMORY_MANAGEMENT
 
