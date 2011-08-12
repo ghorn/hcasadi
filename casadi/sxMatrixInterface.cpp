@@ -7,7 +7,7 @@
 
 #include <casadi/sx/sx.hpp>
 #include <casadi/sx/sx_tools.hpp>
-//#include <casadi/matrix/matrix_tools.hpp>
+#include <casadi/matrix/matrix_tools.hpp>
 
 #include "sxMatrixInterface.hpp"
 
@@ -22,6 +22,14 @@ SXMatrix * sxMatrixCreateSymbolic(char * charPrefix, int n, int m){
   string prefix;
   prefix.assign(charPrefix);
   SXMatrix * out = new SXMatrix(create_symbolic(prefix, n, m));
+  #ifdef COUT_MEMORY_MANAGEMENT
+  cout << "(cpp) new sx matrix at " << out << ", val: " << *out << endl;
+  #endif
+  return out;
+}
+
+SXMatrix * sxMatrixCopy(const SXMatrix & old){
+  SXMatrix * out = new SXMatrix(old);
   #ifdef COUT_MEMORY_MANAGEMENT
   cout << "(cpp) new sx matrix at " << out << ", val: " << *out << endl;
   #endif
@@ -60,6 +68,10 @@ void sxMatrixAt(const SXMatrix & mat, int n, int m, SX & out){
   out = SX(mat.indexed(n,m));
 }
 
+void sxMatrixSet(const SX & sx, int n, int m, SXMatrix & mat){
+  mat.indexed_assignment(n, m, sx);
+}
+
 int sxMatrixSize1(const SXMatrix & mat){
   return mat.size1();
 }
@@ -84,4 +96,10 @@ void sxMM(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut){
 
 void sxMatrixTranspose(const SXMatrix & mIn, SXMatrix & mOut){
   mOut = SXMatrix(mIn.trans());
+}
+
+int sxMatrixIsEqual(const SXMatrix & m0, const SXMatrix & m1){
+  if (isEqual(m0, m1))
+    return 1;
+  return 0;
 }
