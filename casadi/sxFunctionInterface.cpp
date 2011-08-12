@@ -16,6 +16,7 @@ using namespace std;
 using namespace CasADi;
 
 
+/******************** memory management *******************/
 SXFunction * sxFunctionCreate(const SXMatrix & sxIn, const SXMatrix & sxOut){
   SXFunction * out = new SXFunction(sxIn, sxOut);
   return out;

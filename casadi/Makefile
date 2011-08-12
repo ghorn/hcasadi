@@ -34,7 +34,7 @@ HS_LDFLAGS = \
 	-lcasadi
 
 HS_LIB = libcasadi_interface.a
-HS_FLAGS = -pgml g++ -O2 --make #-fforce-recomp #-Wall #-Werror #-g
+HS_FLAGS = -pgml g++ -O2 --make -fforce-recomp #-Wall #-Werror #-g
 
 
 .PHONY: clean

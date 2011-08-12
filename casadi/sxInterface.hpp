@@ -12,21 +12,23 @@ using namespace CasADi;
 extern "C"{
 #endif
 
+  // memory management
   SX * sxNewDouble(double in);
   SX * sxNewInt(int in);
   void sxDelete(SX * const sx);
-  void sxShow(char * stringOut, int strLen, const SX & sx);
-  int sxEqual(const SX & sx0, const SX & sx1);
 
+  // show
+  void sxShow(char * stringOut, int strLen, const SX & sx);
+
+  // math
+  int sxEqual(const SX & sx0, const SX & sx1);
   void sxPlus(const SX & sx0, const SX & sx1, SX & sxOut);
   void sxMinus(const SX & sx0, const SX & sx1, SX & sxOut);
   void sxTimes(const SX & sx0, const SX & sx1, SX & sxOut);
   void sxDivide(const SX & sx0, const SX & sx1, SX & sxOut);
-
   void sxNegate(const SX & sxIn, SX & sxOut);
   void sxAbs(const SX & sxIn, SX & sxOut);
   int sxSignum(const SX & sxIn);
-
   void sxPi(SX & sxOut);
   void sxExp(const SX & sxIn, SX & sxOut);
   void sxSqrt(const SX & sxIn, SX & sxOut);

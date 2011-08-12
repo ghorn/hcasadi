@@ -14,6 +14,8 @@
 using namespace std;
 using namespace CasADi;
 
+
+/******************** memory management *******************/
 SX * sxNewDouble(double in){
   SX * sx = new SX(in);
   #ifdef COUT_MEMORY_MANAGEMENT
@@ -37,6 +39,8 @@ void sxDelete(SX * const sx){
   delete sx;
 }
 
+
+/******************** show *******************/
 void sxShow(char * stringOut, int strLen, const SX & sx){
   ostringstream sxOutStream;
   sxOutStream << sx;
@@ -46,6 +50,8 @@ void sxShow(char * stringOut, int strLen, const SX & sx){
     cerr << "(cpp) ERROR - sxShow trying to write " << sxOutStream.str().length() << " characters to output string with capacity of " << strLen << " characters\n";
 }
 
+
+/******************** math *******************/
 int sxEqual(const SX & sx0, const SX & sx1){
   return sx0.isEqual(sx1);
 }

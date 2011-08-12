@@ -13,6 +13,7 @@ using namespace CasADi;
 extern "C"{
 #endif
 
+  // memory management
   SXFunction * sxFunctionCreate(const SXMatrix & sxIn, const SXMatrix & sxOut);
   SXFunction * sxFunctionDelete(SXFunction * const fun);
 
