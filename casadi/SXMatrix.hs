@@ -37,24 +37,24 @@ foreign import ccall "sxMatrixTranspose" c_sxMatrixTranspose :: (Ptr SXMatrixRaw
 foreign import ccall "sxMatrixIsEqual" c_sxMatrixIsEqual :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO CInt
 
 ----------------- create -------------------------
-sxMatrixCreateSymbolic :: String -> (Integer, Integer) -> SXMatrix
-sxMatrixCreateSymbolic prefix (n,m) = unsafePerformIO $ mask_ $ do
+sxMatrixCreateSymbolic :: String -> (Integer, Integer) -> IO SXMatrix
+sxMatrixCreateSymbolic prefix (n,m) = mask_ $ do
   cPrefix <- newCString prefix
   mat <- c_sxMatrixCreateSymbolic cPrefix (fromIntegral n) (fromIntegral m) >>= newForeignPtr c_sxMatrixDelete
   return $ SXMatrix mat
 
-sxMatrixCopy :: SXMatrix -> SXMatrix
-sxMatrixCopy (SXMatrix old) = unsafePerformIO $ mask_ $ do
+sxMatrixCopy :: SXMatrix -> IO SXMatrix
+sxMatrixCopy (SXMatrix old) = mask_ $ do
   new <- withForeignPtr old c_sxMatrixCopy >>= newForeignPtr c_sxMatrixDelete
   return $ SXMatrix new
 
-sxVectorCreateSymbolic :: String -> Integer -> SXVector
-sxVectorCreateSymbolic prefix n = (SXVector p)
-  where
-    (SXMatrix p) = sxMatrixCreateSymbolic prefix (n,1)
+sxVectorCreateSymbolic :: String -> Integer -> IO SXVector
+sxVectorCreateSymbolic prefix n = do
+  (SXMatrix p) <- sxMatrixCreateSymbolic prefix (n,1)
+  return (SXVector p)
 
-sxMatrixZeros :: Integral a => (a, a) -> SXMatrix
-sxMatrixZeros (n,m) = unsafePerformIO $ mask_ $ do
+sxMatrixZeros :: Integral a => (a, a) -> IO SXMatrix
+sxMatrixZeros (n,m) = mask_ $ do
   let n' = safeToCInt n
       m' = safeToCInt m
       
@@ -82,21 +82,21 @@ sxVectorShow (SXVector s) = sxMatrixShow (SXMatrix s)
 
 
 --------------- getters/setters ---------------------
-sxMatrixAt :: SXMatrix -> (Integer,Integer) -> SX
-sxMatrixAt (SXMatrix matIn) (n,m) = unsafePerformIO $ do
-  let SX sxOut = sxNewInteger 0
+sxMatrixAt :: SXMatrix -> (Integer,Integer) -> IO SX
+sxMatrixAt (SXMatrix matIn) (n,m) = do
+  SX sxOut <- sxNewInteger 0
   withForeignPtrs2 (\matIn' sxOut' -> c_sxMatrixAt matIn' (fromIntegral n) (fromIntegral m) sxOut') matIn sxOut
   return (SX sxOut)
 
-sxMatrixSet :: SXMatrix -> (Integer,Integer) -> SX -> SXMatrix
-sxMatrixSet (SXMatrix matIn) (n,m) (SX val) = unsafePerformIO $ do
-  let SXMatrix matOut = sxMatrixCopy (SXMatrix matIn)
-      n' = fromIntegral n
+sxMatrixSet :: SXMatrix -> (Integer,Integer) -> SX -> IO SXMatrix
+sxMatrixSet (SXMatrix matIn) (n,m) (SX val) = do
+  SXMatrix matOut <- sxMatrixCopy (SXMatrix matIn)
+  let n' = fromIntegral n
       m' = fromIntegral m
   withForeignPtrs2 (\val' matOut' -> c_sxMatrixSet val' n' m' matOut') val matOut
   return (SXMatrix matOut)
 
-sxVectorAt :: SXVector -> Integer -> SX
+sxVectorAt :: SXVector -> Integer -> IO SX
 sxVectorAt (SXVector vecIn) n = sxMatrixAt (SXMatrix vecIn) (n,0)
 
 
@@ -114,17 +114,19 @@ sxVectorLength (SXVector vecIn)
   where (n,m) = sxMatrixSize (SXMatrix vecIn)
 
 sxMatrixToLists :: SXMatrix -> [[SX]]
-sxMatrixToLists mat = [[sxMatrixAt mat (row, col) | col <- [0..m-1]] | row <- [0..n-1]]
-  where
-    (n,m) = sxMatrixSize mat
+sxMatrixToLists mat = unsafePerformIO $ do
+  let f row = mapM (\col -> sxMatrixAt mat (row, col)) [0..m-1]
+      (n,m) = sxMatrixSize mat
+  mapM f [0..n-1]
 
 -- turns n by 1 matrix into a list of SX, returns error if matrix is not n by 1
 sxMatrixToList :: SXMatrix -> [SX]
-sxMatrixToList mat
-  | m == 1    = [sxMatrixAt mat (row, 0) | row <- [0..n-1]]
-  | otherwise = error "sxMatrixToList can only be used on an n by 1 matrix"
-  where
-    (n,m) = sxMatrixSize mat
+sxMatrixToList mat = unsafePerformIO $ do
+  let (n,m) = sxMatrixSize mat
+  if m == 1
+    then mapM (\row -> sxMatrixAt mat (row, 0)) [0..n-1]
+    else error "sxMatrixToList can only be used on an n by 1 matrix"
+
 
 ------------------------- math ---------------------------------
 sxMatrixPlus :: SXMatrix -> SXMatrix -> SXMatrix
@@ -135,7 +137,7 @@ sxMatrixPlus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
         where
           sizeM0 = sxMatrixSize (SXMatrix m0)
           sizeM1 = sxMatrixSize (SXMatrix m1)
-  let SXMatrix mOut = sxMatrixZeros size'
+  SXMatrix mOut <- sxMatrixZeros size'
   withForeignPtrs3 c_sxMatrixPlus m0 m1 mOut
   return $ SXMatrix mOut
 
@@ -147,7 +149,7 @@ sxMatrixMinus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
         where
           sizeM0 = sxMatrixSize (SXMatrix m0)
           sizeM1 = sxMatrixSize (SXMatrix m1)
-  let SXMatrix mOut = sxMatrixZeros size'
+  SXMatrix mOut <- sxMatrixZeros size'
   withForeignPtrs3 c_sxMatrixMinus m0 m1 mOut
   return $ SXMatrix mOut
 
@@ -170,7 +172,7 @@ sxMM (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
           (rowsM0, colsM0) = sxMatrixSize (SXMatrix m0)
           (rowsM1, colsM1) = sxMatrixSize (SXMatrix m1)
 
-  let SXMatrix mOut = sxMatrixZeros size'
+  SXMatrix mOut <- sxMatrixZeros size'
   withForeignPtrs3 c_sxMM m0 m1 mOut
   return $ SXMatrix mOut
 
@@ -186,9 +188,7 @@ sxVM (SXVector vIn) (SXMatrix mat) = SXVector vOut
 
 sxMatrixTranspose :: SXMatrix -> SXMatrix
 sxMatrixTranspose (SXMatrix mIn) = unsafePerformIO $ do
-  let SXMatrix mOut = sxMatrixZeros (m,n)
-        where
-          (n,m) = sxMatrixSize (SXMatrix mIn)
+  SXMatrix mOut <- sxMatrixZeros $ sxMatrixSize (SXMatrix mIn)
   withForeignPtrs2 c_sxMatrixTranspose mIn mOut
   return $ SXMatrix mOut
 
@@ -245,11 +245,11 @@ instance Num SXVector where
 
 main :: IO ()
 main = do 
-  let mA = sxMatrixCreateSymbolic "A" (2,2)
-      mB = sxMatrixCreateSymbolic "B" (2,2)
-      mC = sxMatrixCreateSymbolic "C" (4,1)
-      u = sxVectorCreateSymbolic "u" 3
-      v = sxVectorCreateSymbolic "u" 3
+  mA <- sxMatrixCreateSymbolic "A" (2,2)
+  mB <- sxMatrixCreateSymbolic "B" (2,2)
+  mC <- sxMatrixCreateSymbolic "C" (4,1)
+  u <- sxVectorCreateSymbolic "u" 3
+  v <- sxVectorCreateSymbolic "u" 3
   
   print $ mA == mB
   print $ mA == mA

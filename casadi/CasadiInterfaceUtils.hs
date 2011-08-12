@@ -18,5 +18,3 @@ withForeignPtrs3 f0 p0 p1 p2 = withForeignPtr p2 $ \p2' -> (f2 p2')
   where
     f2 p2'     = withForeignPtr p1 (\p1' -> f1 p1' p2'    )
     f1 p1' p2' = withForeignPtr p0 (\p0' -> f0 p0' p1' p2')
-
-
