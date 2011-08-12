@@ -49,18 +49,18 @@ foreign import ccall "sxInterface.hpp sxArctan" c_sxArctan :: Ptr SXRaw -> Ptr S
 
 
 -- cpp function wrappers
-sxNewDouble :: Double -> IO SX
-sxNewDouble val = mask_ $ do
+sxNewDouble :: Double -> SX
+sxNewDouble val = unsafePerformIO $ mask_ $ do
     f <- c_sxNewDouble (realToFrac val) >>= newForeignPtr c_sxDelete
     return $ SX f
 
-sxNewInt :: Int -> IO SX
-sxNewInt val = mask_ $ do
+sxNewInt :: Int -> SX
+sxNewInt val = unsafePerformIO $ mask_ $ do
     f <- c_sxNewInt (fromIntegral val) >>= newForeignPtr c_sxDelete
     return $ SX f
 
 
-sxNewInteger :: Integer -> IO SX
+sxNewInteger :: Integer -> SX
 sxNewInteger val
       | withinCIntBounds val = sxNewInt (fromInteger val)
       | otherwise            = error "input out of range of CInt in sxNewInteger"
@@ -85,37 +85,37 @@ sxEqual (SX sx0) (SX sx1) = unsafePerformIO $ do
 
 sxPlus :: SX -> SX -> SX
 sxPlus (SX sx0) (SX sx1) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs3 c_sxPlus sx0 sx1 sxOut
   return (SX sxOut)
 
 sxMinus :: SX -> SX -> SX
 sxMinus (SX sx0) (SX sx1) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs3 c_sxMinus sx0 sx1 sxOut
   return (SX sxOut)
 
 sxTimes :: SX -> SX -> SX
 sxTimes (SX sx0) (SX sx1) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs3 c_sxTimes sx0 sx1 sxOut
   return (SX sxOut)
 
 sxDivide :: SX -> SX -> SX
 sxDivide (SX sx0) (SX sx1) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs3 c_sxDivide sx0 sx1 sxOut
   return (SX sxOut)
 
 sxNegate :: SX -> SX
 sxNegate (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxNegate sx sxOut
   return (SX sxOut)
 
 sxAbs :: SX -> SX
 sxAbs (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxAbs sx sxOut
   return (SX sxOut)
 
@@ -123,74 +123,74 @@ sxSignum :: SX -> SX
 sxSignum (SX sx) = unsafePerformIO $ do
   sign <- withForeignPtr sx c_sxSignum
   if (sign == 1)
-    then sxNewInteger 1
-    else sxNewInteger (-1)
+    then return $ sxNewInteger 1
+    else return $ sxNewInteger (-1)
 
 
 
 sxPi :: SX
 sxPi = unsafePerformIO $ do
-  SX sx <- sxNewInteger 0
-  withForeignPtr sx $ c_sxPi
-  return (SX sx)
+  let SX sxOut = sxNewInteger 0
+  withForeignPtr sxOut $ c_sxPi
+  return (SX sxOut)
 
 sxExp :: SX -> SX
 sxExp (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxExp sx sxOut
   return (SX sxOut)
 
 sxSqrt :: SX -> SX
 sxSqrt (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxSqrt sx sxOut
   return (SX sxOut)
 
 sxLog :: SX -> SX
 sxLog (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxLog sx sxOut
   return (SX sxOut)
 
 sxPow :: SX -> SX -> SX
 sxPow (SX sx0) (SX sx1) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs3 c_sxPow sx0 sx1 sxOut
   return (SX sxOut)
 
 sxSin :: SX -> SX
 sxSin (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxSin sx sxOut
   return (SX sxOut)
 
 sxCos :: SX -> SX
 sxCos (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxCos sx sxOut
   return (SX sxOut)
 
 sxTan :: SX -> SX
 sxTan (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxTan sx sxOut
   return (SX sxOut)
 
 sxArcsin :: SX -> SX
 sxArcsin (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxArcsin sx sxOut
   return (SX sxOut)
 
 sxArccos :: SX -> SX
 sxArccos (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxArccos sx sxOut
   return (SX sxOut)
 
 sxArctan :: SX -> SX
 sxArctan (SX sx) = unsafePerformIO $ do
-  SX sxOut <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 c_sxArctan sx sxOut
   return (SX sxOut)
 
@@ -211,12 +211,12 @@ instance Num SX where
   negate = sxNegate
   abs = sxAbs
   signum = sxSignum
-  fromInteger val = unsafePerformIO $ sxNewInteger val
+  fromInteger val = sxNewInteger val
 
 instance Fractional SX where
   (/) = sxDivide
-  recip sx = (unsafePerformIO $ sxNewInteger 1)/sx
-  fromRational x = (unsafePerformIO $ sxNewInteger num)/(unsafePerformIO $ sxNewInteger den)
+  recip sx = (sxNewInteger 1)/sx
+  fromRational x = (sxNewInteger num)/(sxNewInteger den)
     where
       num = numerator x
       den = denominator x
@@ -243,9 +243,9 @@ instance Floating SX where
 
 main :: IO ()
 main = do 
-  f <- sxNewDouble 10.1
-  g <- sxNewDouble 3.0
-  h <- sxNewDouble (-4.4)
+  let f = sxNewDouble 10.1
+      g = sxNewDouble 3.0
+      h = sxNewDouble (-4.4)
 
   putStrLn $ sxShow f
   putStrLn $ sxShow g

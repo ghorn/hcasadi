@@ -83,7 +83,7 @@ instance Show SXVector where
 --------------- access ---------------------
 sxMatrixAt :: SXMatrix -> (Integer,Integer) -> SX
 sxMatrixAt (SXMatrix matIn) (n,m) = unsafePerformIO $ do
-  (SX sxOut) <- sxNewInteger 0
+  let SX sxOut = sxNewInteger 0
   withForeignPtrs2 (\matIn' sxOut' -> c_sxMatrixAt matIn' (fromIntegral n) (fromIntegral m) sxOut') matIn sxOut
   return (SX sxOut)
 
