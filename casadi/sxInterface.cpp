@@ -130,4 +130,3 @@ void sxArccos(const SX & sxIn, SX & sxOut){
 void sxArctan(const SX & sxIn, SX & sxOut){
   sxOut = atan(sxIn);
 }
-

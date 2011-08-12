@@ -3,8 +3,11 @@
 --{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module SX(SX) where
 --module Main where
+module SX(SX(..), SXRaw, sxNewInteger) where
+
+import CasadiInterfaceUtils
+
 import Foreign.C
 import Foreign.Ptr
 import Foreign.ForeignPtr
@@ -15,47 +18,34 @@ import Data.Ratio(numerator, denominator)
 -- the SX data type
 data SXRaw = SXRaw
 newtype SX = SX (ForeignPtr SXRaw)
-
+--data SX = SX (ForeignPtr SXRaw) | SX Integer | SX Double
 
 -- foreign imports
-foreign import ccall "casadiInterface.hpp sxNewDouble" c_sxNewDouble :: CDouble -> IO (Ptr SXRaw)
-foreign import ccall "casadiInterface.hpp sxNewInt"    c_sxNewInt :: CInt -> IO (Ptr SXRaw)
-foreign import ccall "casadiInterface.hpp &sxDelete"   c_sxDelete :: FunPtr (Ptr SXRaw -> IO ())
-foreign import ccall "casadiInterface.hpp sxShow"      c_sxShow :: Ptr CChar -> CInt -> (Ptr SXRaw) -> IO ()
+foreign import ccall "sxInterface.hpp sxNewDouble" c_sxNewDouble :: CDouble -> IO (Ptr SXRaw)
+foreign import ccall "sxInterface.hpp sxNewInt"    c_sxNewInt :: CInt -> IO (Ptr SXRaw)
+foreign import ccall "sxInterface.hpp &sxDelete"   c_sxDelete :: FunPtr (Ptr SXRaw -> IO ())
+foreign import ccall "sxInterface.hpp sxShow"      c_sxShow :: Ptr CChar -> CInt -> (Ptr SXRaw) -> IO ()
 
-foreign import ccall "casadiInterface.hpp sxEqual"  c_sxEqual :: Ptr SXRaw -> Ptr SXRaw -> IO CInt
-foreign import ccall "casadiInterface.hpp sxPlus"   c_sxPlus :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxMinus"  c_sxMinus :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxTimes"  c_sxTimes :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxDivide" c_sxDivide :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxNegate" c_sxNegate :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxAbs"    c_sxAbs :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxSignum" c_sxSignum :: Ptr SXRaw -> IO CInt
+foreign import ccall "sxInterface.hpp sxEqual"  c_sxEqual :: Ptr SXRaw -> Ptr SXRaw -> IO CInt
+foreign import ccall "sxInterface.hpp sxPlus"   c_sxPlus :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxMinus"  c_sxMinus :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxTimes"  c_sxTimes :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxDivide" c_sxDivide :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxNegate" c_sxNegate :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxAbs"    c_sxAbs :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxSignum" c_sxSignum :: Ptr SXRaw -> IO CInt
 
-foreign import ccall "casadiInterface.hpp sxPi"     c_sxPi     :: Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxExp"    c_sxExp    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxSqrt"   c_sxSqrt   :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxLog"    c_sxLog    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxPow"    c_sxPow    :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxSin"    c_sxSin    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxCos"    c_sxCos    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxTan"    c_sxTan    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxArcsin" c_sxArcsin :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxArccos" c_sxArccos :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-foreign import ccall "casadiInterface.hpp sxArctan" c_sxArctan :: Ptr SXRaw -> Ptr SXRaw -> IO ()
-
-
--- convenience functions for cpp wrappers
-withForeignPtrs2 :: (Ptr SXRaw -> Ptr SXRaw -> IO a) -> ForeignPtr SXRaw -> ForeignPtr SXRaw -> IO a
-withForeignPtrs2 f0 p0 p1 = withForeignPtr p1 $ \p1' -> (f1 p1')
-  where
-    f1 p1' = withForeignPtr p0 (\p0' -> f0 p0' p1')
-
-withForeignPtrs3 :: (Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO a) -> ForeignPtr SXRaw -> ForeignPtr SXRaw -> ForeignPtr SXRaw -> IO a
-withForeignPtrs3 f0 p0 p1 p2 = withForeignPtr p2 $ \p2' -> (f2 p2')
-  where
-    f2 p2'     = withForeignPtr p1 (\p1' -> f1 p1' p2'    )
-    f1 p1' p2' = withForeignPtr p0 (\p0' -> f0 p0' p1' p2')
+foreign import ccall "sxInterface.hpp sxPi"     c_sxPi     :: Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxExp"    c_sxExp    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxSqrt"   c_sxSqrt   :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxLog"    c_sxLog    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxPow"    c_sxPow    :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxSin"    c_sxSin    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxCos"    c_sxCos    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxTan"    c_sxTan    :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxArcsin" c_sxArcsin :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxArccos" c_sxArccos :: Ptr SXRaw -> Ptr SXRaw -> IO ()
+foreign import ccall "sxInterface.hpp sxArctan" c_sxArctan :: Ptr SXRaw -> Ptr SXRaw -> IO ()
 
 
 -- cpp function wrappers

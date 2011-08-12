@@ -39,7 +39,6 @@ extern "C"{
   void sxArccos(const SX & sxIn, SX & sxOut);
   void sxArctan(const SX & sxIn, SX & sxOut);
 
-
 #ifdef __cplusplus
 }
 #endif
