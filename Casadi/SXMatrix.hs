@@ -3,10 +3,10 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module SXMatrix(SXMatrix(..), SXMatrixRaw(..), sxMatrixTranspose, sxMatrixCreateSymbolic, sxMatrixListToUnsafeArray, sxMatrixFreeUnsafeArray, sxMatrixToLists, sxMatrixToList, sxMatrixFromList, sxMatrixZeros, sxMatrixSize) where
+module Casadi.SXMatrix(SXMatrix(..), SXMatrixRaw(..), sxMatrixTranspose, sxMatrixCreateSymbolic, sxMatrixListToUnsafeArray, sxMatrixFreeUnsafeArray, sxMatrixToLists, sxMatrixToList, sxMatrixFromList, sxMatrixZeros, sxMatrixSize) where
 
-import SX
-import CasadiInterfaceUtils
+import Casadi.SX
+import Casadi.CasadiInterfaceUtils
 
 import Foreign.C
 import Foreign.ForeignPtr

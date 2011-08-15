@@ -3,10 +3,10 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module SXFunction(SXFunction(..), SXFunctionRaw(..), sxFunctionCreate, sxFunctionCreate', sxFunctionEvaluate, sxFunctionGetInputs, sxFunctionGetOutputs, sxFunctionGradientAt, sxFunctionGradients, sxFunctionJacobianAt, sxFunctionHessianAt) where
+module Casadi.SXFunction(SXFunction(..), SXFunctionRaw(..), sxFunctionCreate, sxFunctionCreate', sxFunctionEvaluate, sxFunctionGetInputs, sxFunctionGetOutputs, sxFunctionGradientAt, sxFunctionGradients, sxFunctionJacobianAt, sxFunctionHessianAt) where
 
-import SXMatrix
-import CasadiInterfaceUtils
+import Casadi.SXMatrix
+import Casadi.CasadiInterfaceUtils
 
 import Foreign.C
 import Foreign.ForeignPtr
