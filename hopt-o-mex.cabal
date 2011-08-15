@@ -40,9 +40,12 @@ Library
 Executable speedTest
   Main-Is:         speedTest.hs
   Hs-Source-Dirs:  .
-  Other-Modules:   Hom, Ddp
+  Other-Modules:   Hom, Ddp, Casadi
   Build-depends:   ad, hmatrix
-  Ghc-options:     -O2
+  Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
+
+  Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
+  Extra-libraries: casadi_interface, casadi
 
 Executable springDdp
   Main-Is:         springDdp.hs

@@ -4,6 +4,7 @@
 
 module Main where
 
+import Casadi
 import Data.Time.Clock
 import Hom
 import Ddp
@@ -65,9 +66,9 @@ cpQuad = Quad vxx vx v0 x0
     x0 = [11,22]
  
 
--- function to benchmark
-runComputation :: [Double] -> IO ()
-runComputation xu = do
+-- ad function to benchmark
+adEval :: [Double] -> IO ()
+adEval xu = do
   let x = take nx xu
       u = drop nx xu
       
@@ -87,24 +88,66 @@ runComputation xu = do
   putStrLn ""
 
 
--- time "runComputation"
-timeOneRun :: [Double] -> IO (Double)
-timeOneRun xu = do
+-- prepare casadi SXFunction
+casadiFcn :: IO SXFunction
+casadiFcn = do
+  x <- sxMatrixCreateSymbolic "x" (4,1)
+  u <- sxMatrixCreateSymbolic "u" (1,1)
+      
+  let x' = sxMatrixToList x
+      u' = sxMatrixToList u
+      q' = sxMatrixFromList [(cpCost x' u') + (evalQuad cpQuad (dode x' u'))]
+      
+      qFcn = sxFunctionCreate [x,u] [q']
+      qx'  = sxFunctionGradientAt qFcn 0
+      qu'  = sxFunctionGradientAt qFcn 1
+      qxx' = sxFunctionHessianAt qFcn (0,0)
+      qxu' = sxFunctionHessianAt qFcn (0,1)
+      quu' = sxFunctionHessianAt qFcn (1,1)
+
+  return $ sxFunctionCreate [x,u] [q', qx', qu', qxx', qxu', quu']
+
+
+-- casadi computation to benchmark
+casadiEval :: SXFunction -> [Double] -> IO ()
+casadiEval sxFcn xu = do
+  let x = take nx xu
+      u = drop nx xu
+      
+  [q',qx',qu',qxx',qxu',quu'] <- sxFunctionEvaluate sxFcn [x,u]
+  print $ q'
+  print $ qx'
+  print $ qu'
+  print $ qxu'
+  print $ qxx'
+  print $ quu'
+
+
+-- time an evaluation
+timeOneRun :: ([Double] -> IO ()) -> [Double] -> IO (Double)
+timeOneRun computation xu = do
   time0 <- getCurrentTime
-  runComputation xu
+  computation xu
   time1 <- getCurrentTime
   return (realToFrac (diffUTCTime time1 time0))
 
 
 main :: IO ()
 main = do
+  
+  qFcn <- casadiFcn
+  
   let n = 100 :: Int -- number of times to call benchmarking function
       
       -- a bunch of arbitrary inputs
       xuInputs :: [[Double]]
       xuInputs = map (\k -> map fromIntegral [k..k+nx+nu-1]) [1..n::Int]
 
-  times <- mapM timeOneRun xuInputs
+  adTimes <- mapM (timeOneRun adEval) xuInputs
+  casadiTimes <- mapM (timeOneRun (casadiEval qFcn)) xuInputs
   
-  putStrLn $ "times: " ++ (show times)
-  putStrLn $ "mean time: " ++ (show ((sum times)/(fromIntegral (length times))))
+  putStrLn $ "ad times: " ++ (show adTimes)
+  putStrLn $ "casadi times: " ++ (show casadiTimes)
+
+  putStrLn $ "mean time (ad):     " ++ (show ((sum adTimes)/(fromIntegral (length adTimes))))
+  putStrLn $ "mean time (casadi): " ++ (show ((sum casadiTimes)/(fromIntegral (length casadiTimes))))
