@@ -1,0 +1,65 @@
+Name:          hopt-o-mex
+Version:       0.1
+License:       AllRightsReserved
+--License-file:
+Copyright:     (c) Greg Horn 2011,
+Author:        Greg Horn
+Maintainer:    gregmainland@gmail.com
+Stability:     Experimental
+Category:      Math
+Build-type:    Simple
+Cabal-version: >=1.2
+--synopsis:      Wrapper for CasADi C++ Automatic Differentiation libraries
+--description:   TODO
+
+Library
+  Exposed-modules:
+    Casadi
+    Casadi.SX
+    Casadi.SXMatrix
+    Casadi.SXFunction
+  
+  Other-modules:
+        Casadi.CasadiInterfaceUtils
+
+  Build-depends: base
+  
+  -- Modules not exported by this package.
+  -- Other-modules:       
+  
+  -- Extra tools (e.g. alex, hsc2hs, ...) needed to build the source.
+  -- Build-tools:         
+
+  Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
+
+  Extra-libraries: casadi_interface, casadi
+
+  Ghc-options: -pgml g++ -fPIC -O2
+  --HS_PROFILE_FLAGS = -prof -auto-all -caf-all -fforce-recomp -rtsopts
+
+Executable speedTest
+  Main-Is:         speedTest.hs
+  Hs-Source-Dirs:  .
+  Other-Modules:   Hom, Ddp
+  Build-depends:   ad, hmatrix
+  Ghc-options:     -O2
+
+Executable springDdp
+  Main-Is:         springDdp.hs
+  Hs-Source-Dirs:  .
+  Other-Modules:   Hom, Ddp, Casadi
+  Build-depends:   ad, hmatrix, gnuplot
+  Ghc-options: -O2
+
+  Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
+  Extra-libraries: casadi_interface, casadi
+
+Executable cartpoleDdp
+  Main-Is:         cartpoleDdp.hs
+  Hs-Source-Dirs:  .
+  Other-Modules:   Hom, Ddp, Casadi
+  Build-depends:   ad, hmatrix, time, GLUT, containers, deepseq, unix
+  Ghc-options: -O2
+
+  Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
+  Extra-libraries: casadi_interface, casadi

@@ -3,7 +3,20 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module Casadi.SXFunction(SXFunction(..), SXFunctionRaw(..), sxFunctionCreate, sxFunctionCreate', sxFunctionEvaluate, sxFunctionGetInputs, sxFunctionGetOutputs, sxFunctionGradientAt, sxFunctionGradients, sxFunctionJacobianAt, sxFunctionHessianAt) where
+module Casadi.SXFunction
+       (
+         SXFunction(..)
+       , SXFunctionRaw(..)
+       , sxFunctionCreate
+       , sxFunctionCreate'
+       , sxFunctionEvaluate
+       , sxFunctionGetInputs
+       , sxFunctionGetOutputs
+       , sxFunctionGradientAt
+       , sxFunctionGradients
+       , sxFunctionJacobianAt
+       , sxFunctionHessianAt
+       ) where
 
 import Casadi.SXMatrix
 import Casadi.CasadiInterfaceUtils

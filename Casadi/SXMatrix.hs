@@ -3,7 +3,20 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module Casadi.SXMatrix(SXMatrix(..), SXMatrixRaw(..), sxMatrixTranspose, sxMatrixCreateSymbolic, sxMatrixListToUnsafeArray, sxMatrixFreeUnsafeArray, sxMatrixToLists, sxMatrixToList, sxMatrixFromList, sxMatrixZeros, sxMatrixSize) where
+module Casadi.SXMatrix
+       (
+         SXMatrix(..)
+       , SXMatrixRaw(..)
+       , sxMatrixTranspose
+       , sxMatrixCreateSymbolic
+       , sxMatrixListToUnsafeArray
+       , sxMatrixFreeUnsafeArray
+       , sxMatrixToLists
+       , sxMatrixToList
+       , sxMatrixFromList
+       , sxMatrixZeros
+       , sxMatrixSize
+       ) where
 
 import Casadi.SX
 import Casadi.CasadiInterfaceUtils

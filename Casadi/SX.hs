@@ -4,7 +4,12 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 
 --module Main where
-module Casadi.SX(SX(..), SXRaw(..), sxNewInteger) where
+module Casadi.SX
+       (
+         SX(..)
+       , SXRaw(..)
+       , sxNewInteger
+       ) where
 
 import Casadi.CasadiInterfaceUtils
 
