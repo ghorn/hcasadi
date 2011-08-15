@@ -18,6 +18,10 @@ using namespace CasADi;
 
 
 /******************** memory management *******************/
+int sxMatrixSizeOfAddress(){
+  return sizeof(SXMatrix*);
+}
+
 SXMatrix * sxMatrixCreateSymbolic(char * charPrefix, int n, int m){
   string prefix;
   prefix.assign(charPrefix);
@@ -28,13 +32,31 @@ SXMatrix * sxMatrixCreateSymbolic(char * charPrefix, int n, int m){
   return out;
 }
 
-SXMatrix * sxMatrixCopy(const SXMatrix & old){
+SXMatrix * sxMatrixDuplicate(const SXMatrix & old){
   SXMatrix * out = new SXMatrix(old);
   #ifdef COUT_MEMORY_MANAGEMENT
-  cout << "(cpp) new sx matrix at " << out << ", val: " << *out << endl;
+  cout << "(cpp) duplicate " << out << ", val: " << *out << endl;
   #endif
   return out;
 }
+
+void sxMatrixDuplicateAt(const SXMatrix & source, int idx, SXMatrix * destination[]){
+  destination[idx] = new SXMatrix(source);
+
+  #ifdef COUT_MEMORY_MANAGEMENT
+  cout << "(cpp) duplicateAt destination {head: " << destination << ", address: " << destination[idx] << ", val: " << *(destination[idx]) << "}\n";
+  #endif
+}
+
+void sxMatrixFreeArray(SXMatrix * matArray[], int n){
+  for (int idx=0; idx<n; idx++){
+    #ifdef COUT_MEMORY_MANAGEMENT
+    cout << "(cpp) freeArray deleting {head: " << matArray << ", address: " << matArray[idx] << ", val: " << *(matArray[idx]) << "}\n";
+    #endif
+    delete matArray[idx];
+  }
+}
+
 
 void sxMatrixDelete(SXMatrix * const sx){
   #ifdef COUT_MEMORY_MANAGEMENT

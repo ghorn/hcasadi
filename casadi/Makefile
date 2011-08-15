@@ -21,8 +21,8 @@ CPP_FLAGS = -O2 -fPIC #-Wall -Wextra -Wshadow #-Werror #-g
 HS_SRC = \
 	SX.hs \
 	SXMatrix.hs \
+	SXFunction.hs \
 	CasadiInterfaceUtils.hs
-#	SXFunction.hs \
 
 HS_OBJ = $(HS_SRC:.hs=.o) 
 HS_HI = $(HS_SRC:.hs=.hi) 
@@ -34,7 +34,8 @@ HS_LDFLAGS = \
 	-lcasadi
 
 HS_LIB = libcasadi_interface.a
-HS_FLAGS = -pgml g++ -O2 --make -fforce-recomp #-Wall #-Werror #-g
+HS_PROFILE_FLAGS = -prof -auto-all -caf-all -fforce-recomp -rtsopts
+HS_FLAGS = -pgml g++ -dno-debug-output -fPIC -O2 --make -fforce-recomp #$(HS_PROFILE_FLAGS) #-Wall #-Werror #-g
 
 
 .PHONY: clean
