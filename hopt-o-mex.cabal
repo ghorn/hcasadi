@@ -34,13 +34,13 @@ Library
 
   Extra-libraries: casadi_interface, casadi
 
-  Ghc-options: -pgml g++ -fPIC -O2
+  Ghc-options: -pgml g++ -fPIC -O2 -dno-debug-output
   --HS_PROFILE_FLAGS = -prof -auto-all -caf-all -fforce-recomp -rtsopts
 
 Executable speedTest
   Main-Is:         speedTest.hs
   Hs-Source-Dirs:  .
-  Other-Modules:   Hom, Ddp, Casadi
+  Other-Modules:   Hom, Ddp, Casadi, DdpCasadi
   Build-depends:   ad, hmatrix
   Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
 
@@ -52,17 +52,24 @@ Executable springDdp
   Hs-Source-Dirs:  .
   Other-Modules:   Hom, Ddp, Casadi
   Build-depends:   ad, hmatrix, gnuplot
-  Ghc-options: -O2
+  Ghc-options: -O2 -dno-debug-output
 
   Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
   Extra-libraries: casadi_interface, casadi
+
+Executable cartpoleDdpAD
+  Main-Is:         cartpoleDdpAD.hs
+  Hs-Source-Dirs:  .
+  Other-Modules:   Hom, Ddp
+  Build-depends:   ad, hmatrix, time, GLUT, containers, deepseq, unix
+  Ghc-options: -threaded -O2 -dno-debug-output
 
 Executable cartpoleDdp
   Main-Is:         cartpoleDdp.hs
   Hs-Source-Dirs:  .
   Other-Modules:   Hom, Ddp, Casadi
-  Build-depends:   ad, hmatrix, time, GLUT, containers, deepseq, unix
-  Ghc-options: -O2
+  Build-depends:   hmatrix, time, GLUT, containers, deepseq, unix
+  Ghc-options: -threaded -O2 -dno-debug-output
 
   Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
   Extra-libraries: casadi_interface, casadi

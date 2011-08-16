@@ -7,7 +7,8 @@ module Main where
 import Casadi
 import Data.Time.Clock
 import Hom
-import Ddp
+import qualified Ddp
+import DdpCasadi
 import Numeric.AD
 
 -- an arbitrary timestep
@@ -63,7 +64,7 @@ cpQuad = Quad vxx vx v0 x0
            [4,7,9,10]]
     vx = [10,20,30,40]
     v0 = 42
-    x0 = [11,22]
+    x0 = [11, 22, 33, 44]
  
 
 -- ad function to benchmark
@@ -79,33 +80,13 @@ adEval xu = do
           vx'  = map lift vx
           v0'  = lift v0
           x0'  = map lift x0
-  print $ unprobe $ q0 cpCost dode (map lift x) (map lift u) (liftQuad cpQuad)
-  print $ qx cpCost dode x u cpQuad
-  print $ qu cpCost dode x u cpQuad
-  print $ qxu cpCost dode x u cpQuad
-  print $ qxx cpCost dode x u cpQuad
-  print $ quu cpCost dode x u cpQuad
+  print $ unprobe $ Ddp.q0 cpCost dode (map lift x) (map lift u) (liftQuad cpQuad)
+  print $ Ddp.qx cpCost dode x u cpQuad
+  print $ Ddp.qu cpCost dode x u cpQuad
+  print $ Ddp.qxu cpCost dode x u cpQuad
+  print $ Ddp.qxx cpCost dode x u cpQuad
+  print $ Ddp.quu cpCost dode x u cpQuad
   putStrLn ""
-
-
--- prepare casadi SXFunction
-casadiFcn :: IO SXFunction
-casadiFcn = do
-  x <- sxMatrixCreateSymbolic "x" (4,1)
-  u <- sxMatrixCreateSymbolic "u" (1,1)
-      
-  let x' = sxMatrixToList x
-      u' = sxMatrixToList u
-      q' = sxMatrixFromList [(cpCost x' u') + (evalQuad cpQuad (dode x' u'))]
-      
-      qFcn = sxFunctionCreate [x,u] [q']
-      qx'  = sxFunctionGradientAt qFcn 0
-      qu'  = sxFunctionGradientAt qFcn 1
-      qxx' = sxFunctionHessianAt qFcn (0,0)
-      qxu' = sxFunctionHessianAt qFcn (0,1)
-      quu' = sxFunctionHessianAt qFcn (1,1)
-
-  return $ sxFunctionCreate [x,u] [q', qx', qu', qxx', qxu', quu']
 
 
 -- casadi computation to benchmark
@@ -113,14 +94,14 @@ casadiEval :: SXFunction -> [Double] -> IO ()
 casadiEval sxFcn xu = do
   let x = take nx xu
       u = drop nx xu
-      
-  [q',qx',qu',qxx',qxu',quu'] <- sxFunctionEvaluate sxFcn [x,u]
-  print $ q'
-  print $ qx'
-  print $ qu'
-  print $ qxu'
-  print $ qxx'
-  print $ quu'
+  
+  (q,qx,qu,qxx,qxu,quu) <- evalQFunction sxFcn (x,u,cpQuad)
+  print $ q
+  print $ qx
+  print $ qu
+  print $ qxu
+  print $ qxx
+  print $ quu
 
 
 -- time an evaluation
@@ -135,7 +116,7 @@ timeOneRun computation xu = do
 main :: IO ()
 main = do
   
-  qFcn <- casadiFcn
+  qFcn <- prepareQFunction nx nu cpCost dode
   
   let n = 100 :: Int -- number of times to call benchmarking function
       

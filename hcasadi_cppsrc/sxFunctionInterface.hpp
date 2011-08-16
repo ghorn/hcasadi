@@ -25,7 +25,7 @@ extern "C"{
   void sxFunctionGetOutputs(const SXFunction & fun, int idx, SXMatrix & mat);
 
   // evaluate
-  void sxFunctionEvaluate(FX & fun, const double inputsArray[], const int inputLengths[]);
+  void sxFunctionEvaluate(FX & fun, const double inputsArray[], const int inputRows[], const int inputCols[]);
   void sxFunctionGetEvaluatedOutput(FX & fun, int outputIdx, int rows, int cols, double output[]);
 
   // ad

@@ -6,7 +6,7 @@
 module Main where
 
 import Hom
-import DdpCasadi(prepareDdp, BacksweepOutput)
+import Ddp(ddp)
 import Vis
 import qualified Data.Map as DM
 import Data.Maybe (fromJust)
@@ -82,13 +82,12 @@ drawFun (x, xTraj, uTraj) = do
     renderPrimitive LineStrip $ mapM_ (\(a,b,c)->vertex$Vertex3 a b c) bobPath
 
 
-simFun :: ([State Double] -> [Action Double] -> [([State Double], [Action Double], [BacksweepOutput Double])])
-           -> SimState Double -> SimState Double
-simFun cddp (x, xTraj0, uTraj0) = (dode x u, xTraj, uTraj)
+simFun :: SimState Double -> SimState Double
+simFun (x, xTraj0, uTraj0) = (dode x u, xTraj, uTraj)
   where
     xTraj0' = x:(drop 2 xTraj0) ++ [last xTraj0]
     uTraj0' = (tail uTraj0) ++ [last uTraj0]
-    (xTraj, uTraj, _) = head $ cddp xTraj0' uTraj0'
+    (xTraj, uTraj, _) = head $ ddp cost dode xTraj0' uTraj0'
     u = head uTraj
 
 -- cost fcn
@@ -109,14 +108,12 @@ dode x u = rk4Step dxdt x u dt
 -- run ddp
 main :: IO ()
 main = do let n = 100
-              x0 = [2,0,3,0::Double]
+              x0 = [0,0,3,0::Double]
               u0 = [0::Double]
-
+              
               xTraj0 = replicate n x0
               uTraj0 = replicate n u0
+              
+              (xTraj, uTraj, _) = head $ drop 50 $ ddp cost dode xTraj0 uTraj0
 
-          ddp <- prepareDdp cost dode (4::Int) (1::Int)
-
-          let (xTraj, uTraj, _) = head $ drop 50 $ ddp xTraj0 uTraj0
-
-          vis (simFun ddp) drawFun (x0, xTraj, uTraj) dt
+          vis simFun drawFun (x0, xTraj, uTraj) dt

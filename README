@@ -1,6 +1,28 @@
 Hopt-o-mex is currently an incomplete Haskell port of my "opt-o-mex" c++ optimal control software.
 
-So far I've implemented euler/rk4 integrators, dynamics linearization functions, differential dynamic programming using automatic differentiations from Edward Kmett's ad package, and a few examples.
+So far I've implemented euler/rk4 integrators, dynamics linearization functions, differential dynamic programming, a visualizer, and some examples.
 
-For a quick demo of ddp run springDdp.hs
-For a quick demo of the visualizer run cartpoleDdp.hs
+Automatic differentiation is currently done using two packages: Edward Kmett's pure Haskell "ad" package, and a C++ project called "CasADi" which I wrote haskell bindings for.
+
+
+################# INSTALLATION #################
+
+#### HASKELL BINDINGS FOR CASADI:
+To build the CasADi bindings you need to install CasADi yourself, make a CASADI environment variable, then
+
+    cd hopt-o-mex/hcasadi_interface
+    make
+
+#### HOPT-O-MEX
+Currently you must edit hopt-o-mex.cabal and replace "/home/greg/hopt-o-mex" with wherever you put it. Fixing this is high on my todo list.
+
+    cd hopt-o-mex
+    cabal configure
+    cabal build
+
+You will probably be prompted to install required dependencies.
+
+#### RUNNING
+After the build is complete:
+For a quick demo of ddp run 'hopt-o-mex/dist/build/springDdp/springDdp'
+For a quick and awesome demo of ddp/visualizer run 'hopt-o-mex/dist/build/cartpoleDdp/cartpoleDdp'

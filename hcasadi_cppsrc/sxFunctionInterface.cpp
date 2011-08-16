@@ -76,17 +76,18 @@ void sxFunctionGetOutputs(const SXFunction & fun, int idx, SXMatrix & mat){
 }
 
 /************ evaluate *************/
-void sxFunctionEvaluate(FX & fun, const double inputsArray[], const int inputLengths[]){
+void sxFunctionEvaluate(FX & fun, const double inputsArray[], const int inputRows[], const int inputCols[]){
 
   // setup inputs
   int inputCounter = 0;
-  for (int k=0; k<fun.getNumInputs(); k++){
-    DMatrix anInput(inputLengths[k], 1, 0.0);
-    for (int j=0; j<inputLengths[k]; j++){
-      anInput.indexed_assignment( j, 0, inputsArray[inputCounter] );
-      inputCounter++;
-    }
-    fun.setInput( anInput, k );
+  for (int kth_input=0; kth_input<fun.getNumInputs(); kth_input++){
+    DMatrix anInput(inputRows[kth_input], inputCols[kth_input], 0.0);
+    for (int row=0; row<inputRows[kth_input]; row++)
+      for (int col=0; col<inputCols[kth_input]; col++){
+	anInput.indexed_assignment( row, col, inputsArray[inputCounter] );
+	inputCounter++;
+      }
+    fun.setInput( anInput, kth_input );
   }
 
   // evaluate

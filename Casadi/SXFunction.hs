@@ -45,7 +45,7 @@ foreign import ccall "sxFunctionGetOutputs" c_sxFunctionGetOutputs :: Ptr SXFunc
 foreign import ccall "sxFunctionGradient" c_sxFunctionGradient :: Ptr SXFunctionRaw -> CInt -> Ptr SXMatrixRaw -> IO ()
 foreign import ccall "sxFunctionJacobian" c_sxFunctionJacobian :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
 foreign import ccall "sxFunctionHessian" c_sxFunctionHessian :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall "sxFunctionEvaluate" c_sxFunctionEvaluate :: Ptr SXFunctionRaw -> Ptr CDouble -> Ptr CInt -> IO ()
+foreign import ccall "sxFunctionEvaluate" c_sxFunctionEvaluate :: Ptr SXFunctionRaw -> Ptr CDouble -> Ptr CInt -> Ptr CInt -> IO ()
 foreign import ccall "sxFunctionGetEvaluatedOutput" c_sxFunctionGetEvaluatedOutput :: Ptr SXFunctionRaw -> CInt -> CInt -> CInt -> Ptr CDouble -> IO ()
 
 
@@ -160,14 +160,20 @@ sxFunctionHessianAt (SXFunction fun) (idx0, idx1) = unsafePerformIO $ do
 
 
 --------------------- evaluate -----------------------------
-sxFunctionUnsafeEvaluateInput :: SXFunction -> [[Double]] -> IO ()
+sxFunctionUnsafeEvaluateInput :: SXFunction -> [[[Double]]] -> IO ()
 sxFunctionUnsafeEvaluateInput (SXFunction fun) inputsList = do
-  let inputLengths = map (fromIntegral . length) inputsList :: [CInt]
-      inputsCDouble = map realToFrac (concat inputsList) :: [CDouble]
+  let numRows :: [[a]] -> CInt
+      numRows mat = fromIntegral $ length mat
+      numCols :: [[a]] -> CInt
+      numCols mat = fromIntegral $ length (head mat)
+      inputRows = map numRows inputsList
+      inputCols = map numCols inputsList
+      inputsCDouble = map realToFrac (concat $ map concat inputsList) :: [CDouble]
   inputsArray <- newArray inputsCDouble
-  lengthsArray <- newArray inputLengths
+  rowsArray <- newArray inputRows
+  colsArray <- newArray inputCols
 
-  withForeignPtr fun (\fun' -> c_sxFunctionEvaluate fun' inputsArray lengthsArray)
+  withForeignPtr fun (\fun' -> c_sxFunctionEvaluate fun' inputsArray rowsArray colsArray)
 
 sxFunctionUnsafeGetEvaluatedOutput :: SXFunction -> Int -> IO [[Double]]
 sxFunctionUnsafeGetEvaluatedOutput (SXFunction fun) outputIndex = do
@@ -190,7 +196,7 @@ sxFunctionUnsafeGetEvaluatedOutput (SXFunction fun) outputIndex = do
 
   return $ reshape' [] (map realToFrac outputsList)
 
-sxFunctionEvaluate :: SXFunction -> [[Double]] -> IO [[[Double]]]
+sxFunctionEvaluate :: SXFunction -> [[[Double]]] -> IO [[[Double]]]
 sxFunctionEvaluate fun input = do
   sxFunctionUnsafeEvaluateInput fun input
   mapM (sxFunctionUnsafeGetEvaluatedOutput fun) [0..(sxFunctionNumOutputs fun)-1]
