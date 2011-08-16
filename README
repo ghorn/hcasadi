@@ -10,7 +10,7 @@ Automatic differentiation is currently done using two packages: Edward Kmett's p
 #### HASKELL BINDINGS FOR CASADI:
 To build the CasADi bindings you need to install CasADi yourself, make a CASADI environment variable, then
 
-    cd hopt-o-mex/hcasadi_interface
+    cd hopt-o-mex/hcasadi_cppsrc
     make
 
 #### HOPT-O-MEX
