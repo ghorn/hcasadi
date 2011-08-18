@@ -8,6 +8,8 @@ module Main where
 import Foreign.Storable
 import Numeric.LinearAlgebra
 
+import Graphics.Gnuplot.Simple
+
 rosenbrockF :: (Storable a, Num a) => Vector a -> a
 rosenbrockF x = (1-x0)*(1-x0) + 100*(x1-x0*x0)*(x1-x0*x0)
   where
@@ -90,8 +92,15 @@ oneBfgs xk vk f g = (xkp1, vkp1)
 main :: IO ()
 main = do
   print "hi"
-  let x0 = fromList [-1.2,1] :: Vector Double
+  let x0 = fromList [-1.1,1] :: Vector Double
 --      results = (take 20 $ dfp x0 rosenbrockF rosenbrockG)
       results = (take 20 $ bfgs x0 rosenbrockF rosenbrockG)
+      path = map f results
+        where
+          f (vec,_) = (x,y)
+            where
+              [x,y] = toList vec
   mapM_ (\(_,v) -> print $ inv v) results
   mapM_ (\(x,_) -> print x) results
+
+  plotList [] path
