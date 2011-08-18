@@ -43,7 +43,7 @@ dfp :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
        Vector e -> (Vector e -> t) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
 dfp x0 f g = iterate (\(x,v) -> oneDfp x v f g) (x0, v0)
   where
-    v0 = ident $ fromIntegral $ length (toList x0)
+    v0 = ident (dim x0)
 
 oneDfp :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
        Vector e -> Matrix e -> (Vector e -> t) -> (Vector e -> Vector e) -> (Vector e, Matrix e)
@@ -67,7 +67,7 @@ bfgs :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
        Vector e -> (Vector e -> t) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
 bfgs x0 f g = iterate (\(x,v) -> oneBfgs x v f g) (x0, v0)
   where
-    v0 = ident $ fromIntegral $ length (toList x0)
+    v0 = ident (dim x0)
 
 oneBfgs :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
        Vector e -> Matrix e -> (Vector e -> t) -> (Vector e -> Vector e) -> (Vector e, Matrix e)
@@ -92,7 +92,7 @@ oneBfgs xk vk f g = (xkp1, vkp1)
 main :: IO ()
 main = do
   print "hi"
-  let x0 = fromList [-1.1,1] :: Vector Double
+  let x0 = fromList [-1.01,1] :: Vector Double
 --      results = (take 20 $ dfp x0 rosenbrockF rosenbrockG)
       results = (take 20 $ bfgs x0 rosenbrockF rosenbrockG)
       path = map f results
