@@ -19,9 +19,13 @@ Library
     Casadi.SXMatrix
     Casadi.SXFunction
     Casadi.Utils
+
+    Optimization
+    Optimization.LineSearch
+    Optimization.QuasiNewton
   
   Other-modules:
-        Casadi.CasadiInterfaceUtils
+    Casadi.CasadiInterfaceUtils
 
   Build-depends: base, hmatrix
   
@@ -37,6 +41,7 @@ Library
 
   Ghc-options: -pgml g++ -fPIC -O2 -dno-debug-output
   --HS_PROFILE_FLAGS = -prof -auto-all -caf-all -fforce-recomp -rtsopts
+
 
 Executable speedTest
   Main-Is:         speedTest.hs
@@ -79,7 +84,7 @@ Executable cartpoleDdp
 Executable optTest
   Main-Is:         preliminaryOptimization.hs
   Hs-Source-Dirs:  .
-  Other-Modules:   Casadi
+  Other-Modules:   Casadi, Optimization
   Build-depends:   hmatrix, gnuplot
   Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
 

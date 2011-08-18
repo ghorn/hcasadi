@@ -1,35 +1,12 @@
--- preliminaryOptimization.hs
+-- QuasiNewton.hs
 
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Main where
+module Optimization.QuasiNewton(dfp, bfgs) where
 
-import Casadi.Utils
+import Optimization.LineSearch
 import Numeric.LinearAlgebra
-
-import Graphics.Gnuplot.Simple
-
-rosenbrock :: Floating a => [a] -> a
-rosenbrock [x0,x1] = (1-x0)*(1-x0) + 100*(x1-x0*x0)*(x1-x0*x0)
-
-tau :: Floating a => a
-tau = 2/(1+sqrt(5))
-
-goldenSectionSearch :: (Ord a, Floating b) => (b -> a) -> (b, b) -> [(b,a)]
-goldenSectionSearch f (x0,x3) = gss f (x0,x1,x2,x3)
-  where
-    x1 = x0 + (x3-x0)*(1-tau)
-    x2 = x0 + (x3-x0)*tau
-
-gss :: (Ord a, Floating b) => (b -> a) -> (b, b, b, b) -> [(b,a)]
-gss f (x0, x1, x2, x3) = xs
-  where
-    x1' = x0 + (x2-x0)*(1-tau)
-    x2' = x1 + (x3-x1)*tau
-    xs
-      | (f x1) < (f x2) = (x1, f x1):(gss f (x0,x1',x1,x2))
-      | otherwise       = (x2, f x2):(gss f (x1,x2,x2',x3))
 
 dfp :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
        Vector e -> (Vector e -> t) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
@@ -79,20 +56,3 @@ oneBfgs xk vk f g = (xkp1, vkp1)
     f' alpha = f $ xk + (scale alpha pk)
     (alphakp1, _) = head $ drop 200 $ goldenSectionSearch f' (0,10)
     xkp1 = xk + (scale alphakp1 pk)
-
-
-main :: IO ()
-main = do
-  (rosenbrockF, rosenbrockG, _) <- getDerivs rosenbrock 2
-  let x0 = fromList [-0.9,1] :: Vector Double
---      results = (take 20 $ dfp x0 rosenbrockF rosenbrockG)
-      results = (take 20 $ bfgs x0 rosenbrockF rosenbrockG)
-      path = map f results
-        where
-          f (vec,_) = (x,y)
-            where
-              [x,y] = toList vec
-  mapM_ (\(_,v) -> print $ inv v) results
-  mapM_ (\(x,_) -> print x) results
-
-  plotList [] path
