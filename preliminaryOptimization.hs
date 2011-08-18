@@ -5,21 +5,13 @@
 
 module Main where
 
-import Foreign.Storable
+import Casadi.Utils
 import Numeric.LinearAlgebra
 
 import Graphics.Gnuplot.Simple
 
-rosenbrockF :: (Storable a, Num a) => Vector a -> a
-rosenbrockF x = (1-x0)*(1-x0) + 100*(x1-x0*x0)*(x1-x0*x0)
-  where
-    [x0,x1] = toList x
-
-rosenbrockG :: (Storable a, Num a) => Vector a -> Vector a
-rosenbrockG x = fromList [2*(x0-1) + 400*x0*(x0*x0-x1),
-                          200*(x1-x0*x0)]
-  where
-    [x0,x1] = toList x
+rosenbrock :: Floating a => [a] -> a
+rosenbrock [x0,x1] = (1-x0)*(1-x0) + 100*(x1-x0*x0)*(x1-x0*x0)
 
 tau :: Floating a => a
 tau = 2/(1+sqrt(5))
@@ -29,7 +21,7 @@ goldenSectionSearch f (x0,x3) = gss f (x0,x1,x2,x3)
   where
     x1 = x0 + (x3-x0)*(1-tau)
     x2 = x0 + (x3-x0)*tau
-    
+
 gss :: (Ord a, Floating b) => (b -> a) -> (b, b, b, b) -> [(b,a)]
 gss f (x0, x1, x2, x3) = xs
   where
@@ -88,11 +80,11 @@ oneBfgs xk vk f g = (xkp1, vkp1)
     (alphakp1, _) = head $ drop 200 $ goldenSectionSearch f' (0,10)
     xkp1 = xk + (scale alphakp1 pk)
 
-    
+
 main :: IO ()
 main = do
-  print "hi"
-  let x0 = fromList [-1.01,1] :: Vector Double
+  (rosenbrockF, rosenbrockG, _) <- getDerivs rosenbrock 2
+  let x0 = fromList [-0.9,1] :: Vector Double
 --      results = (take 20 $ dfp x0 rosenbrockF rosenbrockG)
       results = (take 20 $ bfgs x0 rosenbrockF rosenbrockG)
       path = map f results
