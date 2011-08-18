@@ -38,24 +38,24 @@ instance Storable SXMatrixRaw where
   alignment _ = fromIntegral $ unsafePerformIO c_sxMatrixSizeOfAddress
 
 -- foreign imports
-foreign import ccall "sxMatrixSizeOfAddress" c_sxMatrixSizeOfAddress :: IO CInt
-foreign import ccall "sxMatrixCreateSymbolic" c_sxMatrixCreateSymbolic :: Ptr CChar -> CInt -> CInt -> IO (Ptr SXMatrixRaw)
-foreign import ccall "sxMatrixDuplicate" c_sxMatrixDuplicate :: (Ptr SXMatrixRaw) -> IO (Ptr SXMatrixRaw)
-foreign import ccall "sxMatrixDuplicateAt" c_sxMatrixDuplicateAt :: (Ptr SXMatrixRaw) -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall "sxMatrixFreeArray" c_sxMatrixFreeArray :: (Ptr SXMatrixRaw) -> CInt -> IO ()
-foreign import ccall "&sxMatrixDelete" c_sxMatrixDelete :: FunPtr (Ptr SXMatrixRaw -> IO ())
-foreign import ccall "sxMatrixZeros" c_sxMatrixZeros :: CInt -> CInt -> IO (Ptr SXMatrixRaw)
-foreign import ccall "sxMatrixShow" c_sxMatrixShow :: Ptr CChar -> CInt -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall "sxMatrixAt" c_sxMatrixAt :: (Ptr SXMatrixRaw) -> CInt -> CInt -> (Ptr SXRaw) -> IO ()
-foreign import ccall "sxMatrixSet" c_sxMatrixSet :: (Ptr SXRaw) -> CInt -> CInt -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall "sxMatrixSize1" c_sxMatrixSize1 :: (Ptr SXMatrixRaw) -> IO CInt
-foreign import ccall "sxMatrixSize2" c_sxMatrixSize2 :: (Ptr SXMatrixRaw) -> IO CInt
+foreign import ccall unsafe "sxMatrixSizeOfAddress" c_sxMatrixSizeOfAddress :: IO CInt
+foreign import ccall unsafe "sxMatrixCreateSymbolic" c_sxMatrixCreateSymbolic :: Ptr CChar -> CInt -> CInt -> IO (Ptr SXMatrixRaw)
+foreign import ccall unsafe "sxMatrixDuplicate" c_sxMatrixDuplicate :: (Ptr SXMatrixRaw) -> IO (Ptr SXMatrixRaw)
+foreign import ccall unsafe "sxMatrixDuplicateAt" c_sxMatrixDuplicateAt :: (Ptr SXMatrixRaw) -> CInt -> Ptr SXMatrixRaw -> IO ()
+foreign import ccall unsafe "sxMatrixFreeArray" c_sxMatrixFreeArray :: (Ptr SXMatrixRaw) -> CInt -> IO ()
+foreign import ccall unsafe "&sxMatrixDelete" c_sxMatrixDelete :: FunPtr (Ptr SXMatrixRaw -> IO ())
+foreign import ccall unsafe "sxMatrixZeros" c_sxMatrixZeros :: CInt -> CInt -> IO (Ptr SXMatrixRaw)
+foreign import ccall unsafe "sxMatrixShow" c_sxMatrixShow :: Ptr CChar -> CInt -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixAt" c_sxMatrixAt :: (Ptr SXMatrixRaw) -> CInt -> CInt -> (Ptr SXRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixSet" c_sxMatrixSet :: (Ptr SXRaw) -> CInt -> CInt -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixSize1" c_sxMatrixSize1 :: (Ptr SXMatrixRaw) -> IO CInt
+foreign import ccall unsafe "sxMatrixSize2" c_sxMatrixSize2 :: (Ptr SXMatrixRaw) -> IO CInt
 
-foreign import ccall "sxMatrixPlus" c_sxMatrixPlus :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall "sxMatrixMinus" c_sxMatrixMinus :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall "sxMM" c_sxMM :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall "sxMatrixTranspose" c_sxMatrixTranspose :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall "sxMatrixIsEqual" c_sxMatrixIsEqual :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO CInt
+foreign import ccall unsafe "sxMatrixPlus" c_sxMatrixPlus :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixMinus" c_sxMatrixMinus :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMM" c_sxMM :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixTranspose" c_sxMatrixTranspose :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixIsEqual" c_sxMatrixIsEqual :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO CInt
 
 
 ----------------- create -------------------------

@@ -35,18 +35,18 @@ data SXFunctionRaw = SXFunctionRaw
 newtype SXFunction = SXFunction (ForeignPtr SXFunctionRaw)
 
 -- foreign imports
-foreign import ccall "sxFunctionCreate" c_sxFunctionCreate :: Ptr SXMatrixRaw -> Ptr SXMatrixRaw -> IO (Ptr SXFunctionRaw)
-foreign import ccall "sxFunctionCreateMulti" c_sxFunctionCreateMulti :: (Ptr SXMatrixRaw) -> CInt -> (Ptr SXMatrixRaw) -> CInt -> IO (Ptr SXFunctionRaw)
-foreign import ccall "&sxFunctionDelete" c_sxFunctionDelete :: FunPtr (Ptr SXFunctionRaw -> IO ())
-foreign import ccall "sxFunctionGetNumInputs" c_sxFunctionGetNumInputs :: Ptr SXFunctionRaw -> IO CInt
-foreign import ccall "sxFunctionGetNumOutputs" c_sxFunctionGetNumOutputs :: Ptr SXFunctionRaw -> IO CInt
-foreign import ccall "sxFunctionGetInputs" c_sxFunctionGetInputs :: Ptr SXFunctionRaw -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall "sxFunctionGetOutputs" c_sxFunctionGetOutputs :: Ptr SXFunctionRaw -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall "sxFunctionGradient" c_sxFunctionGradient :: Ptr SXFunctionRaw -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall "sxFunctionJacobian" c_sxFunctionJacobian :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall "sxFunctionHessian" c_sxFunctionHessian :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall "sxFunctionEvaluate" c_sxFunctionEvaluate :: Ptr SXFunctionRaw -> Ptr CDouble -> Ptr CInt -> Ptr CInt -> IO ()
-foreign import ccall "sxFunctionGetEvaluatedOutput" c_sxFunctionGetEvaluatedOutput :: Ptr SXFunctionRaw -> CInt -> CInt -> CInt -> Ptr CDouble -> IO ()
+foreign import ccall unsafe "sxFunctionCreate" c_sxFunctionCreate :: Ptr SXMatrixRaw -> Ptr SXMatrixRaw -> IO (Ptr SXFunctionRaw)
+foreign import ccall unsafe "sxFunctionCreateMulti" c_sxFunctionCreateMulti :: (Ptr SXMatrixRaw) -> CInt -> (Ptr SXMatrixRaw) -> CInt -> IO (Ptr SXFunctionRaw)
+foreign import ccall unsafe "&sxFunctionDelete" c_sxFunctionDelete :: FunPtr (Ptr SXFunctionRaw -> IO ())
+foreign import ccall unsafe "sxFunctionGetNumInputs" c_sxFunctionGetNumInputs :: Ptr SXFunctionRaw -> IO CInt
+foreign import ccall unsafe "sxFunctionGetNumOutputs" c_sxFunctionGetNumOutputs :: Ptr SXFunctionRaw -> IO CInt
+foreign import ccall unsafe "sxFunctionGetInputs" c_sxFunctionGetInputs :: Ptr SXFunctionRaw -> CInt -> Ptr SXMatrixRaw -> IO ()
+foreign import ccall unsafe "sxFunctionGetOutputs" c_sxFunctionGetOutputs :: Ptr SXFunctionRaw -> CInt -> Ptr SXMatrixRaw -> IO ()
+foreign import ccall unsafe "sxFunctionGradient" c_sxFunctionGradient :: Ptr SXFunctionRaw -> CInt -> Ptr SXMatrixRaw -> IO ()
+foreign import ccall unsafe "sxFunctionJacobian" c_sxFunctionJacobian :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
+foreign import ccall unsafe "sxFunctionHessian" c_sxFunctionHessian :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
+foreign import ccall unsafe "sxFunctionEvaluate" c_sxFunctionEvaluate :: Ptr SXFunctionRaw -> Ptr CDouble -> Ptr CInt -> Ptr CInt -> IO ()
+foreign import ccall unsafe "sxFunctionGetEvaluatedOutput" c_sxFunctionGetEvaluatedOutput :: Ptr SXFunctionRaw -> CInt -> CInt -> CInt -> Ptr CDouble -> IO ()
 
 
 ------------------ creation -------------------------
