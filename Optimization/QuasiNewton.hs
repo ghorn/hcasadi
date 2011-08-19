@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Optimization.QuasiNewton(dfp, bfgs) where
+module Optimization.QuasiNewton(dfp, bfgs, dfpHessian, bfgsHessian, quasiNewton) where
 
 import Optimization.LineSearch
 import Numeric.LinearAlgebra
@@ -13,12 +13,12 @@ type HessianApprox a = Matrix a -> Vector a -> Vector a -> Vector a -> Vector a 
 
 dfp :: (Product e, Container Vector e, Ord e, Num (Vector e), Floating e) =>
        Vector e -> (Vector e -> e) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
-dfp = quasiNewton dfpHessianApprox goldenSectionSearch
+dfp = quasiNewton dfpHessian goldenSectionSearch
 
 
 bfgs :: (Product e, Container Vector e, Ord e, Num (Vector e), Floating e) =>
        Vector e -> (Vector e -> e) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
-bfgs = quasiNewton bfgsHessianApprox goldenSectionSearch
+bfgs = quasiNewton bfgsHessian goldenSectionSearch
 
 
 quasiNewton :: (Product a, Container Vector a, Ord a, Num (Vector a), Floating a) =>
@@ -44,9 +44,9 @@ oneQuasiNewton hessianApprox linesearch xk vk f g = (xkp1, vkp1)
     xkp1 = xk + (scale alphakp1 pk)
 
 
-bfgsHessianApprox :: (Product t, Container Vector t, Num (Vector t)) =>
-                     Matrix t -> Vector t -> Vector t -> Vector t -> Vector t -> Matrix t
-bfgsHessianApprox vk xk xkp1 gk gkp1 = vkp1
+bfgsHessian :: (Product t, Container Vector t, Num (Vector t)) =>
+               Matrix t -> Vector t -> Vector t -> Vector t -> Vector t -> Matrix t
+bfgsHessian vk xk xkp1 gk gkp1 = vkp1
   where
     vkp1 = (eye - (scale den (outer sk yk))) <> vk <> (eye - (scale den (outer yk sk)))
            + (scale den (outer sk sk))
@@ -58,9 +58,9 @@ bfgsHessianApprox vk xk xkp1 gk gkp1 = vkp1
     sk = xkp1 - xk
     
 
-dfpHessianApprox :: (Product t, Container Vector t, Num (Vector t)) =>
-                     Matrix t -> Vector t -> Vector t -> Vector t -> Vector t -> Matrix t
-dfpHessianApprox vk xk xkp1 gk gkp1 = vkp1
+dfpHessian :: (Product t, Container Vector t, Num (Vector t)) =>
+              Matrix t -> Vector t -> Vector t -> Vector t -> Vector t -> Matrix t
+dfpHessian vk xk xkp1 gk gkp1 = vkp1
   where
     vkp1 = vk - ak + bk
 
