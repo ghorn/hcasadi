@@ -4,7 +4,7 @@
 
 module Casadi.Utils
        (
-         getDerivs,
+         getDerivs
        ) where
 
 import Casadi.SX
@@ -28,15 +28,6 @@ getDerivs f n = do
       sxGrad = sxFunctionCreate [x] [gradSX]
       sxHess = sxFunctionCreate [x] [hessSX]
       
-      x' = fromList [2,3::Double]
-  
-  print $ sxFunctionGetOutputs sxFun 0
-  print $ sxFunctionGetOutputs sxGrad 0
-  print $ sxFunctionGetOutputs sxHess 0
-  print (evalF sxFun x')
-  print (evalG sxGrad x')
-  print (evalH sxHess x')
-
   return (evalF sxFun, evalG sxGrad, evalH sxHess)
 
 evalF :: SXFunction -> Vector Double -> Double
