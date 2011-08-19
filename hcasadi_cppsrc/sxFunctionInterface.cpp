@@ -120,13 +120,8 @@ void sxFunctionJacobian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & outp
 }
 
 void sxFunctionHessian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output){
-  /* apparently the hessian function only works on block-diagonal entries */
-  //output = SXMatrix( fun.hess( idxIn, idxOut ) );
-  //cout << "(cpp): hessian (" << idxIn << ", " << idxOut << ") of " << fun.outputSX() << ":\n" << output << endl;
-
-  if (idxIn == idxOut)
-    output = SXMatrix( fun.hess( idxIn, 0 ) );
-  else
-    output = jacobian(fun.grad(idxIn), fun.inputSX(idxOut));
+  SXMatrix theGrad(fun.grad(idxIn));
+  makeDense(theGrad);
+  output = jacobian(theGrad, fun.inputSX(idxOut));
   makeDense(output);
 }
