@@ -39,7 +39,7 @@ oneQuasiNewton hessianApprox linesearch xk vk f g = (xkp1, vkp1)
     pk = -( vk <> gk )
     f' alpha = f $ xk + (scale alpha pk)
     g' alpha = (g $ xk + (scale alpha pk)) <.> pk
-    h' _ = error "Error in QuasiNewton - please implement directional hessian approximation"
+    h' _ = pk <.> (vk <> pk) -- constant hessian approximation
     (alphakp1, _) = head $ drop 200 $ linesearch f' g' h' (0,10)
     xkp1 = xk + (scale alphakp1 pk)
 
