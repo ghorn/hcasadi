@@ -31,7 +31,7 @@ SXFunction * sxFunctionCreate(const SXMatrix & sxIn, const SXMatrix & sxOut){
   return fun;
 }
 
-SXFunction * sxFunctionDelete(SXFunction * const fun){
+void sxFunctionDelete(SXFunction * const fun){
   #ifdef COUT_MEMORY_MANAGEMENT
   cout << "(cpp) sxFunctionDelete {address: " << fun << "}\n";
   #endif
