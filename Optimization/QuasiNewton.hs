@@ -11,13 +11,13 @@ import Numeric.LinearAlgebra
 type HessianApprox a = Matrix a -> Vector a -> Vector a -> Vector a -> Vector a -> Matrix a
 
 
-dfp :: (Product e, Container Vector e, Ord e, Num (Vector e), Floating e) =>
-       Vector e -> (Vector e -> e) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
+dfp :: (Product a, Container Vector a, Ord a, Num (Vector a), Floating a) =>
+       Vector a -> (Vector a -> a) -> (Vector a -> Vector a) -> [(Vector a, Matrix a)]
 dfp = quasiNewton dfpHessian goldenSectionSearch
 
 
-bfgs :: (Product e, Container Vector e, Ord e, Num (Vector e), Floating e) =>
-       Vector e -> (Vector e -> e) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
+bfgs :: (Product a, Container Vector a, Ord a, Num (Vector a), Floating a) =>
+       Vector a -> (Vector a -> a) -> (Vector a -> Vector a) -> [(Vector a, Matrix a)]
 bfgs = quasiNewton bfgsHessian goldenSectionSearch
 
 
@@ -44,8 +44,7 @@ oneQuasiNewton hessianApprox linesearch xk vk f g = (xkp1, vkp1)
     xkp1 = xk + (scale alphakp1 pk)
 
 
-bfgsHessian :: (Product t, Container Vector t, Num (Vector t)) =>
-               Matrix t -> Vector t -> Vector t -> Vector t -> Vector t -> Matrix t
+bfgsHessian :: (Product a, Container Vector a, Num (Vector a)) => HessianApprox a
 bfgsHessian vk xk xkp1 gk gkp1 = vkp1
   where
     vkp1 = (eye - (scale den (outer sk yk))) <> vk <> (eye - (scale den (outer yk sk)))
@@ -58,8 +57,7 @@ bfgsHessian vk xk xkp1 gk gkp1 = vkp1
     sk = xkp1 - xk
     
 
-dfpHessian :: (Product t, Container Vector t, Num (Vector t)) =>
-              Matrix t -> Vector t -> Vector t -> Vector t -> Vector t -> Matrix t
+dfpHessian :: (Product a, Container Vector a, Num (Vector a)) => HessianApprox a
 dfpHessian vk xk xkp1 gk gkp1 = vkp1
   where
     vkp1 = vk - ak + bk
