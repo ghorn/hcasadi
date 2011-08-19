@@ -1,4 +1,4 @@
--- preliminaryOptimization.hs
+-- optTest.hs
 
 {-# OPTIONS_GHC -Wall #-}
 

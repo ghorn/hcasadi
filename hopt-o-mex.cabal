@@ -82,7 +82,7 @@ Executable cartpoleDdp
 
 
 Executable optTest
-  Main-Is:         preliminaryOptimization.hs
+  Main-Is:         optTest.hs
   Hs-Source-Dirs:  .
   Other-Modules:   Casadi, Optimization
   Build-depends:   hmatrix, gnuplot

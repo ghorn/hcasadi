@@ -4,19 +4,23 @@
 
 module Optimization.LineSearch
        (
-         goldenSectionSearch
+         goldenSectionSearch,
+         LineSearch
        ) where
+
 
 tau :: Floating a => a
 tau = 2/(1+sqrt(5))
 
-goldenSectionSearch :: (Ord a, Floating b) => (b -> a) -> (b, b) -> [(b,a)]
-goldenSectionSearch f (x0,x3) = gss f (x0,x1,x2,x3)
+type LineSearch a = (a -> a) -> (a -> a) -> (a -> a) -> (a, a) -> [(a,a)]
+
+goldenSectionSearch :: (Ord a, Floating a) => LineSearch a
+goldenSectionSearch f _ _ (x0,x3) = gss f (x0,x1,x2,x3)
   where
     x1 = x0 + (x3-x0)*(1-tau)
     x2 = x0 + (x3-x0)*tau
 
-gss :: (Ord a, Floating b) => (b -> a) -> (b, b, b, b) -> [(b,a)]
+gss :: (Ord a, Floating a) => (a -> a) -> (a, a, a, a) -> [(a,a)]
 gss f (x0, x1, x2, x3) = xs
   where
     x1' = x0 + (x2-x0)*(1-tau)

@@ -8,51 +8,64 @@ module Optimization.QuasiNewton(dfp, bfgs) where
 import Optimization.LineSearch
 import Numeric.LinearAlgebra
 
-dfp :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
-       Vector e -> (Vector e -> t) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
-dfp x0 f g = iterate (\(x,v) -> oneDfp x v f g) (x0, v0)
+type HessianApprox a = Matrix a -> Vector a -> Vector a -> Vector a -> Vector a -> Matrix a
+
+
+dfp :: (Product e, Container Vector e, Ord e, Num (Vector e), Floating e) =>
+       Vector e -> (Vector e -> e) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
+dfp = quasiNewton dfpHessianApprox goldenSectionSearch
+
+
+bfgs :: (Product e, Container Vector e, Ord e, Num (Vector e), Floating e) =>
+       Vector e -> (Vector e -> e) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
+bfgs = quasiNewton bfgsHessianApprox goldenSectionSearch
+
+
+quasiNewton :: (Product a, Container Vector a, Ord a, Num (Vector a), Floating a) =>
+               HessianApprox a -> LineSearch a -> Vector a -> (Vector a -> a) -> (Vector a -> Vector a) -> [(Vector a, Matrix a)]
+quasiNewton hessianApprox linesearch x0 f g = iterate (\(x,v) -> oneQuasiNewton hessianApprox linesearch x v f g) (x0, v0)
   where
     v0 = ident (dim x0)
 
-oneDfp :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
-       Vector e -> Matrix e -> (Vector e -> t) -> (Vector e -> Vector e) -> (Vector e, Matrix e)
-oneDfp xk vk f g = (xkp1, vkp1)
+
+oneQuasiNewton :: (Product a, Container Vector a, Ord a, Num (Vector a), Floating a) =>
+                  HessianApprox a -> LineSearch a-> Vector a -> Matrix a -> (Vector a -> a) -> (Vector a -> Vector a) -> (Vector a, Matrix a)
+oneQuasiNewton hessianApprox linesearch xk vk f g = (xkp1, vkp1)
   where
-    vkp1 = vk - ak + bk
+    vkp1 = hessianApprox vk xk xkp1 gk gkp1
     gk   = g xk
     gkp1 = g xkp1
-    yk = gkp1 - gk
-    sk = xkp1 - xk
-    
-    bk = scale (1/(sk <.> yk)) (outer sk sk)
-    ak = scale (1/(yk <.> (vk <> yk))) (outer (vk <> yk) (yk <> vk))
 
     pk = -( vk <> gk )
     f' alpha = f $ xk + (scale alpha pk)
-    (alphakp1, _) = head $ drop 200 $ goldenSectionSearch f' (0,10)
+    g' alpha = (g $ xk + (scale alpha pk)) <.> pk
+    h' _ = error "Error in QuasiNewton - please implement directional hessian approximation"
+    (alphakp1, _) = head $ drop 200 $ linesearch f' g' h' (0,10)
     xkp1 = xk + (scale alphakp1 pk)
-    
-bfgs :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
-       Vector e -> (Vector e -> t) -> (Vector e -> Vector e) -> [(Vector e, Matrix e)]
-bfgs x0 f g = iterate (\(x,v) -> oneBfgs x v f g) (x0, v0)
-  where
-    v0 = ident (dim x0)
 
-oneBfgs :: (Product e, Container Vector e, Ord t, Num (Vector e), Floating e) =>
-       Vector e -> Matrix e -> (Vector e -> t) -> (Vector e -> Vector e) -> (Vector e, Matrix e)
-oneBfgs xk vk f g = (xkp1, vkp1)
+
+bfgsHessianApprox :: (Product t, Container Vector t, Num (Vector t)) =>
+                     Matrix t -> Vector t -> Vector t -> Vector t -> Vector t -> Matrix t
+bfgsHessianApprox vk xk xkp1 gk gkp1 = vkp1
   where
-    eye = ident $ cols vk
-    den = 1/(sk <.> yk)
-    
     vkp1 = (eye - (scale den (outer sk yk))) <> vk <> (eye - (scale den (outer yk sk)))
            + (scale den (outer sk sk))
-    gk   = g xk
-    gkp1 = g xkp1
+
+    eye = ident $ cols vk
+    den = 1/(sk <.> yk)
+
     yk = gkp1 - gk
     sk = xkp1 - xk
     
-    pk = -( vk <> gk )
-    f' alpha = f $ xk + (scale alpha pk)
-    (alphakp1, _) = head $ drop 200 $ goldenSectionSearch f' (0,10)
-    xkp1 = xk + (scale alphakp1 pk)
+
+dfpHessianApprox :: (Product t, Container Vector t, Num (Vector t)) =>
+                     Matrix t -> Vector t -> Vector t -> Vector t -> Vector t -> Matrix t
+dfpHessianApprox vk xk xkp1 gk gkp1 = vkp1
+  where
+    vkp1 = vk - ak + bk
+
+    ak = scale (1/(yk <.> (vk <> yk))) (outer (vk <> yk) (yk <> vk))
+    bk = scale (1/(sk <.> yk)) (outer sk sk)
+
+    yk = gkp1 - gk
+    sk = xkp1 - xk
