@@ -9,7 +9,8 @@ LIB = libcasadi_interface.a
 SRC = \
 	sxInterface.cpp \
 	sxMatrixInterface.cpp \
-	sxFunctionInterface.cpp
+	sxFunctionInterface.cpp \
+	ipoptSolverInterface.cpp
 
 OBJ = $(SRC:%.cpp=%.o) 
 INCLUDES = -I$(CASADI)

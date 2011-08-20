@@ -13,6 +13,13 @@ To build the CasADi bindings you need to install CasADi yourself, make a CASADI 
     cd hopt-o-mex/hcasadi_cppsrc
     make
 
+#### IPOPT
+Install ipopt on your own - their website has good instructions. Then you may have to append /usr/local/lib/coin and /usr/local/lib/coin/ThirdParty to your LD_LIBRARY_PATH env var.
+
+When you cabal configure it will warn you about missing ipopt/coinmumps/coinmetis libraries - you can ignore this.
+
+You might just want to comment out the whole ipoptTest executable in hopt-o-mex.cabal if you are having problems.
+
 #### HOPT-O-MEX
 Currently you must edit hopt-o-mex.cabal and replace "/home/greg/hopt-o-mex" with wherever you put it. Fixing this is high on my todo list.
 
