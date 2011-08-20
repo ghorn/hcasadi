@@ -59,7 +59,7 @@ foreign import ccall unsafe "sxMatrixIsEqual" c_sxMatrixIsEqual :: (Ptr SXMatrix
 
 
 ----------------- create -------------------------
-sxMatrixCreateSymbolic :: String -> (Integer, Integer) -> IO SXMatrix
+sxMatrixCreateSymbolic :: String -> (Int, Int) -> IO SXMatrix
 sxMatrixCreateSymbolic prefix (n,m) = mask_ $ do
   cPrefix <- newCString prefix
   mat <- c_sxMatrixCreateSymbolic cPrefix (fromIntegral n) (fromIntegral m) >>= newForeignPtr c_sxMatrixDelete
@@ -86,17 +86,17 @@ sxMatrixFreeUnsafeArray :: ForeignPtr SXMatrixRaw -> Int -> IO ()
 sxMatrixFreeUnsafeArray matArray len = do
   withForeignPtr matArray (\x -> c_sxMatrixFreeArray x (fromIntegral len))
 
---sxVectorCreateSymbolic :: String -> Integer -> IO SXVector
+--sxVectorCreateSymbolic :: String -> Int -> IO SXVector
 --sxVectorCreateSymbolic prefix n = do
 --  (SXMatrix p) <- sxMatrixCreateSymbolic prefix (n,1)
 --  return (SXVector p)
 
-sxMatrixZeros :: Integral a => (a, a) -> IO SXMatrix
+sxMatrixZeros :: (Int, Int) -> IO SXMatrix
 sxMatrixZeros (n,m) = mask_ $ do
   let n' = safeToCInt n
       m' = safeToCInt m
       
-      safeToCInt :: (Integral a) => a -> CInt
+      safeToCInt :: Int -> CInt
       safeToCInt x
         | and [toInteger x <= maxCInt, toInteger x >= minCInt] = fromIntegral x
         | otherwise = error "Error - sxMatrixZeros dimensions too big"
@@ -125,13 +125,13 @@ sxMatrixShow (SXMatrix s) = unsafePerformIO $ do
 
 
 --------------- getters/setters ---------------------
-sxMatrixAt :: SXMatrix -> (Integer,Integer) -> IO SX
+sxMatrixAt :: SXMatrix -> (Int,Int) -> IO SX
 sxMatrixAt (SXMatrix matIn) (n,m) = do
-  SX sxOut <- sxNewInteger 0
+  SX sxOut <- sxNewInt 0
   withForeignPtrs2 (\matIn' sxOut' -> c_sxMatrixAt matIn' (fromIntegral n) (fromIntegral m) sxOut') matIn sxOut
   return (SX sxOut)
 
-sxMatrixSet :: SXMatrix -> (Integer,Integer) -> SX -> SXMatrix
+sxMatrixSet :: SXMatrix -> (Int,Int) -> SX -> SXMatrix
 sxMatrixSet (SXMatrix matIn) (n,m) (SX val) = unsafePerformIO $ do
   SXMatrix matOut <- sxMatrixDuplicate (SXMatrix matIn)
   let n' = fromIntegral n
@@ -139,19 +139,19 @@ sxMatrixSet (SXMatrix matIn) (n,m) (SX val) = unsafePerformIO $ do
   withForeignPtrs2 (\val' matOut' -> c_sxMatrixSet val' n' m' matOut') val matOut
   return (SXMatrix matOut)
 
---sxVectorAt :: SXVector -> Integer -> IO SX
+--sxVectorAt :: SXVector -> Int -> IO SX
 --sxVectorAt (SXVector vecIn) n = sxMatrixAt (SXMatrix vecIn) (n,0)
 
 
 
 ---------------- dimensions --------------------
-sxMatrixSize :: SXMatrix -> (Integer,Integer)
+sxMatrixSize :: SXMatrix -> (Int,Int)
 sxMatrixSize (SXMatrix matIn) = unsafePerformIO $ do
   n <- withForeignPtr matIn c_sxMatrixSize1
   m <- withForeignPtr matIn c_sxMatrixSize2
   return (fromIntegral n, fromIntegral m)
 
---sxVectorLength :: SXVector -> Integer
+--sxVectorLength :: SXVector -> Int
 --sxVectorLength (SXVector vecIn)
 --  | m == 1    = n
 --  | otherwise = error "Error - sxVectorLength got size: (n, m /= 1)"

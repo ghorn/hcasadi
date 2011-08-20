@@ -13,7 +13,7 @@ import Casadi.SXFunction
 import Numeric.LinearAlgebra
 import System.IO.Unsafe(unsafePerformIO)
 
-getDerivs :: ([SX] -> SX) -> Integer
+getDerivs :: ([SX] -> SX) -> Int
              -> IO (Vector Double -> Double, Vector Double -> Vector Double, Vector Double -> Matrix Double)
 getDerivs f n = do
   
