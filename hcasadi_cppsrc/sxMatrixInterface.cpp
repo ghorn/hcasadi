@@ -125,3 +125,7 @@ int sxMatrixIsEqual(const SXMatrix & m0, const SXMatrix & m1){
     return 1;
   return 0;
 }
+
+void sxMatrixScale(const SX & scalar, const SXMatrix & mIn, SXMatrix & mOut){
+  mOut = scalar * mIn;
+}

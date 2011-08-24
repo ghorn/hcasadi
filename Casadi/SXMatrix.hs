@@ -16,6 +16,7 @@ module Casadi.SXMatrix
        , sxMatrixFromList
        , sxMatrixZeros
        , sxMatrixSize
+       , sxMatrixScale
        ) where
 
 import Casadi.SX
@@ -56,6 +57,7 @@ foreign import ccall unsafe "sxMatrixMinus" c_sxMatrixMinus :: (Ptr SXMatrixRaw)
 foreign import ccall unsafe "sxMM" c_sxMM :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 foreign import ccall unsafe "sxMatrixTranspose" c_sxMatrixTranspose :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 foreign import ccall unsafe "sxMatrixIsEqual" c_sxMatrixIsEqual :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO CInt
+foreign import ccall unsafe "sxMatrixScale" c_sxMatrixScale :: (Ptr SXRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 
 
 ----------------- create -------------------------
@@ -254,6 +256,13 @@ sxMatrixIsEqual (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
 --    return True
 --    else
 --    return False
+
+
+sxMatrixScale :: SX -> SXMatrix -> SXMatrix
+sxMatrixScale (SX scalar) (SXMatrix mIn) = unsafePerformIO $ do
+  SXMatrix mOut <- sxMatrixZeros (1,1)
+  withForeignPtrs3 c_sxMatrixScale scalar mIn mOut
+  return $ SXMatrix mOut
 
 
 ----------------- typeclass stuff ------------------
