@@ -1,6 +1,6 @@
 -- SX.hs
 
---{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
 --module Main where
@@ -8,8 +8,11 @@ module Casadi.SX
        (
          SX(..)
        , SXRaw(..)
+       , sxNewDouble
        , sxNewInt
        , sxNewIntegral
+       , sxFromInt
+       , sxCreateSymbolic
        ) where
 
 import Casadi.CasadiInterfaceUtils
@@ -19,14 +22,14 @@ import Foreign.Ptr
 import Foreign.ForeignPtr
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
-import Data.Ratio(numerator, denominator)
+--import Data.Ratio(numerator, denominator)
 
 -- the SX data type
 data SXRaw = SXRaw
 newtype SX = SX (ForeignPtr SXRaw)
---data SX = SX (ForeignPtr SXRaw) | SX Integer | SX Double
 
 -- foreign imports
+foreign import ccall unsafe "sxInterface.hpp sxCreateSymbolic" c_sxCreateSymbolic :: Ptr CChar -> IO (Ptr SXRaw)
 foreign import ccall unsafe "sxInterface.hpp sxNewDouble" c_sxNewDouble :: CDouble -> IO (Ptr SXRaw)
 foreign import ccall unsafe "sxInterface.hpp sxNewInt"    c_sxNewInt :: CInt -> IO (Ptr SXRaw)
 foreign import ccall unsafe "sxInterface.hpp &sxDelete"   c_sxDelete :: FunPtr (Ptr SXRaw -> IO ())
@@ -54,7 +57,13 @@ foreign import ccall unsafe "sxInterface.hpp sxArccos" c_sxArccos :: Ptr SXRaw -
 foreign import ccall unsafe "sxInterface.hpp sxArctan" c_sxArctan :: Ptr SXRaw -> Ptr SXRaw -> IO ()
 
 
--- cpp function wrappers
+-- creation
+sxCreateSymbolic :: String -> IO SX
+sxCreateSymbolic name = mask_ $ do
+  cName <- newCString name
+  sym <- c_sxCreateSymbolic cName >>= newForeignPtr c_sxDelete
+  return $ SX sym
+
 sxNewDouble :: Double -> IO SX
 sxNewDouble val = mask_ $ do
     f <- c_sxNewDouble (realToFrac val) >>= newForeignPtr c_sxDelete
@@ -200,7 +209,10 @@ sxArctan (SX sx) = unsafePerformIO $ do
   withForeignPtrs2 c_sxArctan sx sxOut
   return (SX sxOut)
 
-
+sxFromInt :: Int -> SX
+sxFromInt n = unsafePerformIO $ do
+  sxOut <- sxNewInt n
+  return sxOut
 
 -- typeclass stuff
 instance Eq SX where
@@ -222,10 +234,11 @@ instance Num SX where
 instance Fractional SX where
   (/) = sxDivide
   recip sx = (unsafePerformIO $ sxNewInt 1)/sx
-  fromRational x = (unsafePerformIO $ sxNewIntegral num)/(unsafePerformIO $ sxNewIntegral den)
-    where
-      num = numerator x
-      den = denominator x
+--  fromRational x = (unsafePerformIO $ sxNewIntegral num)/(unsafePerformIO $ sxNewIntegral den)
+--    where
+--      num = numerator x
+--      den = denominator x
+  fromRational x = unsafePerformIO $ sxNewDouble (fromRational x)
 
 instance Floating SX where
   pi = sxPi
@@ -247,28 +260,28 @@ instance Floating SX where
   atanh = error "hyperbolic functions not yet implemented for SX"
   acosh = error "hyperbolic functions not yet implemented for SX"
 
-main :: IO ()
-main = do 
-  f <- sxNewDouble 10.1
-  g <- sxNewDouble 3.0
-  h <- sxNewDouble (-4.4)
-
-  putStrLn $ sxShow f
-  putStrLn $ sxShow g
-  putStrLn $ sxShow (sxPlus f g)
-  putStrLn $ sxShow (sxTimes f g)
-  putStrLn $ sxShow (sxMinus f g)
-  putStrLn $ sxShow (sxNegate f)
-  putStrLn $ sxShow (sxAbs f)
-  putStrLn $ sxShow (sxAbs h)
-  putStrLn $ sxShow (sxSignum f)
-  putStrLn $ sxShow (sxSignum h)
-
-  putStrLn $ sxShow (sxDivide f g)
-
-  putStrLn $ sxShow (sin f)
-  putStrLn $ sxShow (cos g)
-  putStrLn $ sxShow (tan h)
-  putStrLn $ sxShow (asin f)
-  putStrLn $ sxShow (acos g)
-  putStrLn $ sxShow (atan h)
+--main :: IO ()
+--main = do 
+--  f <- sxNewDouble 10.1
+--  g <- sxNewDouble 3.0
+--  h <- sxNewDouble (-4.4)
+--
+--  putStrLn $ sxShow f
+--  putStrLn $ sxShow g
+--  putStrLn $ sxShow (sxPlus f g)
+--  putStrLn $ sxShow (sxTimes f g)
+--  putStrLn $ sxShow (sxMinus f g)
+--  putStrLn $ sxShow (sxNegate f)
+--  putStrLn $ sxShow (sxAbs f)
+--  putStrLn $ sxShow (sxAbs h)
+--  putStrLn $ sxShow (sxSignum f)
+--  putStrLn $ sxShow (sxSignum h)
+--
+--  putStrLn $ sxShow (sxDivide f g)
+--
+--  putStrLn $ sxShow (sin f)
+--  putStrLn $ sxShow (cos g)
+--  putStrLn $ sxShow (tan h)
+--  putStrLn $ sxShow (asin f)
+--  putStrLn $ sxShow (acos g)
+--  putStrLn $ sxShow (atan h)

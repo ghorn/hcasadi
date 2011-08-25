@@ -11,37 +11,36 @@ module DdpCasadi
          BacksweepOutput
        ) where
 
-import Casadi
+import Casadi hiding ((<>), trans)
+import Casadi.SXFunction
 import Hom(State, Action, Cost, Ode, Quad(..), evalQuad)
-import Numeric.LinearAlgebra
+import Numeric.LinearAlgebra((<>),fromList, fromLists, toList, toLists, inv, dot, trans)
 import Data.List(mapAccumL)
 import System.IO.Unsafe(unsafePerformIO)
 
 type BacksweepOutput a = (Quad a, [[a]], [a])
 
 -- prepare casadi SXFunction
-prepareQFunction :: Integral a => a -> a -> Cost SX -> Ode SX -> IO SXFunction
+prepareQFunction :: Int -> Int -> Cost SX -> Ode SX -> IO SXFunction
 prepareQFunction nx nu costFunction dode = do
-  let nx' = fromIntegral nx
-      nu' = fromIntegral nu
-  x   <- sxMatrixCreateSymbolic "x"   (nx',1)
-  u   <- sxMatrixCreateSymbolic "u"   (nu',1)
-  vxx <- sxMatrixCreateSymbolic "vxx" (nx',nx')
-  vx  <- sxMatrixCreateSymbolic "vx"  (nx',1)
-  v0  <- sxMatrixCreateSymbolic "v0"  (1,1)
-  x0  <- sxMatrixCreateSymbolic "x0"  (nx',1)
+  let x   = sxMatrixSymbolic "x"   (nx,1)
+      u   = sxMatrixSymbolic "u"   (nu,1)
+      vxx = sxMatrixSymbolic "vxx" (nx,nx)
+      vx  = sxMatrixSymbolic "vx"  (nx,1)
+      v0  = sxMatrixSymbolic "v0"  (1,1)
+      x0  = sxMatrixSymbolic "x0"  (nx,1)
       
   let -- reshape SXMatrices into lists
-      x'   = sxMatrixToList x
-      u'   = sxMatrixToList u
-      vxx' = sxMatrixToLists vxx
-      vx'  = sxMatrixToList vx
-      v0'  = head (sxMatrixToList v0)
-      x0'  = sxMatrixToList x0
+      x'   = Casadi.toList x
+      u'   = Casadi.toList u
+      vxx' = Casadi.toLists vxx
+      vx'  = Casadi.toList vx
+      v0'  = head (Casadi.toList v0)
+      x0'  = Casadi.toList x0
       quad = Quad vxx' vx' v0' x0'
       
       -- the qFunction
-      q = sxMatrixFromList [(costFunction x' u') + (evalQuad quad (dode x' u'))]
+      q = Casadi.fromList [(costFunction x' u') + (evalQuad quad (dode x' u'))]
       qFun = sxFunctionCreate [x,u,vxx,vx,v0,x0] [q]
       
       -- the quadratic expansion
@@ -63,7 +62,7 @@ evalQFunction qExpansion (x, u, Quad vxx vx v0 x0) = do
 
 ----------------------- convenience function -----------------------
 -- prepare ddp  
-prepareDdp :: Integral a => (forall b. Floating b => Cost b) -> (forall b. Floating b => Ode b) -> a -> a
+prepareDdp :: (forall a. Floating a => Cost a) -> (forall a. Floating a => Ode a) -> Int -> Int
        -> IO ([State Double] -> [Action Double] -> [([State Double], [Action Double], [BacksweepOutput Double])])
 prepareDdp cost dode nx nu = do
   qFun <- prepareQFunction nx nu cost dode
@@ -91,12 +90,12 @@ ddp' qFunction dode xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
 
 
 -------------------------- forward sweep -----------------------------
-forwardSweep :: (Floating a) => Ode a -> State a -> [BacksweepOutput a]
+forwardSweep :: (Floating a, Ord a) => Ode a -> State a -> [BacksweepOutput a]
                 -> [(State a, Action a)]
 forwardSweep dode x0 backsweepTrajectory = snd $ mapAccumL (fSweep dode) x0 backsweepTrajectory
 
 
-fSweep :: Floating a => Ode a -> State a -> BacksweepOutput a -> (State a, (State a, Action a))
+fSweep :: (Ord a, Floating a) => Ode a -> State a -> BacksweepOutput a -> (State a, (State a, Action a))
 fSweep dode x (Quad _ _ _ x0, feedbackGain, uOpenLoop) = (xNext, (x, u))
   where
     u = mimoController x x0 feedbackGain uOpenLoop
@@ -136,20 +135,20 @@ backPropagate qFunction x u nextValue = (Quad vxx vx v0 x, feedbackGains, openLo
   where
     -- q functions to lists to matrices/vectors
     (q0', qx', qu', qxx', qxu', quu') = unsafePerformIO $ do (evalQFunction qFunction (x,u,nextValue))
-    qxx = fromLists qxx'
-    quu = fromLists quu'
-    qxu = fromLists qxu'
-    qx = fromList $ concat qx'
-    qu = fromList $ concat qu'
+    qxx = Numeric.LinearAlgebra.fromLists qxx'
+    quu = Numeric.LinearAlgebra.fromLists quu'
+    qxu = Numeric.LinearAlgebra.fromLists qxu'
+    qx = Numeric.LinearAlgebra.fromList $ concat qx'
+    qu = Numeric.LinearAlgebra.fromList $ concat qu'
     q0 = head (head q0')
     
     -- value function
-    vxx = toLists $ qxx - (qxu <> (inv quu) <> (trans qxu))
-    vx = toList $ qx - ( qu <> (inv quu) <> (trans qxu))
+    vxx = Numeric.LinearAlgebra.toLists $ qxx - (qxu <> (inv quu) <> (trans qxu))
+    vx = Numeric.LinearAlgebra.toList $ qx - ( qu <> (inv quu) <> (trans qxu))
     v0 = q0 - (qu `dot` ((inv quu) <> qu))
     
     -- feedback gain
-    feedbackGains = toLists $ - ( inv quu) <> (trans qxu);
+    feedbackGains = Numeric.LinearAlgebra.toLists $ - ( inv quu) <> (trans qxu);
     
     -- open loop control
-    openLoopControl = zipWith (+) u $ toList $ - (inv quu) <> qu;
+    openLoopControl = zipWith (+) u $ Numeric.LinearAlgebra.toList $ - (inv quu) <> qu;

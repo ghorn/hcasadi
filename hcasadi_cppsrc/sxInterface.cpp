@@ -16,6 +16,17 @@ using namespace CasADi;
 
 
 /******************** memory management *******************/
+SX * sxCreateSymbolic(char * charName){
+  string name;
+  name.assign(charName);
+  SX * out = new SX(create_symbolic(name));
+  #ifdef COUT_MEMORY_MANAGEMENT
+  cout << "(cpp) new sx at " << out << ", val: " << *out << endl;
+  #endif
+  return out;
+}
+
+
 SX * sxNewDouble(double in){
   SX * sx = new SX(in);
   #ifdef COUT_MEMORY_MANAGEMENT

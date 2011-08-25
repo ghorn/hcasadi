@@ -15,9 +15,8 @@ rosenbrock _ = error "wrong number of inputs to rosenbrock"
 -- box constraints only rosenbrock
 solveRosenbrock :: IO ([Double], Double)
 solveRosenbrock = do
-  x <- sxMatrixCreateSymbolic "x" (2,1)
-  
-  let [x0,x1] = sxMatrixToList x
+  let x = sxMatrixSymbolic "x" (2,1)
+      [x0,x1] = toList x
       constraints = []
       objFun = rosenbrock $ [x0,x1]
   
@@ -36,9 +35,8 @@ solveRosenbrock = do
 -- quadratic with y >= 1 - x
 solveQuadratic :: IO ([Double], Double)
 solveQuadratic = do
-  x <- sxMatrixCreateSymbolic "x" (2,1)
-  
-  let [x0,x1] = sxMatrixToList x
+  let x = sxMatrixSymbolic "x" (2,1)
+      [x0,x1] = toList x
       constraints = [1 - x0 - x1]
       objFun = x0*x0 + x1*x1
   

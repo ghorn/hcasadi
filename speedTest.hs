@@ -4,7 +4,7 @@
 
 module Main where
 
-import Casadi
+import Casadi.SXFunction
 import Data.Time.Clock
 import Hom
 import qualified Ddp

@@ -39,6 +39,7 @@ extern "C"{
   void sxMatrixTranspose(const SXMatrix & mIn, SXMatrix & mOut);
   int sxMatrixIsEqual(const SXMatrix & m0, const SXMatrix & m1);
   void sxMatrixScale(const SX & scalar, const SXMatrix & mIn, SXMatrix & mOut);
+  void sxMatrixInv(const SXMatrix & mIn, SXMatrix & mOut);
 
 #ifdef __cplusplus
 }

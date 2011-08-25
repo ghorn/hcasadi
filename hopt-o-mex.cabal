@@ -19,6 +19,7 @@ Library
     Casadi.SXMatrix
     Casadi.SXFunction
     Casadi.Utils
+    Casadi.Api
 
     Optimization
     Optimization.LineSearch

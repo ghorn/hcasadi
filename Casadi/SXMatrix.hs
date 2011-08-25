@@ -17,6 +17,7 @@ module Casadi.SXMatrix
        , sxMatrixZeros
        , sxMatrixSize
        , sxMatrixScale
+       , sxMatrixInv
        ) where
 
 import Casadi.SX
@@ -58,6 +59,7 @@ foreign import ccall unsafe "sxMM" c_sxMM :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixR
 foreign import ccall unsafe "sxMatrixTranspose" c_sxMatrixTranspose :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 foreign import ccall unsafe "sxMatrixIsEqual" c_sxMatrixIsEqual :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO CInt
 foreign import ccall unsafe "sxMatrixScale" c_sxMatrixScale :: (Ptr SXRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixInv" c_sxMatrixInv :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 
 
 ----------------- create -------------------------
@@ -118,7 +120,7 @@ sxMatrixFromList sxList = unsafePerformIO $ do
 ---------------- show -------------------
 sxMatrixShow :: SXMatrix -> String
 sxMatrixShow (SXMatrix s) = unsafePerformIO $ do
-  (stringRef, stringLength) <- newCStringLen $ replicate 512 ' '
+  (stringRef, stringLength) <- newCStringLen $ replicate 4096 ' '
   withForeignPtr s $ c_sxMatrixShow stringRef (fromIntegral stringLength)
   peekCString stringRef
 
@@ -264,6 +266,12 @@ sxMatrixScale (SX scalar) (SXMatrix mIn) = unsafePerformIO $ do
   withForeignPtrs3 c_sxMatrixScale scalar mIn mOut
   return $ SXMatrix mOut
 
+sxMatrixInv :: SXMatrix -> SXMatrix
+sxMatrixInv (SXMatrix mIn) = unsafePerformIO $ do
+  SXMatrix mOut <- sxMatrixZeros (1,1)
+  withForeignPtrs2 c_sxMatrixInv mIn mOut
+  return $ SXMatrix mOut
+
 
 ----------------- typeclass stuff ------------------
 instance Show SXMatrix where
@@ -283,10 +291,25 @@ instance Eq SXMatrix where
 instance Num SXMatrix where
   (+) = sxMatrixPlus
   (-) = sxMatrixMinus
-  (*) = sxMM
+  (*) m0 m1
+    | sxMatrixSize m0 == (1,1) = sxMatrixScale s0 m1
+    | sxMatrixSize m1 == (1,1) = sxMatrixScale s1 m0
+    | otherwise                = sxMM m0 m1
+      where
+        [s0] = sxMatrixToList m0
+        [s1] = sxMatrixToList m1
+
   abs = error "abs not defined for instance Num SXMatrix"
   signum = error "signum not defined for instance Num SXMatrix"
-  fromInteger = error "fromInteger not defined for instance Num SXMatrix"
+  fromInteger i = unsafePerformIO $ do
+    s <- sxNewIntegral i
+    return $ sxMatrixFromList [s]
+
+instance Fractional SXMatrix where
+  (/) m0 m1 = m0 * (recip m1)
+  recip mat = sxMatrixInv mat
+  fromRational x = sxMatrixFromList [fromRational x :: SX]
+
 
 --instance Num SXVector where
 --  (+) = sxVectorPlus
