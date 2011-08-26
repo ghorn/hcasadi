@@ -24,8 +24,13 @@ int sxMatrixSizeOfAddress(){
 
 SXMatrix * sxMatrixCreateSymbolic(char * charPrefix, int n, int m){
   string prefix;
+  SXMatrix * out;
   prefix.assign(charPrefix);
-  SXMatrix * out = new SXMatrix(create_symbolic(prefix, n, m));
+  if (m == 1)
+    out = new SXMatrix(create_symbolic(prefix, n));
+  else
+    out = new SXMatrix(create_symbolic(prefix, n, m));
+
   #ifdef COUT_MEMORY_MANAGEMENT
   cout << "(cpp) new sx matrix at " << out << ", val: " << *out << endl;
   #endif

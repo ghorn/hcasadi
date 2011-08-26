@@ -17,7 +17,7 @@ solveRosenbrock :: IO ([Double], Double)
 solveRosenbrock = do
   let x = sxMatrixSymbolic "x" (2,1)
       [x0,x1] = toList x
-      constraints = []
+      constraints = fromList []
       objFun = rosenbrock $ [x0,x1]
   
       xGuess = [-0.9, 1.0]
@@ -37,7 +37,7 @@ solveQuadratic :: IO ([Double], Double)
 solveQuadratic = do
   let x = sxMatrixSymbolic "x" (2,1)
       [x0,x1] = toList x
-      constraints = [1 - x0 - x1]
+      constraints = fromList [1 - x0 - x1]
       objFun = x0*x0 + x1*x1
   
       xGuess = [0.0, 0.0]

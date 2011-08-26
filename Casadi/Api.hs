@@ -16,6 +16,10 @@ module Casadi.Api
        , fromList
        , toList
        , toLists
+       , dim
+       , rows
+       , cols
+       , concatMat
        ) where
 
 import Casadi.SX
@@ -53,8 +57,8 @@ sxSymbolic name = unsafePerformIO $ do
   return sym
 
 sxMatrixSymbolic :: String -> (Int,Int) -> SXMatrix
-sxMatrixSymbolic prefix dim = unsafePerformIO $ do
-  mat <- sxMatrixCreateSymbolic prefix dim
+sxMatrixSymbolic prefix dim' = unsafePerformIO $ do
+  mat <- sxMatrixCreateSymbolic prefix dim'
   return mat
 
 sxInt :: Int -> SX
@@ -80,3 +84,15 @@ toLists = sxMatrixToLists
 
 fromList :: [SX] -> SXMatrix
 fromList = sxMatrixFromList
+
+dim :: SXMatrix -> (Int,Int)
+dim = sxMatrixSize
+
+rows :: SXMatrix -> Int
+rows = fst . dim
+
+cols :: SXMatrix -> Int
+cols = snd . dim
+
+concatMat :: [SXMatrix] -> SXMatrix
+concatMat mats = fromList $ concat $ map toList mats

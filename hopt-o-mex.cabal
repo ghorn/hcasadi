@@ -123,3 +123,35 @@ Executable ipoptTest
         lapack_interface
         superlu
         tinyxml
+
+Executable ms
+  Main-Is:         MultipleShooting.hs
+  Hs-Source-Dirs:  .
+  Other-Modules:   Casadi, Ipopt
+  Build-depends:   ad
+  Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
+
+  Extra-lib-dirs:
+        /home/greg/hopt-o-mex/hcasadi_cppsrc
+        /home/greg/casadi/build/lib
+        /usr/local/lib/coin
+        /usr/local/lib/coin/ThirdParty
+
+  Extra-libraries:
+        casadi_interface
+        coinhsl
+        coinmumps
+        coinmetis
+        ipopt
+        ipopt_interface
+        cppocp
+        csparse_interface
+        optimal_control
+        snopt_interface
+        superlu_interface
+        casadi
+        csparse
+        gsl_interface
+        lapack_interface
+        superlu
+        tinyxml
