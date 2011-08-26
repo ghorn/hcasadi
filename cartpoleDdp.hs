@@ -115,7 +115,7 @@ main = do let n = 100
               xTraj0 = replicate n x0
               uTraj0 = replicate n u0
 
-          ddp <- prepareDdp cost dode (4::Int) (1::Int)
+          ddp <- prepareDdp cost dode (4::Int) (1::Int) [(-10,10)]
 
           let (xTraj, uTraj, _) = head $ drop 50 $ ddp xTraj0 uTraj0
 

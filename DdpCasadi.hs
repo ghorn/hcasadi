@@ -62,49 +62,55 @@ evalQFunction qExpansion (x, u, Quad vxx vx v0 x0) = do
 
 ----------------------- convenience function -----------------------
 -- prepare ddp  
-prepareDdp :: (forall a. Floating a => Cost a) -> (forall a. Floating a => Ode a) -> Int -> Int
+prepareDdp :: (forall a. Floating a => Cost a) -> (forall a. Floating a => Ode a) -> Int -> Int -> [(Double,Double)]
        -> IO ([State Double] -> [Action Double] -> [([State Double], [Action Double], [BacksweepOutput Double])])
-prepareDdp cost dode nx nu = do
+prepareDdp cost dode nx nu uBounds = do
   qFun <- prepareQFunction nx nu cost dode
-  return $ ddp qFun dode
+  return $ ddp qFun dode uBounds
   
   
 -- iterate ddp'
-ddp :: SXFunction -> Ode Double -> [State Double] -> [Action Double] -> [([State Double], [Action Double], [BacksweepOutput Double])]
-ddp cost dode xTraj0 uTraj0 = iterate f x0
+ddp :: SXFunction -> Ode Double -> [(Double,Double)] -> [State Double] -> [Action Double] -> [([State Double], [Action Double], [BacksweepOutput Double])]
+ddp qFun dode uBounds xTraj0 uTraj0 = iterate f x0
   where
-    f (xTraj, uTraj, _) = ddp' cost dode xTraj uTraj
-    x0 = ddp' cost dode xTraj0 uTraj0
+    f (xTraj, uTraj, _) = ddp' qFun dode uBounds xTraj uTraj
+    x0 = ddp' qFun dode uBounds xTraj0 uTraj0
 
 
 -- just one backsweep then forwardsweep
-ddp' :: SXFunction -> Ode Double -> [State Double] -> [Action Double] -> ([State Double], [Action Double], [BacksweepOutput Double])
-ddp' qFunction dode xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
+ddp' :: SXFunction -> Ode Double -> [(Double,Double)] -> [State Double] -> [Action Double] -> ([State Double], [Action Double], [BacksweepOutput Double])
+ddp' qFunction dode uBounds xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
   where
     backsweepTrajectory :: [BacksweepOutput Double]
     backsweepTrajectory = backSweep qFunction xTraj0 uTraj0
 
     forwardsweepTrajectory :: [(State Double, Action Double)]
-    forwardsweepTrajectory = forwardSweep dode (head xTraj0) backsweepTrajectory
+    forwardsweepTrajectory = forwardSweep dode (head xTraj0) backsweepTrajectory uBounds
     (xTraj, uTraj) = unzip forwardsweepTrajectory
 
 
 -------------------------- forward sweep -----------------------------
-forwardSweep :: (Floating a, Ord a) => Ode a -> State a -> [BacksweepOutput a]
+forwardSweep :: (Floating a, Ord a) => Ode a -> State a -> [BacksweepOutput a] -> [(a,a)]
                 -> [(State a, Action a)]
-forwardSweep dode x0 backsweepTrajectory = snd $ mapAccumL (fSweep dode) x0 backsweepTrajectory
+forwardSweep dode x0 backsweepTrajectory uBounds = snd $ mapAccumL (fSweep uBounds dode) x0 backsweepTrajectory
 
 
-fSweep :: (Ord a, Floating a) => Ode a -> State a -> BacksweepOutput a -> (State a, (State a, Action a))
-fSweep dode x (Quad _ _ _ x0, feedbackGain, uOpenLoop) = (xNext, (x, u))
+fSweep :: (Ord a, Floating a) => [(a,a)] -> Ode a -> State a -> BacksweepOutput a -> (State a, (State a, Action a))
+fSweep uBounds dode x (Quad _ _ _ x0, feedbackGain, uOpenLoop) = (xNext, (x, u))
   where
-    u = mimoController x x0 feedbackGain uOpenLoop
+    u = mimoController uBounds x x0 feedbackGain uOpenLoop
     xNext = dode x u
 
-mimoController :: Floating a => State a -> State a -> [[a]] -> Action a -> Action a
-mimoController x x0 feedbackMatrix uOpenLoop = u
+mimoController :: (Ord a, Floating a) => [(a,a)] -> State a -> State a -> [[a]] -> Action a -> Action a
+mimoController uBounds x x0 feedbackMatrix uOpenLoop = u
   where
-    u = zipWith (+) uOpenLoop uClosedLoop
+    u' = zipWith (+) uOpenLoop uClosedLoop
+    u = zipWith bound uBounds u'
+      where
+        bound (lb,ub) u''
+          | u'' < lb  = lb
+          | u'' > ub  = ub
+          | otherwise = u''
     uClosedLoop = mvMult feedbackMatrix deltaX
       where
         deltaX = zipWith (-) x x0

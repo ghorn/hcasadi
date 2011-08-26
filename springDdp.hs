@@ -53,7 +53,7 @@ main = do let n = 100
               vel = map (!! 1) xTraj
               force = map (!! 0) uTraj
 
-          cddp <- prepareDdp sCost sDode (2::Int) (1::Int)
+          cddp <- prepareDdp sCost sDode (2::Int) (1::Int) [(-20,20)]
 
           let (xTraj', uTraj', _) = head $ cddp xTraj0 uTraj0
               pos' = map (!! 0) xTraj'
