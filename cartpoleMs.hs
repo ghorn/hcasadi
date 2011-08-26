@@ -63,11 +63,11 @@ main = do
       sys = simpleSystem cartpoleOde cpCost dt n
       ms = multipleShooting sys (fromList [tEnd])
 
-      x0 = [0,0,0.01,0]
+      x0 = [-10,0,0.01,0]
       xf = [0,0,pi,0]
       xBounds = [(-10,10), (-50,50), (-4*pi,4*pi), (-20*pi, 20*pi)]
   
-      xBadGuess = (replicate ((rows $ designVars ms) - 1) (1.0::Double))++[3::Double]
+      xBadGuess = (replicate ((rows $ designVars ms) - 1) (1.0::Double))++[5::Double]
   
       x0Sx = head $ states ms
       xfSx = last $ states ms
@@ -78,8 +78,8 @@ main = do
 --                      , boundEqs ms xfSx xf
                       , stateBounds
                       , actionBounds
---                      , [boundInterval ms tEnd (2, 15)]
-                      , [boundEq ms tEnd (fromIntegral(n-1)*simDt)]
+                      , [boundInterval ms tEnd (1, 5)]
+--                      , [boundEq ms tEnd (fromIntegral(n-1)*simDt)]
                       ]
 
   msSolve <- multipleShootingSolver ms []
@@ -91,8 +91,8 @@ main = do
 --                             , boundEqs ms xfSx xf
                              , stateBounds
                              , actionBounds
---                             , [boundInterval ms tEnd (2,15)]
-                             , [boundEq ms tEnd (fromIntegral(n-1)*simDt)]
+                             , [boundInterval ms tEnd (1,5)]
+--                             , [boundEq ms tEnd (fromIntegral(n-1)*simDt)]
                              ]
             xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
             uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
@@ -104,7 +104,6 @@ main = do
         let ctrlState@(_, uTraj, _) = devectorize sol ms
             u = head uTrajPrev
 
-        print u
         return (u, ctrlState)
   
   cartpoleVis simController drawFun (x0, devectorize sol0 ms) simDt

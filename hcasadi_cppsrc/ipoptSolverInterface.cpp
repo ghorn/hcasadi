@@ -74,7 +74,7 @@ IpoptSolver * ipoptSolverCreateExactHessian(const SXMatrix & designVariables, co
   IpoptSolver * solver = new IpoptSolver( ffcn, gfcn, hfcn,  FX());
 
   // Set options
-  solver->setOption("tol",1e-15);
+  solver->setOption("tol",1e-8);
   //solver->setOption("hessian_approximation","limited-memory");
   solver->setOption("hessian_approximation","exact");
 
