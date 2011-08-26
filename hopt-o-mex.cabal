@@ -123,11 +123,11 @@ Executable ipoptTest
         superlu
         tinyxml
 
-Executable ms
-  Main-Is:         MultipleShooting.hs
+Executable cartpoleMs
+  Main-Is:         cartpoleMs.hs
   Hs-Source-Dirs:  .
   Other-Modules:   Casadi, Ipopt
-  Build-depends:   ad
+  Build-depends:
   Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
 
   Extra-lib-dirs:

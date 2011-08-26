@@ -2,7 +2,17 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
-module Main where
+module MultipleShooting( Ode(..)
+                       , Cost(..)
+                       , simpleSystem
+                       , multipleShooting
+                       , MultipleShooting(..)
+                       , boundEq
+                       , boundEqs
+                       , multipleShootingSolver
+                       , eqZero
+                       , ltZero
+                       ) where
 
 import Casadi
 import Ipopt
@@ -140,75 +150,3 @@ ltZero g = Constraint {expression = g, lcon = veryNegative, ucon = zeros}
   where
     veryNegative = replicate (rows g) (-1e30)
     zeros = replicate (rows g) 0
-
-
--- ode
-cartpoleOde :: Ode
-cartpoleOde = Ode cartpoleDxdt (4,1)
-    
-cartpoleDxdt :: SXMatrix -> SXMatrix -> SXMatrix
-cartpoleDxdt state action = state'
-  where
-    [_, x', theta, theta'] = toList state
-    [u] = toList action
-    
-    -- constants
-    g = 9.8;
-    len = 2.2
-    mc = 2;
-    mp = 1;
-
-    x'' = 1/(mc+mp*sin(theta)*sin(theta))*(u+mp*sin(theta)*(len*theta'*theta'+g*cos(theta)))
-    theta'' = 1/(len*(mc+mp*sin(theta)*sin(theta)))*(-u*cos(theta) - mp*len*theta'*theta'*cos(theta)*sin(theta) - (mc+mp)*g*sin(theta));
-
-    state' = fromList [x', x'', theta', theta'']
-
-
--- cost fcn
-cpCost :: Cost
-cpCost = Cost cpCost' (4,1)
-
-cpCost' :: SXMatrix -> SXMatrix -> SX
-cpCost' state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u -- + barrier
-  where
-    [x, x', theta, theta'] = toList state
-    [u] = toList action
-
---    -- barrier
---    uUb =  10.1
---    uLb = -10.1
---    mu = 1.0
---    uBarrierUb = -mu*log(  uUb - u )
---    uBarrierLb = -mu*log( -uLb + u )
---    barrier = uBarrierUb + uBarrierLb
-
-
-main :: IO ()
-main = do
-  let n = 60
---      np = 1
-
-      tEnd =  sxSymbolic "tEnd"
-      dt = tEnd/(sxInt (n-1))
-
-      sys = simpleSystem cartpoleOde cpCost dt n
-      ms = multipleShooting sys (fromList [tEnd])
-
---      x0 = replicate n [-10,0,0.01,0::Double]
---      u0 = replicate n [0::Double]
-      xGuess = (replicate ((rows $ designVars ms) - 1) (1.0::Double))++[10::Double]
-  
-      x0Sx = head $ states ms
-      xfSx = last $ states ms
-      
-      bounds = concat [ boundEqs ms x0Sx [-10, 0, 0.01, 0]
-                      , boundEqs ms xfSx [0,0,pi,0]
-                      , [boundEq ms tEnd 10]
-                      ]
-
-  msSolve <- multipleShootingSolver ms []
-  (sol0,_) <- msSolve bounds xGuess
-  (sol,_) <- msSolve bounds sol0
-  
-  print $ length sol
-
