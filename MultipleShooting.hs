@@ -9,9 +9,12 @@ module MultipleShooting( Ode(..)
                        , MultipleShooting(..)
                        , boundEq
                        , boundEqs
+                       , boundInterval
+                       , boundIntervals
                        , multipleShootingSolver
                        , eqZero
                        , ltZero
+                       , devectorize
                        ) where
 
 import Casadi
@@ -48,6 +51,17 @@ data MultipleShooting = MultipleShooting { system :: System
                                          , designVars :: SXMatrix
                                          }
 
+devectorize :: [Double] -> MultipleShooting -> ([[Double]], [[Double]], [Double])
+devectorize sol ms = (xTraj, uTraj, params')
+  where
+    (xDims, uDims) = unzip $ map (\(Cost _ d) -> d) (costs (system ms))
+    (sol', xTraj) = mapAccumL f sol xDims
+    (params', uTraj) = mapAccumL f sol' uDims
+
+    f acc n = (xs, x)
+      where
+        (x,xs) = splitAt n acc
+
 idxOfMat :: SX -> SXMatrix -> Int
 idxOfMat val mat
   | isJust idx = fromJust idx
@@ -63,9 +77,18 @@ boundEq ms x val = Bound { dvIdx = idxOfMat x (designVars ms)
                          , var = x
                          }
 
-
 boundEqs :: MultipleShooting -> SXMatrix -> [Double] -> [Bound]
 boundEqs ms xs vals = zipWith (boundEq ms) (toList xs) vals
+
+boundInterval :: MultipleShooting -> SX -> (Double, Double) -> Bound
+boundInterval ms x (lb, ub) = Bound { dvIdx = idxOfMat x (designVars ms)
+                                    , lbound = lb
+                                    , ubound = ub
+                                    , var = x
+                                    }
+
+boundIntervals :: MultipleShooting -> SXMatrix -> [(Double,Double)] -> [Bound]
+boundIntervals ms xs bnds = zipWith (boundInterval ms) (toList xs) bnds
 
 
 multipleShooting :: System -> SXMatrix -> MultipleShooting

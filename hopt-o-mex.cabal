@@ -128,7 +128,7 @@ Executable cartpoleMs
   Hs-Source-Dirs:  .
   Other-Modules:   Casadi, Ipopt
   Build-depends:
-  Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
+  Ghc-options:     -threaded -pgml g++ -dno-debug-output -fPIC -O2
 
   Extra-lib-dirs:
         /home/greg/hopt-o-mex/hcasadi_cppsrc

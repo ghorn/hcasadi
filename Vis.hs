@@ -295,6 +295,7 @@ simThread stateMVar userSimFun ts = do
 
         nextState <- getNextState
         _ <- nextState `deepseq` (putState nextState)
+
         postRedisplay Nothing
 
       else do -- need to sleep longer
