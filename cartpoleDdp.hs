@@ -69,12 +69,12 @@ main = do let n = 70
 
           let (xTraj, uTraj, _) = head $ drop 50 $ ddp xTrajBadGuess uTrajBadGuess
 
-              simController cddp x (xTrajPrev, uTrajPrev) = do
+              simController x (xTrajPrev, uTrajPrev) = do
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
                     uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
-                    (xTraj', uTraj', _) = head $ cddp xTraj0 uTraj0
+                    (xTraj', uTraj', _) = head $ ddp xTraj0 uTraj0
                     u = head uTrajPrev
                 return (u, (xTraj', uTraj'))
 
-          cartpoleVis (simController ddp) drawFun (x0, (xTraj, uTraj)) dt
+          cartpoleVis simController drawFun (x0, (xTraj, uTraj)) dt
           print "hi"
