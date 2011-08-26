@@ -83,13 +83,15 @@ drawFun (x, xTraj, uTraj) = do
 
 
 simFun :: ([State Double] -> [Action Double] -> [([State Double], [Action Double], [BacksweepOutput Double])])
-           -> SimState Double -> SimState Double
-simFun cddp (x, xTraj0, uTraj0) = (dode x u, xTraj, uTraj)
-  where
+           -> SimState Double -> IO (SimState Double)
+simFun cddp (x, xTraj0, uTraj0) = do
+  let
     xTraj0' = x:(drop 2 xTraj0) ++ [last xTraj0]
     uTraj0' = (tail uTraj0) ++ [last uTraj0]
     (xTraj, uTraj, _) = head $ cddp xTraj0' uTraj0'
     u = head uTraj
+
+  return (dode x u, xTraj, uTraj)
 
 -- cost fcn
 cost :: Floating a => State a -> Action a -> a

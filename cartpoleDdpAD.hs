@@ -82,8 +82,8 @@ drawFun (x, xTraj, uTraj) = do
     renderPrimitive LineStrip $ mapM_ (\(a,b,c)->vertex$Vertex3 a b c) bobPath
 
 
-simFun :: SimState Double -> SimState Double
-simFun (x, xTraj0, uTraj0) = (dode x u, xTraj, uTraj)
+simFun :: SimState Double -> IO (SimState Double)
+simFun (x, xTraj0, uTraj0) = do return (dode x u, xTraj, uTraj)
   where
     xTraj0' = x:(drop 2 xTraj0) ++ [last xTraj0]
     uTraj0' = (tail uTraj0) ++ [last uTraj0]

@@ -247,7 +247,7 @@ motion camera (Position x y) = do
    postRedisplay Nothing
 
 
-vis :: (NFData a, Show a) => (a -> a) -> (a -> IO ()) -> a -> Double -> IO ()
+vis :: (NFData a, Show a) => (a -> IO a) -> (a -> IO ()) -> a -> Double -> IO ()
 vis userSimFun userDrawFun x0' ts = do
   -- init glut/scene
   (progName, _args) <- getArgsAndInitialize
@@ -270,7 +270,7 @@ vis userSimFun userDrawFun x0' ts = do
   mainLoop
 
 
-simThread :: NFData a => MVar a -> (a -> a) -> Double -> IO ()
+simThread :: NFData a => MVar a -> (a -> IO a) -> Double -> IO ()
 simThread stateMVar userSimFun ts = do
   t0 <- getCurrentTime
   lastTimeRef <- newIORef t0
@@ -288,7 +288,7 @@ simThread stateMVar userSimFun ts = do
 
         let getNextState = do
               state <- readMVar stateMVar
-              return $ userSimFun state
+              userSimFun state
 
         let putState state = do
               swapMVar stateMVar state

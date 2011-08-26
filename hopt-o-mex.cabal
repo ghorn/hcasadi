@@ -81,7 +81,6 @@ Executable cartpoleDdp
   Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
   Extra-libraries: casadi_interface, casadi
 
-
 Executable optTest
   Main-Is:         optTest.hs
   Hs-Source-Dirs:  .
