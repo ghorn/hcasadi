@@ -95,11 +95,18 @@ simFun cddp (x, xTraj0, uTraj0) = do
 
 -- cost fcn
 cost :: Floating a => State a -> Action a -> a
-cost state action = 10*x*x + x'*x' + 100*(theta-pi)*(theta-pi) + theta'*theta' + 0.01*u*u
---cost state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u
+cost state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u + barrier
   where
     [x, x', theta, theta'] = state
     [u] = action
+
+    -- barrier
+    uUb =  10.1
+    uLb = -10.1
+    mu = 1.0
+    uBarrierUb = -mu*log(  uUb - u )
+    uBarrierLb = -mu*log( -uLb + u )
+    barrier = uBarrierUb + uBarrierLb
 
 -- discrete ode
 dt :: Floating a => a
@@ -110,8 +117,8 @@ dode x u = rk4Step dxdt x u dt
 
 -- run ddp
 main :: IO ()
-main = do let n = 100
-              x0 = [2,0,3,0::Double]
+main = do let n = 70
+              x0 = [-10,0,0.01,0::Double]
               u0 = [0::Double]
 
               xTraj0 = replicate n x0
