@@ -6,6 +6,7 @@
 module Ipopt
        (
          ipoptSolverCreate
+       , ipoptSolverCreateExactHessian
        , ipoptSolve
        , IpoptSolverRaw(..)
        ) where
@@ -28,6 +29,7 @@ data IpoptSolver = IpoptSolver (ForeignPtr IpoptSolverRaw) Int Int
 
 -- foreign imports
 foreign import ccall unsafe "ipoptSolverCreate" c_ipoptSolverCreate :: Ptr SXMatrixRaw -> Ptr SXRaw -> Ptr SXMatrixRaw -> IO (Ptr IpoptSolverRaw)
+foreign import ccall unsafe "ipoptSolverCreateExactHessian" c_ipoptSolverCreateExactHessian :: Ptr SXMatrixRaw -> Ptr SXRaw -> Ptr SXMatrixRaw -> IO (Ptr IpoptSolverRaw)
 foreign import ccall unsafe "&ipoptSolverDelete" c_ipoptSolverDelete :: FunPtr (Ptr IpoptSolverRaw -> IO ())
 foreign import ccall unsafe "ipoptSolverSolve" c_ipoptSolverSolve :: Ptr IpoptSolverRaw -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> IO CDouble
 
@@ -35,6 +37,11 @@ foreign import ccall unsafe "ipoptSolverSolve" c_ipoptSolverSolve :: Ptr IpoptSo
 ipoptSolverCreate :: SXMatrix -> SX -> SXMatrix -> IO IpoptSolver
 ipoptSolverCreate (SXMatrix inputs) (SX objFun) (SXMatrix constraints) = mask_ $ do
   ss <- withForeignPtrs3 c_ipoptSolverCreate inputs objFun constraints >>= newForeignPtr c_ipoptSolverDelete
+  return $ IpoptSolver ss (rows (SXMatrix inputs)) (rows (SXMatrix constraints))
+
+ipoptSolverCreateExactHessian :: SXMatrix -> SX -> SXMatrix -> IO IpoptSolver
+ipoptSolverCreateExactHessian (SXMatrix inputs) (SX objFun) (SXMatrix constraints) = mask_ $ do
+  ss <- withForeignPtrs3 c_ipoptSolverCreateExactHessian inputs objFun constraints >>= newForeignPtr c_ipoptSolverDelete
   return $ IpoptSolver ss (rows (SXMatrix inputs)) (rows (SXMatrix constraints))
 
 ipoptSolve :: IpoptSolver -> [Double] -> ([Double],[Double]) -> ([Double],[Double]) -> IO ([Double], Double)

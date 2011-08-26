@@ -22,6 +22,32 @@ using namespace CasADi;
 /******************** memory management *******************/
 IpoptSolver * ipoptSolverCreate(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints){
 
+  vector<SXMatrix> inputs(1);
+  inputs[0] = designVariables;
+
+  // Create the NLP solver
+  SXFunction ffcn(designVariables, objFun); // objective function
+  SXFunction gfcn(designVariables, constraints); // constraint
+
+  gfcn.setOption("ad_mode","reverse");
+
+  IpoptSolver * solver = new IpoptSolver(ffcn,gfcn);
+  //IpoptSolver * solver = new IpoptSolver(ffcn,gfcn,FX(),Jacobian(gfcn));
+  //IpoptSolver * solver = new IpoptSolver( ffcn, gfcn, hfcn,  FX());
+
+  // Set options
+  solver->setOption("tol",1e-15);
+  //solver->setOption("hessian_approximation","limited-memory");
+  //solver->setOption("hessian_approximation","exact");
+
+  // initialize the solver
+  solver->init();
+
+  return solver;
+}
+
+IpoptSolver * ipoptSolverCreateExactHessian(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints){
+
   // hessian
   SXMatrix sigma = create_symbolic("sigma", 1);
   SXMatrix lambda = create_symbolic("lambda", constraints.size1());

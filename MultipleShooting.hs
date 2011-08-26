@@ -125,7 +125,7 @@ multipleShootingSolver :: MultipleShooting -> [Constraint] -> IO ([Bound] -> [Do
 multipleShootingSolver ms moreConstraints = do
   let allConstraints = concat [dodeConstraints ms, moreConstraints]
 
-  solver <- ipoptSolverCreate (designVars ms) (objFun ms) (concatMat $ map expression allConstraints)
+  solver <- ipoptSolverCreateExactHessian (designVars ms) (objFun ms) (concatMat $ map expression allConstraints)
   
   let solve :: [Bound] -> [Double] -> IO ([Double], Double)
       solve bounds xGuess = ipoptSolve solver xGuess (boxLbs, boxUbs) (nlLbs, nlUbs)

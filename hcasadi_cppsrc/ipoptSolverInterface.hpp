@@ -16,6 +16,7 @@ extern "C"{
 
   // memory management
   IpoptSolver * ipoptSolverCreate(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
+  IpoptSolver * ipoptSolverCreateExactHessian(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
   void ipoptSolverDelete(IpoptSolver * const solver);
 
   double ipoptSolverSolve(IpoptSolver & solver, double guess[], double lb[], double ub[], double gMin[], double gMax[], double sol[]);
