@@ -12,10 +12,16 @@ SRC = \
 	sxFunctionInterface.cpp \
 	ipoptSolverInterface.cpp
 
-OBJ = $(SRC:%.cpp=%.o) 
-INCLUDES = -I$(CASADI)
+ifdef SNOPT
+	SRC += \
+		snoptSolverInterface.cpp \
+		SnoptSolver.cpp
+endif
+
+OBJ = $(SRC:%.cpp=%.o)
+INCLUDES = -I$(CASADI) -I$(SNOPT) -I$(SNOPT)/include
 LDFLAGS =
-FLAGS = -O2 -fPIC #-Wall -Wextra -Wshadow #-Werror #-g
+FLAGS = -O2 #-Wall -Wextra -Wshadow #-Werror #-g
 
 .PHONY: clean
 
