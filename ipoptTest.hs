@@ -5,7 +5,8 @@
 
 module Main where
 
-import Ipopt
+import NLP.NLP
+import NLP.Ipopt
 import Casadi
 
 rosenbrock :: Floating a => [a] -> a
@@ -27,8 +28,8 @@ solveRosenbrock = do
       gLb = []
       gUb = []
 
-  solver <- ipoptSolverCreate x objFun constraints
-  sol <- ipoptSolve solver xGuess (xLb, xUb) (gLb, gUb)
+  solver <- createSolver IpoptExactHessian x objFun constraints
+  sol <- solveNlp solver xGuess (xLb, xUb) (gLb, gUb)
   return sol
   
   
@@ -47,8 +48,8 @@ solveQuadratic = do
       gLb = [-1e12]
       gUb = [0]
 
-  solver <- ipoptSolverCreate x objFun constraints
-  sol <- ipoptSolve solver xGuess (xLb, xUb) (gLb, gUb)
+  solver <- createSolver IpoptExactHessian x objFun constraints
+  sol <- solveNlp solver xGuess (xLb, xUb) (gLb, gUb)
   return sol
 
 

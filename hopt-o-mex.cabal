@@ -94,7 +94,7 @@ Executable optTest
 Executable ipoptTest
   Main-Is:         ipoptTest.hs
   Hs-Source-Dirs:  .
-  Other-Modules:   Casadi, Ipopt
+  Other-Modules:   Casadi, NLP.Ipopt
   Build-depends:
   Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
 
@@ -126,7 +126,7 @@ Executable ipoptTest
 Executable cartpoleMs
   Main-Is:         cartpoleMs.hs
   Hs-Source-Dirs:  .
-  Other-Modules:   Casadi, Ipopt
+  Other-Modules:   Casadi, NLP.Ipopt
   Build-depends:
   Ghc-options:     -threaded -pgml g++ -dno-debug-output -fPIC -O2
 

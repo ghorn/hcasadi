@@ -18,7 +18,8 @@ module MultipleShooting( Ode(..)
                        ) where
 
 import Casadi
-import Ipopt
+import NLP.Ipopt
+import NLP.NLP
 import Text.Printf
 import Data.List
 import Data.Maybe
@@ -125,10 +126,10 @@ multipleShootingSolver :: MultipleShooting -> [Constraint] -> IO ([Bound] -> [Do
 multipleShootingSolver ms moreConstraints = do
   let allConstraints = concat [dodeConstraints ms, moreConstraints]
 
-  solver <- ipoptSolverCreateExactHessian (designVars ms) (objFun ms) (concatMat $ map expression allConstraints)
+  solver <- createSolver IpoptExactHessian (designVars ms) (objFun ms) (concatMat $ map expression allConstraints)
   
   let solve :: [Bound] -> [Double] -> IO ([Double], Double)
-      solve bounds xGuess = ipoptSolve solver xGuess (boxLbs, boxUbs) (nlLbs, nlUbs)
+      solve bounds xGuess = solveNlp solver xGuess (boxLbs, boxUbs) (nlLbs, nlUbs)
         where
           nlLbs = concat $ map lcon allConstraints
           nlUbs = concat $ map ucon allConstraints
