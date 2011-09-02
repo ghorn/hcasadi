@@ -137,22 +137,15 @@ SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, co
 
   for(int r=0; r<rowind.size()-1; ++r)
     for(int el=rowind[r]; el<rowind[r+1]; ++el){
-      // SXMatrix jacobElem = gradF.outputSX().getElement(r, col[el]);
-      // simplify(jacobElem);
-      // cout << "next jacobian element: ";
-      // cout << jacobElem << endl;
-      // if (jacobElem.at(0).isConstant())
-      // 	 cout << "constant?: true\n";
-      // else
-      // 	 cout << "constant?: false\n";
-      // cout << endl;
-      if (0 && gradF.outputSX().getElement(r, col[el]).isConstant()){
-        A_.push_back( gradF.outputSX().getElement(r, col[el]).getValue() );
+      SXMatrix jacobElem = gradF.outputSX().getElement(r, col[el]);
+      jacobElem = evaluateConstants(jacobElem);
+      if (0 && jacobElem.at(0).isConstant()){
+	A_.push_back( jacobElem.at(0).getValue() );
         iAfun_.push_back( r + FIRST_FORTRAN_INDEX );
         jAvar_.push_back( col[el] + FIRST_FORTRAN_INDEX );
 
         // subtract out linear part
-        SXMatrix linearpart = gradF.outputSX().getElement(r, col[el])*designVariables[col[el]];
+        SXMatrix linearpart = jacobElem.at(0).getValue()*designVariables[col[el]];
         fnonlinear[r] -= linearpart.at(0);
         simplify(fnonlinear.at(r));
       } else {
