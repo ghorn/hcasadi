@@ -33,27 +33,19 @@ public:
   ~SnoptSolver(void);
   SnoptSolver(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
 
-  void setGuess(const double _xGuess[], int _n);
-  void setXBounds(const double _xlb[], int _nxlb, const double _xub[], int _nxub);
-  void setFBounds(const double _Flb[], int _nFlb, const double _Fub[], int _nFub);
-  double getSolution(double _xOpt[], int _n);
+  void setGuess(const double _xGuess[]);
+  void setXBounds(const double _xlb[], const double _xub[]);
+  void setFBounds(const double _Flb[], const double _Fub[]);
+  double getSolution(double _xOpt[]);
 
   void solve(void);
 
-
 private:
-  // objective/constraints
-  // SXMatrix ftotal;
-
   // function for nonlinear part of ftotal
   SXFunction Fnonlinear;
 
   // function for jacobian of Fnonlinear
   SXFunction Gfcn;
-
-  // design variables reference
-  //SXMatrix designVariables;
-
 
   static int userfcn( integer    *Status, integer *n,    doublereal x[],
 		      integer    *needF,  integer *neF,  doublereal F[],

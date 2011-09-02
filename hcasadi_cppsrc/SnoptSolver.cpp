@@ -37,107 +37,50 @@ SnoptSolver::~SnoptSolver()
 }
 
 void
-SnoptSolver::setGuess(const double _xGuess[], int _n){
-  // assert correct dimensions
-  if (_n != n){
-    cerr << "(cpp): Error in SnoptSolver::setGuess() - _n != n\n";
-    throw 1;
-  }
-
-  // make sure mempy is ok for copying doublereal to double
-  if (sizeof(double) == sizeof(doublereal)){
-    cout << "\n\n----------------------------------------------------\n";
-    cout << "(cpp), oh yeah, sizeof(double) == sizeof(doublereal)\n";
-    cout << "----------------------------------------------------\n\n";
-  } else {
-    cout << "\n\n----------------------------------------------------\n";
-    cout << "(cpp), sizeof(doublereal) != sizeof(double)\n";
-    cout << "----------------------------------------------------\n\n";
-    throw 1;
-  }
-
+SnoptSolver::setGuess(const double _xGuess[]){
   memcpy( x, _xGuess, n*sizeof(double) );
 }
 
 void
-SnoptSolver::setXBounds(const double _xlb[], int _nxlb, const double _xub[], int _nxub){
-  // assert correct dimensions
-  if ((_nxlb != n) || (_nxub != n)){
-    cerr << "(cpp): Dimension error in SnoptSolver::setXBounds()";
-    throw 1;
-  }
-
-  // make sure mempy is ok for copying doublereal to double
-  if (sizeof(double) == sizeof(doublereal)){
-    cout << "\n\n----------------------------------------------------\n";
-    cout << "(cpp), oh yeah, sizeof(double) == sizeof(doublereal)\n";
-    cout << "----------------------------------------------------\n\n";
-  } else {
-    cout << "\n\n----------------------------------------------------\n";
-    cout << "(cpp), sizeof(doublereal) != sizeof(double)\n";
-    cout << "----------------------------------------------------\n\n";
-    throw 1;
-  }
-
+SnoptSolver::setXBounds(const double _xlb[], const double _xub[]){
   memcpy( xlow, _xlb, n*sizeof(double) );
   memcpy( xupp, _xub, n*sizeof(double) );
 }
 
 void
-SnoptSolver::setFBounds(const double _Flb[], int _nFlb, const double _Fub[], int _nFub){
-  // assert correct dimensions
-  if ((_nFlb != neF) || (_nFub != neF)){
-    cerr << "(cpp): Dimension error in SnoptSolver::setFBounds()";
-    throw 1;
-  }
+SnoptSolver::setFBounds(const double _Flb[], const double _Fub[]){
+  // set bound on objective function
+  Flow[0] = -SNOPT_INFINITY;
+  Fupp[0] = SNOPT_INFINITY;
 
-  // make sure mempy is ok for copying doublereal to double
-  if (sizeof(double) == sizeof(doublereal)){
-    cout << "\n\n----------------------------------------------------\n";
-    cout << "(cpp), oh yeah, sizeof(double) == sizeof(doublereal)\n";
-    cout << "----------------------------------------------------\n\n";
-  } else {
-    cout << "\n\n----------------------------------------------------\n";
-    cout << "(cpp), sizeof(doublereal) != sizeof(double)\n";
-    cout << "----------------------------------------------------\n\n";
-    throw 1;
+  // set bound on nonlinear constraints
+  if (neF > 1){
+    memcpy( &(Flow[1]), _Flb, (neF-1)*sizeof(double) );
+    memcpy( &(Fupp[1]), _Fub, (neF-1)*sizeof(double) );
   }
-
-  memcpy( Flow, _Flb, n*sizeof(double) );
-  memcpy( Fupp, _Fub, n*sizeof(double) );
+  // for (int k=0; k<neF; k++)
+  //      cout << "Flow[" << k << "]: " << Flow[k] << ", Fupp[" << k << "]: " << Fupp[k] << endl;
 }
 
 double
-SnoptSolver::getSolution(double _xOpt[], int _n){
-  // assert correct dimensions
-  if (_n != n){
-    cerr << "(cpp): Error in SnoptSolver::getSolutionGuess() - _n != n\n";
-    throw 1;
-  }
-
-  // make sure mempy is ok for copying doublereal to double
-  if (sizeof(double) == sizeof(doublereal)){
-    cout << "\n\n----------------------------------------------------\n";
-    cout << "(cpp), oh yeah, sizeof(double) == sizeof(doublereal)\n";
-    cout << "----------------------------------------------------\n\n";
-  } else {
-    cout << "\n\n----------------------------------------------------\n";
-    cout << "(cpp), sizeof(doublereal) != sizeof(double)\n";
-    cout << "----------------------------------------------------\n\n";
-    throw 1;
-  }
-
+SnoptSolver::getSolution(double _xOpt[]){
   memcpy( _xOpt, x, n*sizeof(double) );
-
   return F[0];
 }
 
 
 SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints)
 {
+  // make sure mempy is ok for copying doublereal to double
+  if (sizeof(double) != sizeof(doublereal)){
+    cout << "\n\n----------------------------------------------------\n";
+    cout << "(cpp), sizeof(doublereal) != sizeof(double)\n";
+    cout << "----------------------------------------------------\n\n";
+    throw 1;
+  }
+
   si = this;
   SXMatrix ftotal = vertcat( SXMatrix(objFun), constraints );
-
 
   SXFunction Ftotal(designVariables, ftotal);
   Ftotal.init();
@@ -193,22 +136,32 @@ SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, co
   vector<integer> jGvar_;
 
   for(int r=0; r<rowind.size()-1; ++r)
-    for(int el=rowind[r]; el<rowind[r+1]; ++el)
-      if (gradF.outputSX().getElement(r, col[el]).isConstant()){
-	A_.push_back( gradF.outputSX().getElement(r, col[el]).getValue() );
-	iAfun_.push_back( r + FIRST_FORTRAN_INDEX );
-	jAvar_.push_back( col[el] + FIRST_FORTRAN_INDEX );
+    for(int el=rowind[r]; el<rowind[r+1]; ++el){
+      // SXMatrix jacobElem = gradF.outputSX().getElement(r, col[el]);
+      // simplify(jacobElem);
+      // cout << "next jacobian element: ";
+      // cout << jacobElem << endl;
+      // if (jacobElem.at(0).isConstant())
+      // 	 cout << "constant?: true\n";
+      // else
+      // 	 cout << "constant?: false\n";
+      // cout << endl;
+      if (0 && gradF.outputSX().getElement(r, col[el]).isConstant()){
+        A_.push_back( gradF.outputSX().getElement(r, col[el]).getValue() );
+        iAfun_.push_back( r + FIRST_FORTRAN_INDEX );
+        jAvar_.push_back( col[el] + FIRST_FORTRAN_INDEX );
 
-	// subtract out linear part
-	SXMatrix linearpart = gradF.outputSX().getElement(r, col[el])*designVariables[col[el]];
-	fnonlinear[r] -= linearpart.at(0);
-	simplify(fnonlinear.at(r));
+        // subtract out linear part
+        SXMatrix linearpart = gradF.outputSX().getElement(r, col[el])*designVariables[col[el]];
+        fnonlinear[r] -= linearpart.at(0);
+        simplify(fnonlinear.at(r));
       } else {
-	G_.push_back( gradF.outputSX().getElement(r, col[el]) );
-	iGfun_.push_back( r + FIRST_FORTRAN_INDEX );
-	jGvar_.push_back( col[el] + FIRST_FORTRAN_INDEX );
+        G_.push_back( gradF.outputSX().getElement(r, col[el]) );
+        iGfun_.push_back( r + FIRST_FORTRAN_INDEX );
+        jGvar_.push_back( col[el] + FIRST_FORTRAN_INDEX );
       }
-        
+    }
+
   // nonlinear function
   Fnonlinear = SXFunction( designVariables, fnonlinear );
   Fnonlinear.init();
@@ -222,9 +175,11 @@ SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, co
   iAfun = new integer[lenA];
   jAvar = new integer[lenA];
 
-  copy( A_.begin(), A_.end(), A);
-  copy( iAfun_.begin(), iAfun_.end(), iAfun);
-  copy( jAvar_.begin(), jAvar_.end(), jAvar);
+  if (neA > 0){
+    copy( A_.begin(), A_.end(), A);
+    copy( iAfun_.begin(), iAfun_.end(), iAfun);
+    copy( jAvar_.begin(), jAvar_.end(), jAvar);
+  }
         
   // nonlinear part
   neG = G_.size();
@@ -234,19 +189,33 @@ SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, co
   iGfun = new integer[lenG];
   jGvar = new integer[lenG];
 
-  copy( iGfun_.begin(), iGfun_.end(), iGfun);
-  copy( jGvar_.begin(), jGvar_.end(), jGvar);
+  if (neG > 0){
+    copy( iGfun_.begin(), iGfun_.end(), iGfun);
+    copy( jGvar_.begin(), jGvar_.end(), jGvar);
+  }
 
-  Gfcn = SXFunction( Ftotal.inputSX(), G_ );
+  Gfcn = SXFunction( designVariables, G_ );
   Gfcn.init();
+
+  // for (int k=0; k<neA; k++){
+  //   cout << "A[" << iAfun[k] << "," << jAvar[k] << "]: " << A[k] << endl;
+  // }
+  // cout << "\n";
+
+  // for (int k=0; k<neG; k++){
+  //      cout << "G[" << iGfun[k] << "," << jGvar[k] << "]: " << Gfcn.outputSX().at(k) << endl;
+  // }
+  // cout << "\n";
+
+  // cout << "Fnonlinear.outputSX():\n" << Fnonlinear.outputSX() << endl;
 }
 
 
 void
 SnoptSolver::solve()
 {
-  // #define LENRW 20000
-  // #define LENIW 10000
+//  #define LENRW 20000
+//  #define LENIW 10000
 #define LENCW 500
 
 #define LENRW 600000
@@ -354,7 +323,7 @@ SnoptSolver::solve()
     ( strOpt, &Niter, &iPrint, &iSumm, &INFO,
       cw, &lencw, iw, &leniw, rw, &lenrw, strOpt_len, 8*500 );
 
-  doublereal major_opt_tol = 1e-9;
+  doublereal major_opt_tol = 1e-2;
   strcpy(strOpt,"Major optimality tolerance");
   strOpt_len = strlen(strOpt);
   snsetr_
@@ -416,12 +385,19 @@ int SnoptSolver::userfcn
     si->Fnonlinear.setInput(x);
     si->Fnonlinear.evaluate();
     si->Fnonlinear.getOutput(F);
+
+    // cout << endl;
+    // for (int k=0; k<*neF; k++)
+    // 	 cout << "F[" << k << "]: " << F[k] << endl;
   }
 
   if( *needG > 0 ){
     si->Gfcn.setInput(x);
     si->Gfcn.evaluate();
     si->Gfcn.getOutput(G);
+    // cout << endl;
+    // for (int k=0; k<*neG; k++)
+    // 	 cout << "G[" << k << "]: " << G[k] << endl;
   }
 
   return 0;

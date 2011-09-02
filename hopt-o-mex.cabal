@@ -40,7 +40,7 @@ Library
 
   Extra-libraries: casadi_interface, casadi
 
-  Ghc-options: -pgml g++ -fPIC -O2 -dno-debug-output
+  Ghc-options: -pgml g++ -O2 -dno-debug-output
   --HS_PROFILE_FLAGS = -prof -auto-all -caf-all -fforce-recomp -rtsopts
 
 
@@ -49,7 +49,7 @@ Executable speedTest
   Hs-Source-Dirs:  .
   Other-Modules:   Hom, Ddp, Casadi, DdpCasadi
   Build-depends:   ad, hmatrix
-  Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
+  Ghc-options:     -pgml g++ -dno-debug-output -O2
 
   Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
   Extra-libraries: casadi_interface, casadi
@@ -76,7 +76,8 @@ Executable cartpoleDdp
   Hs-Source-Dirs:  .
   Other-Modules:   Hom, Ddp, Casadi
   Build-depends:   hmatrix, time, GLUT, containers, deepseq, unix
-  Ghc-options: -threaded -O2 -dno-debug-output
+  Ghc-options:     -threaded -O2 -pgml g++ -dno-debug-output
+--  Ghc-options:     -threaded -O2 -pgml g++ -dno-debug-output -auto-all -caf-all -fforce-recomp -rtsopts
 
   Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
   Extra-libraries: casadi_interface, casadi
@@ -86,7 +87,7 @@ Executable optTest
   Hs-Source-Dirs:  .
   Other-Modules:   Casadi, Optimization
   Build-depends:   hmatrix, gnuplot
-  Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
+  Ghc-options:     -pgml g++ -dno-debug-output -O2
 
   Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
   Extra-libraries: casadi_interface, casadi
@@ -94,15 +95,16 @@ Executable optTest
 Executable ipoptTest
   Main-Is:         ipoptTest.hs
   Hs-Source-Dirs:  .
-  Other-Modules:   Casadi, NLP.Ipopt
+  Other-Modules:
   Build-depends:
-  Ghc-options:     -pgml g++ -dno-debug-output -fPIC -O2
+  Ghc-options:     -pgml g++ -dno-debug-output -O2
 
   Extra-lib-dirs:
         /home/greg/hopt-o-mex/hcasadi_cppsrc
         /home/greg/casadi/build/lib
         /usr/local/lib/coin
         /usr/local/lib/coin/ThirdParty
+        /home/greg/snopt7/lib
 
   Extra-libraries:
         casadi_interface
@@ -111,10 +113,8 @@ Executable ipoptTest
         coinmetis
         ipopt
         ipopt_interface
-        cppocp
         csparse_interface
         optimal_control
-        snopt_interface
         superlu_interface
         casadi
         csparse
@@ -122,19 +122,30 @@ Executable ipoptTest
         lapack_interface
         superlu
         tinyxml
+        snopt
+        snopt_c
+        snopt_cpp
+        snprint
+        snprint_c
+        snoptblas
+        snoptblas_c
+        HSrtsmain
+        f2c
 
 Executable cartpoleMs
   Main-Is:         cartpoleMs.hs
   Hs-Source-Dirs:  .
-  Other-Modules:   Casadi, NLP.Ipopt
+  Other-Modules:   Casadi
   Build-depends:
-  Ghc-options:     -threaded -pgml g++ -dno-debug-output -fPIC -O2
+  Ghc-options:     -threaded -pgml g++ -dno-debug-output -O2
+--  Ghc-options:     -O2 -threaded -pgml g++ -dno-debug-output -auto-all -caf-all -fforce-recomp -rtsopts
 
   Extra-lib-dirs:
         /home/greg/hopt-o-mex/hcasadi_cppsrc
         /home/greg/casadi/build/lib
         /usr/local/lib/coin
         /usr/local/lib/coin/ThirdParty
+        /home/greg/snopt7/lib
 
   Extra-libraries:
         casadi_interface
@@ -143,10 +154,8 @@ Executable cartpoleMs
         coinmetis
         ipopt
         ipopt_interface
-        cppocp
         csparse_interface
         optimal_control
-        snopt_interface
         superlu_interface
         casadi
         csparse
@@ -154,3 +163,12 @@ Executable cartpoleMs
         lapack_interface
         superlu
         tinyxml
+        snopt
+        snopt_c
+        snopt_cpp
+        snprint
+        snprint_c
+        snoptblas
+        snoptblas_c
+        HSrtsmain
+        f2c

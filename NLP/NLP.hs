@@ -56,5 +56,5 @@ solveNlp nlp x0' (xLb', xUb') (gLb',gUb') =
     sol <- mallocArray (length x0')
     optVal <- withForeignPtr (nlpPtr nlp) (\s -> c_solve s x0 xLb xUb gLb gUb sol)
     sol' <- peekArray (length x0') sol
-  
+
     return (map realToFrac sol', realToFrac optVal)

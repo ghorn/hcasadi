@@ -6,7 +6,8 @@
 module Main where
 
 import NLP.NLP
-import NLP.Ipopt
+--import NLP.Ipopt
+import NLP.Snopt
 import Casadi
 
 rosenbrock :: Floating a => [a] -> a
@@ -28,7 +29,8 @@ solveRosenbrock = do
       gLb = []
       gUb = []
 
-  solver <- createSolver IpoptExactHessian x objFun constraints
+--  solver <- createSolver IpoptExactHessian x objFun constraints
+  solver <- createSolver Snopt x objFun constraints
   sol <- solveNlp solver xGuess (xLb, xUb) (gLb, gUb)
   return sol
   
@@ -39,6 +41,7 @@ solveQuadratic = do
   let x = sxMatrixSymbolic "x" (2,1)
       [x0,x1] = toList x
       constraints = fromList [1 - x0 - x1]
+--      constraints = fromList [ -x0 - x1]
       objFun = x0*x0 + x1*x1
   
       xGuess = [0.0, 0.0]
@@ -47,17 +50,19 @@ solveQuadratic = do
       
       gLb = [-1e12]
       gUb = [0]
+--      gUb = [-1]
 
-  solver <- createSolver IpoptExactHessian x objFun constraints
+--  solver <- createSolver IpoptExactHessian x objFun constraints
+  solver <- createSolver Snopt x objFun constraints
   sol <- solveNlp solver xGuess (xLb, xUb) (gLb, gUb)
   return sol
 
 
 main :: IO ()
 main = do
-  (rSol,rVal) <- solveRosenbrock
+--  (rSol,rVal) <- solveRosenbrock
   (qSol,qVal) <- solveQuadratic
   
   putStrLn "\n"
-  putStrLn $ "rosenbrock sol: " ++ (show rSol) ++ ", optimal value: " ++ (show rVal)
-  putStrLn $ "quadratic  sol: " ++ (show qSol) ++ ", optimal value: " ++ (show qVal)
+--  putStrLn $ "rosenbrock sol: " ++ (show rSol) ++ ", optimal value: " ++ (show rVal)
+  putStrLn $ "quadratic sol: " ++ (show qSol) ++ ", optimal value: " ++ (show qVal)
