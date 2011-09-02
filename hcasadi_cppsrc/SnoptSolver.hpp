@@ -47,6 +47,9 @@ private:
   // function for jacobian of Fnonlinear
   SXFunction Gfcn;
 
+  // workaround for constants added to nonlinear constraints
+  doublereal * Foffset;
+
   static int userfcn( integer    *Status, integer *n,    doublereal x[],
 		      integer    *needF,  integer *neF,  doublereal F[],
 		      integer    *needG,  integer *neG,  doublereal G[],

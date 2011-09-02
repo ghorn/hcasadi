@@ -41,16 +41,14 @@ solveQuadratic = do
   let x = sxMatrixSymbolic "x" (2,1)
       [x0,x1] = toList x
       constraints = fromList [1 - x0 - x1]
---      constraints = fromList [ -x0 - x1]
       objFun = x0*x0 + x1*x1
   
       xGuess = [0.0, 0.0]
       xLb = [-10,-10]
       xUb = [10,10]
       
-      gLb = [-1e12]
+      gLb = [-1e25]
       gUb = [0]
---      gUb = [-1]
 
 --  solver <- createSolver IpoptExactHessian x objFun constraints
   solver <- createSolver Snopt x objFun constraints

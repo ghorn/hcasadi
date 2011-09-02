@@ -34,6 +34,7 @@ SnoptSolver::~SnoptSolver()
   delete []Fupp;
   delete []Fmul;
   delete []Fstate;
+  delete []Foffset;
 }
 
 void
@@ -58,14 +59,22 @@ SnoptSolver::setFBounds(const double _Flb[], const double _Fub[]){
     memcpy( &(Flow[1]), _Flb, (neF-1)*sizeof(double) );
     memcpy( &(Fupp[1]), _Fub, (neF-1)*sizeof(double) );
   }
+
+  // correct for constant offset in F
+  for (int k=0; k<neF; k++){
+    Flow[k] -= Foffset[k];
+    Fupp[k] -= Foffset[k];
+  }
+
+  // cout << endl;
   // for (int k=0; k<neF; k++)
-  //      cout << "Flow[" << k << "]: " << Flow[k] << ", Fupp[" << k << "]: " << Fupp[k] << endl;
+  //   cout << "Flow[" << k << "]: " << Flow[k] << ", Fupp[" << k << "]: " << Fupp[k] << endl;
 }
 
 double
 SnoptSolver::getSolution(double _xOpt[]){
   memcpy( _xOpt, x, n*sizeof(double) );
-  return F[0];
+  return F[objRow - FIRST_FORTRAN_INDEX] + objAdd;
 }
 
 
@@ -102,19 +111,20 @@ SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, co
 
   /*********** objective/constraint functions ***********/
   neF = Ftotal.output().size();
-  objAdd = 0.0;
   objRow = FIRST_FORTRAN_INDEX;
   F = new doublereal[neF];
   Flow = new doublereal[neF];
   Fupp = new doublereal[neF];
   Fmul = new doublereal[neF];
   Fstate = new integer[neF];
+  Foffset = new doublereal[neF];
   for (int k=0; k<neF; k++){
     F[k] = 0;
     Flow[k] = -SNOPT_INFINITY;
     Fupp[k] = 0;
     Fmul[k] = 0;
     Fstate[k] = 0;
+    Foffset[k] = 0;
   }
   Fupp[ objRow - FIRST_FORTRAN_INDEX ] = SNOPT_INFINITY;
 
@@ -139,7 +149,7 @@ SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, co
     for(int el=rowind[r]; el<rowind[r+1]; ++el){
       SXMatrix jacobElem = gradF.outputSX().getElement(r, col[el]);
       jacobElem = evaluateConstants(jacobElem);
-      if (0 && jacobElem.at(0).isConstant()){
+      if (jacobElem.at(0).isConstant()){
 	A_.push_back( jacobElem.at(0).getValue() );
         iAfun_.push_back( r + FIRST_FORTRAN_INDEX );
         jAvar_.push_back( col[el] + FIRST_FORTRAN_INDEX );
@@ -154,6 +164,17 @@ SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, co
         jGvar_.push_back( col[el] + FIRST_FORTRAN_INDEX );
       }
     }
+
+  // remove constants from fnonlinear
+  fnonlinear = evaluateConstants(fnonlinear);
+  for (int k=0; k<neF; k++){
+    if (fnonlinear.at(k).isConstant()){
+      Foffset[k] = fnonlinear.at(k).getValue();
+      fnonlinear[k] -= fnonlinear.at(k);
+      simplify(fnonlinear.at(k));
+    }
+  }
+  objAdd = Foffset[objRow - FIRST_FORTRAN_INDEX];
 
   // nonlinear function
   Fnonlinear = SXFunction( designVariables, fnonlinear );
@@ -200,7 +221,9 @@ SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, co
   // }
   // cout << "\n";
 
-  // cout << "Fnonlinear.outputSX():\n" << Fnonlinear.outputSX() << endl;
+  // cout << "Fnonlinear:\n";
+  // for (int k=0; k<neF; k++)
+  //      cout << "F[" << k << "]: " << Fnonlinear.outputSX().at(k) << endl;
 }
 
 
@@ -308,8 +331,8 @@ SnoptSolver::solve()
     ( strOpt, &Minor, &iPrint, &iSumm, &INFO,
       cw, &lencw, iw, &leniw, rw, &lenrw, strOpt_len, 8*500 );
 
-  integer Niter = 100000;
-  //integer Niter = 10000;
+  //integer Niter = 100000;
+  integer Niter = 10000;
   strcpy( strOpt,"Iterations limit");
   strOpt_len = strlen(strOpt);
   snseti_
@@ -362,7 +385,7 @@ SnoptSolver::solve()
   //   ftnlen cu_len, ftnlen cw_len );
 
   snclose_( &iPrint );
-  snclose_( &iSpecs );
+//  snclose_( &iSpecs );
 }
 
 
@@ -388,6 +411,7 @@ int SnoptSolver::userfcn
     si->Gfcn.setInput(x);
     si->Gfcn.evaluate();
     si->Gfcn.getOutput(G);
+
     // cout << endl;
     // for (int k=0; k<*neG; k++)
     // 	 cout << "G[" << k << "]: " << G[k] << endl;
