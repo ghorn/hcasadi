@@ -6,6 +6,8 @@ import Vis
 import MultipleShooting
 import Casadi
 import Odes.Cartpole
+import Xyz
+import Quat
 
 import qualified Data.Map as DM
 import Data.Maybe (fromJust)

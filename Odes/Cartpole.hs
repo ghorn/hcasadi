@@ -12,6 +12,8 @@ module Odes.Cartpole( cartpoleDxdt
                     ) where
 
 import Vis
+import Xyz
+import Quat
 import Integrators(rk4Step)
 
 import Graphics.UI.GLUT

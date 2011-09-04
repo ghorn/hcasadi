@@ -6,6 +6,8 @@
 module Main where
 
 import Hom
+import Xyz
+import Quat
 import Integrators(rk4Step)
 import Vis
 import Odes.Cartpole

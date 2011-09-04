@@ -6,12 +6,12 @@ module Vis
        (
          vis
        , VisObject(..)
-       , Quat(..)
-       , Xyz(..)
        , Rgb(..)
        , drawObjects
        ) where
 
+import Xyz
+import Quat
 import Data.IORef ( IORef, newIORef )
 import System.Exit ( exitWith, ExitCode(ExitSuccess) )
 import Graphics.UI.GLUT
@@ -21,8 +21,6 @@ import Control.Concurrent
 import Control.Monad
 import Control.DeepSeq
 
-data Quat a = Quat a a a a
-data Xyz a = Xyz a a a
 data Rgb a = Rgb a a a
 data VisObject a b = VisCylinder (a,a) (Xyz a) (Quat a) (Rgb b)
                    | VisBox (a,a,a) (Xyz a) (Quat a) (Rgb b)
