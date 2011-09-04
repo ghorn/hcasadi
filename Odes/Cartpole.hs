@@ -3,21 +3,27 @@
 {-# OPTIONS_GHC -Wall #-}
 
 module Odes.Cartpole( cartpoleDxdt
-                    , cartpoleOutputs
+                    , cartpoleBob
+                    , cartpoleCylinder
+                    , cartpoleCart
+                    , cartpoleTrack
                     , cartpoleVis
-                    , makeShapes
                     ) where
 
 import Vis
 import Hom(rk4Step)
 
-import qualified Data.Map as DM
-import Data.Maybe (fromJust)
 import Graphics.UI.GLUT
 import Control.DeepSeq
 
 cartpoleLength :: Floating a => a
 cartpoleLength = 2.2
+
+poleVisRadius :: Floating a => a
+poleVisRadius = 0.03*cartpoleLength
+
+cartVisRadius :: Floating a => a
+cartVisRadius = 0.05*cartpoleLength
 
 cartpoleDxdt :: Floating a => [a] -> [a] -> [a]
 cartpoleDxdt state action = state'
@@ -36,35 +42,47 @@ cartpoleDxdt state action = state'
 
     state' = [x', x'', theta', theta'']
 
-cartpoleOutputs :: Floating a => [a] -> [a] -> DM.Map String a
-cartpoleOutputs state _ = DM.fromList [("cart_x", x),
-                                       ("cart_y", 0),
-                                       ("rod_x", rod_x),
-                                       ("rod_y", rod_y),
-                                       ("bob_x", bob_x),
-                                       ("bob_y", bob_y),
-                                       ("len", len)]
-  where
-    [x,_,theta,_] = state
-    len = cartpoleLength
-    bob_x = x + len*sin(theta)
-    bob_y = len*cos(theta)
-    rod_x = x + 0.5*len*sin(theta)
-    rod_y = 0.5*len*cos(theta)
+cartpoleBob :: (Real a, Floating a, Fractional b) => [a] -> Xyz b
+cartpoleBob [x,_,theta,_] = Xyz x' 0 z'
+  where x' = realToFrac $ x + cartpoleLength*sin(theta)
+        z' = realToFrac $ cartpoleLength*cos(theta)
+cartpoleBob _ = error "Wrong list length in cartpoleBob"
 
-makeShapes :: [Double] -> [Double] -> [VisShape GLdouble]
-makeShapes x u = shapes
+
+cartpoleRod :: (Real a, Floating a, Fractional b) => [a] -> Xyz b
+cartpoleRod [x,_,theta,_] = Xyz x' 0 z'
+  where x' = realToFrac $ x + 0.5*cartpoleLength*sin(theta)
+        z' = realToFrac $ 0.5*cartpoleLength*cos(theta)
+cartpoleRod _ = error "Wrong list length in cartpoleBob"
+
+
+cartpoleCylinder :: [Double] -> VisObject GLdouble GLfloat
+cartpoleCylinder x = cylinder
   where
-    outputs = cartpoleOutputs x u
     [_,_,theta,_] = map realToFrac x
-    
-    getOutput key = realToFrac $ fromJust $ DM.lookup key outputs
-    rod_x = getOutput "rod_x"
-    rod_y = getOutput "rod_y"
-    len = getOutput "len"
-    
-    shapes = [((Cylinder' 0.1 len 10 10), (rod_x, 0, rod_y), (cos(0.5*theta),0,sin(0.5*theta),0), (0,1,1))]
 
+    quat = Quat (cos(0.5*theta)) 0.0 (sin(0.5*theta)) 0.0
+    cylinder = VisCylinder (cartpoleLength, poleVisRadius) (cartpoleRod x) quat (Rgb 0 1 1)
+
+cartpoleCart :: [Double] -> VisObject GLdouble GLfloat
+cartpoleCart state = VisBox (d,d,d) (Xyz x y z) (Quat 1 0 0 0) (Rgb 0 0 0.5)
+  where
+    d = 2*cartVisRadius
+    
+    x = realToFrac $ head state
+    y = -poleVisRadius - cartVisRadius
+    z = 0
+
+cartpoleTrack :: VisObject GLdouble GLfloat
+cartpoleTrack = VisBox (dx,dy,dz) (Xyz x y z) (Quat 1 0 0 0) (Rgb 0.6 0 0)
+  where
+    dx = 10.0*cartpoleLength
+    dy = 2*cartVisRadius
+    dz = cartVisRadius
+    
+    x = 0
+    y = -poleVisRadius - cartVisRadius
+    z = cartVisRadius + (0.5*dz)
 
 simFun :: ([Double] -> [Double] -> [Double])
           -> ([Double] -> a -> IO ([Double], a))

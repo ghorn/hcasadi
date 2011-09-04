@@ -6,13 +6,9 @@
 module Main where
 
 import Hom
-import Vis(drawShapes)
+import Vis
 import Odes.Cartpole
 import DdpCasadi(prepareDdp)
-
-import qualified Data.Map as DM
-import Data.Maybe (fromJust)
-import Graphics.UI.GLUT
 
 type ControllerState a = ([State a], [Action a])
 
@@ -31,22 +27,11 @@ cost state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u 
     uBarrierLb = -mu*log( -uLb + u )
     barrier = uBarrierUb + uBarrierLb
 
-drawFun :: (State Double, ControllerState Double) -> IO ()
-drawFun (x, (xTraj, uTraj)) = do
-  drawShapes (makeShapes x [0])
-  let getOutput (x',u') key = realToFrac $ fromJust $ DM.lookup key (cartpoleOutputs x' u')
-      getOutputs key = map (\x' -> getOutput x' key) $ tail $ zip xTraj uTraj
-    
-      bob_x = getOutputs "bob_x"
-      bob_y = getOutputs "bob_y"
-
-      bobPath :: [(GLfloat, GLfloat, GLfloat)]
-      bobPath = zipWith (\a b -> (a,0,b)) bob_x bob_y
-  
-  preservingMatrix $ do
-    materialDiffuse Front $= Color4 1 0.1 0.1 1
-    color (Color3 1 0.1 0.1 :: Color3 GLfloat)
-    renderPrimitive LineStrip $ mapM_ (\(a,b,c)->vertex$Vertex3 a b c) bobPath
+drawFun :: ([Double], ControllerState Double) -> IO ()
+drawFun (x, (xTraj, _)) = do
+  let bobPath = VisLine (map cartpoleBob xTraj) (Rgb 1.0 0.1 0.1)
+      axes = VisAxes (0.5, 5) (Xyz 0 0 0.5) (Quat 1 0 0 0)
+  drawObjects $ [bobPath, cartpoleCart x, cartpoleCylinder x, cartpoleTrack, axes]
 
 
 -- discrete ode

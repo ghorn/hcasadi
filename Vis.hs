@@ -2,7 +2,15 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
-module Vis(vis, VisShape, drawShapes) where
+module Vis
+       (
+         vis
+       , VisObject(..)
+       , Quat(..)
+       , Xyz(..)
+       , Rgb(..)
+       , drawObjects
+       ) where
 
 import Data.IORef ( IORef, newIORef )
 import System.Exit ( exitWith, ExitCode(ExitSuccess) )
@@ -13,14 +21,21 @@ import Control.Concurrent
 import Control.Monad
 import Control.DeepSeq
 
-type VisShape a = (Object, (a,a,a), (a,a,a,a), (GLfloat,GLfloat,GLfloat))
+data Quat a = Quat a a a a
+data Xyz a = Xyz a a a
+data Rgb a = Rgb a a a
+data VisObject a b = VisCylinder (a,a) (Xyz a) (Quat a) (Rgb b)
+                   | VisBox (a,a,a) (Xyz a) (Quat a) (Rgb b)
+                   | VisLine [Xyz a] (Rgb b)
+                   | VisArrow (a,a) (Xyz a) (Xyz a) (Rgb b)
+                   | VisAxes (a,a) (Xyz a) (Quat a)
 
 data Camera = Camera { phi :: IORef GLdouble,
                        theta :: IORef GLdouble,
                        rho :: IORef GLdouble,
-                       x0 :: IORef GLdouble,
-                       y0 :: IORef GLdouble,
-                       z0 :: IORef GLdouble,
+                       x0c :: IORef GLdouble,
+                       y0c :: IORef GLdouble,
+                       z0c :: IORef GLdouble,
                        ballX :: IORef GLint,
                        ballY :: IORef GLint, 
                        leftButton :: IORef GLint,
@@ -32,9 +47,9 @@ makeCamera = do
   phi'   <- newIORef 30
   theta' <- newIORef (20)
   rho'   <- newIORef 5
-  x0'    <- newIORef 0
-  y0'    <- newIORef 0
-  z0'    <- newIORef 0
+  x0    <- newIORef 0
+  y0    <- newIORef 0
+  z0    <- newIORef 0
   ballX'  <- newIORef (-1)
   ballY'  <- newIORef (-1)
   leftButton' <- newIORef 0
@@ -42,9 +57,9 @@ makeCamera = do
   return $ Camera { phi = phi',
                     theta = theta',
                     rho = rho',
-                    x0 = x0',
-                    y0 = y0',
-                    z0 = z0',
+                    x0c = x0,
+                    y0c = y0,
+                    z0c = z0,
                     ballX = ballX',
                     ballY = ballY',
                     leftButton = leftButton',
@@ -70,17 +85,58 @@ myGlInit progName = do
   materialShininess Front $= 25
   colorMaterial $= Just (Front, Diffuse)
 
-drawAxes :: GLdouble -> GLdouble -> IO ()
-drawAxes size aspectRatio = do
-  let numSlices = 8
-      numStacks = 15
-      cylinderRadius = 0.5*size/aspectRatio
-      cylinderHeight = size
-      coneRadius = 2*cylinderRadius
-      coneHeight = 2*coneRadius
-      
-      drawAxis r g b = do
-        -- color
+
+drawObjects :: [VisObject GLdouble GLfloat] -> IO ()
+drawObjects objects = do
+  mapM_ drawObject objects
+  where
+    drawObject :: VisObject GLdouble GLfloat -> IO ()
+    -- cylinder
+    drawObject (VisCylinder (height,radius) (Xyz x y z) (Quat q0 q1 q2 q3) (Rgb r g b)) = do
+      preservingMatrix $ do
+        materialDiffuse Front $= Color4 r g b 1
+        color (Color3 r g b :: Color3 GLfloat)
+        translate (Vector3 x y z :: Vector3 GLdouble)
+        rotate (2*acos(q0)*180/pi :: GLdouble) (Vector3 q1 q2 q3)
+        translate (Vector3 0 0 (-height/2) :: Vector3 GLdouble)
+        renderObject Solid (Cylinder' radius height 10 10)
+
+    -- box
+    drawObject (VisBox (dx,dy,dz) (Xyz x y z) (Quat q0 q1 q2 q3) (Rgb r g b)) = do
+      preservingMatrix $ do
+        materialDiffuse Front $= Color4 r g b 0.1
+        color (Color3 r g b :: Color3 GLfloat)
+        translate (Vector3 x y z :: Vector3 GLdouble)
+        rotate (2*acos(q0)*180/pi :: GLdouble) (Vector3 q1 q2 q3)
+        normalize $= Enabled
+        scale dx dy dz
+        renderObject Solid (Cube 1)
+        normalize $= Disabled
+
+    -- line
+    drawObject (VisLine path (Rgb r g b)) = do
+      preservingMatrix $ do
+        lighting $= Disabled
+        color (Color3 r g b :: Color3 GLfloat)
+        renderPrimitive LineStrip $ mapM_ (\(Xyz x' y' z') -> vertex$Vertex3 x' y' z') path
+        lighting $= Enabled
+
+    -- arrow
+    drawObject (VisArrow (size, aspectRatio) (Xyz x0 y0 z0) (Xyz x y z) (Rgb r g b)) = do
+      preservingMatrix $ do
+        let numSlices = 8
+            numStacks = 15
+            cylinderRadius = 0.5*size/aspectRatio
+            cylinderHeight = size
+            coneRadius = 2*cylinderRadius
+            coneHeight = 2*coneRadius
+
+            rotAngle = acos(z/(sqrt(x*x + y*y + z*z) + 1e-15))*180/pi :: GLdouble
+            rotAxis = Vector3 (-y) x 0
+        
+        translate (Vector3 x0 y0 z0 :: Vector3 GLdouble)
+        rotate rotAngle rotAxis
+        
         materialDiffuse Front $= Color4 r g b 1
         color (Color3 r g b :: Color3 GLfloat)
         -- cylinder
@@ -88,43 +144,16 @@ drawAxes size aspectRatio = do
         -- cone
         translate (Vector3 0 0 cylinderHeight :: Vector3 GLdouble)
         renderObject Solid (Cone coneRadius coneHeight numSlices numStacks)
+
+    drawObject (VisAxes (size, aspectRatio) (Xyz x0 y0 z0) (Quat q0 q1 q2 q3)) = do
+      preservingMatrix $ do
+        translate (Vector3 x0 y0 z0 :: Vector3 GLdouble)
+        rotate (2*acos(q0)*180/pi :: GLdouble) (Vector3 q1 q2 q3)
         
-  -- red x axis
-  preservingMatrix $ do
-    rotate (90 :: GLdouble) (Vector3 0 1 0)
-    drawAxis 1 0 0
-    
-  -- green y axis
-  preservingMatrix $ do
-    rotate (-90 :: GLdouble) (Vector3 1 0 0)
-    drawAxis 0 1 0
-  
-  -- blue z axis
-  preservingMatrix $ do
-    drawAxis 0 0 1
-
-
-drawShapes :: [VisShape GLdouble] -> IO ()
-drawShapes shapes = do
-  mapM_ drawShape shapes
-    where
-      drawShape :: VisShape GLdouble -> IO ()
-      drawShape (cyl@(Cylinder' _ len _ _), (x,y,z), (q0,q1,q2,q3), (r,g,b)) = do
-          preservingMatrix $ do
-            materialDiffuse Front $= Color4 r g b 1
-            color (Color3 r g b :: Color3 GLfloat)
-            translate (Vector3 x y z :: Vector3 GLdouble)
-            rotate (2*acos(q0)*180/pi :: GLdouble) (Vector3 q1 q2 q3)
-            translate (Vector3 0 0 (-len/2) :: Vector3 GLdouble)
-            renderObject Solid cyl
-      drawShape (object, (x,y,z), (q0,q1,q2,q3), (r,g,b)) = do
-          preservingMatrix $ do
-            materialDiffuse Front $= Color4 r g b 1
-            color (Color3 r g b :: Color3 GLfloat)
-            translate (Vector3 x y z :: Vector3 GLdouble)
-            rotate (2*acos(q0)*180/pi :: GLdouble) (Vector3 q1 q2 q3)
-            renderObject Solid object
-
+        let xAxis = VisArrow (size, aspectRatio) (Xyz 0 0 0) (Xyz 1 0 0) (Rgb 1 0 0)
+            yAxis = VisArrow (size, aspectRatio) (Xyz 0 0 0) (Xyz 0 1 0) (Rgb 0 1 0)
+            zAxis = VisArrow (size, aspectRatio) (Xyz 0 0 0) (Xyz 0 0 1) (Rgb 0 0 1)
+        drawObjects [xAxis, yAxis, zAxis]
 
 display :: MVar a -> Camera -> (a -> IO ()) -> DisplayCallback
 display stateMVar camera userDrawFun = do
@@ -133,20 +162,17 @@ display stateMVar camera userDrawFun = do
    -- draw the scene
    preservingMatrix $ do
      -- setup the camera
-     x0'    <- get (x0    camera)
-     y0'    <- get (y0    camera)
-     z0'    <- get (z0    camera)
+     x0     <- get (x0c    camera)
+     y0     <- get (y0c    camera)
+     z0     <- get (z0c    camera)
      phi'   <- get (phi   camera)
      theta' <- get (theta camera)
      rho'   <- get (rho   camera)
      let
-       xc = x0' + rho'*cos(phi'*pi/180)*cos(theta'*pi/180)
-       yc = y0' + rho'*sin(phi'*pi/180)*cos(theta'*pi/180)
-       zc = z0' - rho'*sin(theta'*pi/180)
-     lookAt (Vertex3 xc yc zc) (Vertex3 x0' y0' z0') (Vector3 0 0 (-1))
-     
-     -- draw ned axes
-     drawAxes 0.5 5
+       xc = x0 + rho'*cos(phi'*pi/180)*cos(theta'*pi/180)
+       yc = y0 + rho'*sin(phi'*pi/180)*cos(theta'*pi/180)
+       zc = z0 - rho'*sin(theta'*pi/180)
+     lookAt (Vertex3 xc yc zc) (Vertex3 x0 y0 z0) (Vector3 0 0 (-1))
      
      -- call user function
      state <- readMVar stateMVar
@@ -210,10 +236,10 @@ keyboardMouse simThreadId camera key keyState _ _ = do
 
 motion :: Camera -> MotionCallback
 motion camera (Position x y) = do
-   x0' <- get (x0 camera)
-   y0' <- get (y0 camera)
-   bx <- get (ballX camera)
-   by <- get (ballY camera)
+   x0  <- get (x0c camera)
+   y0  <- get (y0c camera)
+   bx  <- get (ballX camera)
+   by  <- get (ballY camera)
    phi' <- get (phi camera)
    theta' <- get (theta camera)
    rho' <- get (rho camera)
@@ -229,16 +255,16 @@ motion camera (Position x y) = do
          | deltaY + theta' >  80 =  80
          | deltaY + theta' < -80 = -80
          | otherwise             = deltaY + theta'
-       nextX0 = x0' + 0.003*rho'*( -sin(phi'*pi/180)*deltaX - cos(phi'*pi/180)*deltaY)
-       nextY0 = y0' + 0.003*rho'*(  cos(phi'*pi/180)*deltaX - sin(phi'*pi/180)*deltaY)
+       nextX0 = x0 + 0.003*rho'*( -sin(phi'*pi/180)*deltaX - cos(phi'*pi/180)*deltaY)
+       nextY0 = y0 + 0.003*rho'*(  cos(phi'*pi/180)*deltaX - sin(phi'*pi/180)*deltaY)
        
    if (lb == 1)
      then do phi   camera $~ (+ deltaX)
              theta camera $= nextTheta
      else do return ()
    if (rb == 1)
-     then do x0 camera $= nextX0
-             y0 camera $= nextY0
+     then do x0c camera $= nextX0
+             y0c camera $= nextY0
      else do return ()
    
    ballX camera $= x
@@ -248,13 +274,13 @@ motion camera (Position x y) = do
 
 
 vis :: (NFData a, Show a) => (a -> IO a) -> (a -> IO ()) -> a -> Double -> IO ()
-vis userSimFun userDrawFun x0' ts = do
+vis userSimFun userDrawFun x0 ts = do
   -- init glut/scene
   (progName, _args) <- getArgsAndInitialize
   myGlInit progName
    
   -- create internal state
-  stateMVar <- newMVar x0'
+  stateMVar <- newMVar x0
   camera <- makeCamera
 
   -- start sim thread
