@@ -189,7 +189,7 @@ reshape size@(Size w h) = do
    viewport $= (Position 0 0, size)
    matrixMode $= Projection
    loadIdentity
-   perspective 40 (fromIntegral w / fromIntegral h) 1 2000
+   perspective 40 (fromIntegral w / fromIntegral h) 0.1 100
    matrixMode $= Modelview 0
    loadIdentity
    postRedisplay Nothing
