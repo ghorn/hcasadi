@@ -29,10 +29,11 @@ cost state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u 
     barrier = uBarrierUb + uBarrierLb
 
 drawFun :: ([Double], ControllerState Double) -> IO ()
-drawFun (x, (xTraj, _)) = do
+drawFun (state, (xTraj, uTraj)) = do
   let bobPath = VisLine (map cartpoleBob xTraj) (Rgb 1.0 0.1 0.1)
       axes = VisAxes (0.5, 5) (Xyz 0 0 0.5) (Quat 1 0 0 0)
-  drawObjects $ [bobPath, cartpoleCart x, cartpoleCylinder x, cartpoleTrack, axes]
+      forceCylinder = cartpoleForceCylinder state (head uTraj)
+  drawObjects $ [bobPath, cartpoleCart state, cartpoleCylinder state, cartpoleTrack, axes, forceCylinder]
 
 
 -- discrete ode

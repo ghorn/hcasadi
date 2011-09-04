@@ -8,6 +8,7 @@ module Odes.Cartpole( cartpoleDxdt
                     , cartpoleCart
                     , cartpoleTrack
                     , cartpoleVis
+                    , cartpoleForceCylinder
                     ) where
 
 import Vis
@@ -72,6 +73,20 @@ cartpoleCart state = VisBox (d,d,d) (Xyz x y z) (Quat 1 0 0 0) (Rgb 0 0 0.5)
     x = realToFrac $ head state
     y = -poleVisRadius - cartVisRadius
     z = 0
+
+cartpoleForceCylinder :: [Double] -> [Double] -> VisObject GLdouble GLfloat
+cartpoleForceCylinder state action = VisCylinder (len, 0.1) (Xyz x0 y0 z0) quat (Rgb 1 1 0)
+  where
+    quat = Quat (sqrt(2)/2) 0 (signum(u)*sqrt(2)/2) 0
+
+    u = realToFrac $ head action
+    x = realToFrac $ head state
+
+    len = u/4
+
+    x0 = x + len/2
+    y0 = -poleVisRadius - cartVisRadius
+    z0 = -3*cartVisRadius
 
 cartpoleTrack :: VisObject GLdouble GLfloat
 cartpoleTrack = VisBox (dx,dy,dz) (Xyz x y z) (Quat 1 0 0 0) (Rgb 0.6 0 0)
