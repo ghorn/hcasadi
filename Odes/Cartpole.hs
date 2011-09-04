@@ -11,7 +11,7 @@ module Odes.Cartpole( cartpoleDxdt
                     ) where
 
 import Vis
-import Hom(rk4Step)
+import Integrators(rk4Step)
 
 import Graphics.UI.GLUT
 import Control.DeepSeq

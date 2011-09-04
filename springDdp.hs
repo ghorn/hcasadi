@@ -6,7 +6,7 @@
 module Main where
 
 import Hom
-import Ddp(ddp)
+import Integrators
 import DdpCasadi(prepareDdp)
 import Graphics.Gnuplot.Simple
 
@@ -46,21 +46,13 @@ main = do let n = 100
               
               xTraj0 = replicate n x0
               uTraj0 = replicate n u0
-              
-              (xTraj, uTraj, _) = head $ ddp sCost sDode xTraj0 uTraj0
 
+          cddp <- prepareDdp sCost sDode (2::Int) (1::Int) [(-20,20)]
+
+          let (xTraj, uTraj, _) = head $ cddp xTraj0 uTraj0
               pos = map (!! 0) xTraj
               vel = map (!! 1) xTraj
               force = map (!! 0) uTraj
 
-          cddp <- prepareDdp sCost sDode (2::Int) (1::Int) [(-20,20)]
-
-          let (xTraj', uTraj', _) = head $ cddp xTraj0 uTraj0
-              pos' = map (!! 0) xTraj'
-              vel' = map (!! 1) xTraj'
-              force' = map (!! 0) uTraj'
-
           plotLists [] [zip time pos, zip time vel, zip time force]
-          plotLists [] [zip time pos', zip time vel', zip time force']
           print $ "total cost:  " ++ (show (sum (map (\(x,u) -> sCost x u) (zip xTraj uTraj))))
-          print $ "total cost': " ++ (show (sum (map (\(x,u) -> sCost x u) (zip xTraj' uTraj'))))

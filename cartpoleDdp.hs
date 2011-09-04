@@ -6,6 +6,7 @@
 module Main where
 
 import Hom
+import Integrators(rk4Step)
 import Vis
 import Odes.Cartpole
 import DdpCasadi(prepareDdp)
