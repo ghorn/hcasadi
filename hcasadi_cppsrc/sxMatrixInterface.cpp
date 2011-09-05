@@ -26,8 +26,12 @@ SXMatrix * sxMatrixCreateSymbolic(char * charPrefix, int n, int m){
   string prefix;
   SXMatrix * out;
   prefix.assign(charPrefix);
-  if (m == 1)
+  if (n == 1 && m == 1)
+    out = new SXMatrix(create_symbolic(prefix));
+  else if (m == 1)
     out = new SXMatrix(create_symbolic(prefix, n));
+  else if (n == 1)
+    out = new SXMatrix(create_symbolic(prefix, m));
   else
     out = new SXMatrix(create_symbolic(prefix, n, m));
 
