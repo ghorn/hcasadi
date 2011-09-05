@@ -15,6 +15,7 @@ Cabal-version: >=1.2
 Library
   Exposed-modules:
     Casadi
+    Casadi.DMatrix
     Casadi.SX
     Casadi.SXMatrix
     Casadi.SXFunction
