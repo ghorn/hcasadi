@@ -5,6 +5,7 @@
 module MultipleShooting( Ode(..)
                        , Cost(..)
                        , simpleSystem
+                       , replaceFinalCost
                        , multipleShooting
                        , MultipleShooting(..)
                        , boundEq
@@ -149,6 +150,13 @@ simpleSystem ode cost dt n = System { odes = replicate (n-1) ode
                                     , costs = replicate n cost
                                     , dts = replicate (n-1) dt
                                     }
+
+replaceFinalCost :: Cost -> System -> System
+replaceFinalCost cost sysIn = System { odes = odes sysIn
+                                     , costs = init (costs sysIn) ++ [cost]
+                                     , dts = dts sysIn
+                                     }
+
 
 simpsonsRuleError :: SXMatrix -> SXMatrix -> SXMatrix -> SXMatrix -> Ode -> SX -> SXMatrix
 simpsonsRuleError xk uk xkp1 ukp1 (Ode ode _) dt = xkp1 - xk - ((dt/6.0) <> (f0 + fourFm + f1))

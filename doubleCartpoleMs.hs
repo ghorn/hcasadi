@@ -26,8 +26,8 @@ cpCost :: Cost
 cpCost = Cost cpCost' (6,1)
 
 cpCost' :: SXMatrix -> SXMatrix -> SX
-cpCost' state action = 10*x*x
-                       + 0.001*x'*x'
+cpCost' state action = 100*x*x
+                       + 0.01*x'*x'
                        - 10*cos(q1)
                        - 10*cos(q2)
                        + 0.01*q1'*q1'
@@ -36,6 +36,12 @@ cpCost' state action = 10*x*x
   where
     [x,q1,q2,x',q1',q2'] = toList state
     [u] = toList action
+
+cpCostFinal :: Cost
+cpCostFinal = Cost cpCostFinal' (6,1)
+
+cpCostFinal' :: SXMatrix -> SXMatrix -> SX
+cpCostFinal' x u = 10*(cpCost' x u)
 
 
 drawFun :: ([Double], ControllerState Double) -> IO ()
@@ -55,7 +61,7 @@ drawFun (state, (xTraj, uTraj, _)) = do
                 ]
 
 simDt :: Floating a => a
-simDt = 0.01
+simDt = 0.005
 
 main :: IO ()
 main = do
@@ -64,7 +70,7 @@ main = do
       tEnd =  sxSymbolic "tEnd"
       dt = tEnd/(sxInt (n-1))
 
-      sys = simpleSystem doubleCartpoleOde cpCost dt n
+      sys = replaceFinalCost cpCostFinal $ simpleSystem doubleCartpoleOde cpCost dt n
       ms = multipleShooting sys (fromList [tEnd])
 
       x0 = [0, 0.9*pi, 0.9*pi, 0, 0, 0]
@@ -84,8 +90,7 @@ main = do
 --                      , boundEqs ms xfSx xf
                       , stateBounds
                       , actionBounds
-                      , [boundInterval ms tEnd (0.2, 1.0)]
---                      , [boundEq ms tEnd (fromIntegral(n-1)*simDt)]
+                      , [boundInterval ms tEnd (0.05, 0.5)]
                       ]
 
   msSolve <- multipleShootingSolver ms []
@@ -97,8 +102,7 @@ main = do
 --                             , boundEqs ms xfSx xf
                              , stateBounds
                              , actionBounds
-                             , [boundInterval ms tEnd (0.2, 1.0)]
---                             , [boundEq ms tEnd (fromIntegral(n-1)*simDt)]
+                             , [boundInterval ms tEnd (0.05, 0.5)]
                              ]
             xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
             uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]

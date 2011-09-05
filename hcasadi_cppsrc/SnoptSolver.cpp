@@ -339,7 +339,7 @@ SnoptSolver::solve()
     ( strOpt, &Niter, &iPrint, &iSumm, &INFO,
       cw, &lencw, iw, &leniw, rw, &lenrw, strOpt_len, 8*500 );
 
-  doublereal major_opt_tol = 1e-2;
+  doublereal major_opt_tol = 1e-3;
   strcpy(strOpt,"Major optimality tolerance");
   strOpt_len = strlen(strOpt);
   snsetr_
