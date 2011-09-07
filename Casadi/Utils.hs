@@ -11,7 +11,6 @@ import Casadi.SX
 import Casadi.SXMatrix
 import Casadi.SXFunction
 import Numeric.LinearAlgebra
-import System.IO.Unsafe(unsafePerformIO)
 
 getDerivs :: ([SX] -> SX) -> Int
              -> IO (Vector Double -> Double, Vector Double -> Vector Double, Vector Double -> Matrix Double)
@@ -31,16 +30,16 @@ getDerivs f n = do
   return (evalF sxFun, evalG sxGrad, evalH sxHess)
 
 evalF :: SXFunction -> Vector Double -> Double
-evalF sxFun xVec = unsafePerformIO $ do
-  [[[output]]] <- sxFunctionEvaluate sxFun [[toList xVec]]
-  return $ output
+evalF sxFun xVec = output
+  where
+    [[[output]]] = sxFunctionEvaluateLists sxFun [[toList xVec]]
 
 evalG :: SXFunction -> Vector Double -> Vector Double
-evalG sxGrad xVec = unsafePerformIO $ do
-  [output] <- sxFunctionEvaluate sxGrad [[toList xVec]]
-  return $ fromList (concat output)
+evalG sxGrad xVec = fromList (concat output)
+  where
+    [output] = sxFunctionEvaluateLists sxGrad [[toList xVec]]
 
 evalH :: SXFunction -> Vector Double -> Matrix Double
-evalH sxHess xVec = unsafePerformIO $ do
-  [output] <- sxFunctionEvaluate sxHess [[toList xVec]]
-  return $ fromLists output
+evalH sxHess xVec = fromLists output
+  where
+    [output] = sxFunctionEvaluateLists sxHess [[toList xVec]]

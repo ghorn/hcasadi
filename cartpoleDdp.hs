@@ -54,9 +54,9 @@ main = do let n = 70
               xTrajBadGuess = replicate n x0
               uTrajBadGuess = replicate n u0
 
-          ddp <- prepareDdp cost dode (4::Int) (1::Int) [(-10,10)]
+              ddp = prepareDdp cost dode (4::Int) (1::Int) [(-10,10)]
 
-          let (xTraj, uTraj, _) = head $ drop 50 $ ddp xTrajBadGuess uTrajBadGuess
+              (xTraj, uTraj, _) = head $ drop 50 $ ddp xTrajBadGuess uTrajBadGuess
 
               simController x (xTrajPrev, uTrajPrev) = do
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]

@@ -14,7 +14,6 @@ extern "C"{
 
   // memory management
   int dMatrixSizeOfAddress(void);
-  DMatrix * dMatrixDuplicate(const DMatrix & old);
   void dMatrixDelete(DMatrix * const d);
   DMatrix * dMatrixZeros(int n, int m);
 
@@ -24,6 +23,8 @@ extern "C"{
   // getters/setters
   double dMatrixAt(const DMatrix & mat, int n, int m);
   void dMatrixSet(const double scalar, int n, int m, DMatrix & mat);
+  void dMatrixSetList(int length, double * list, DMatrix & mat);
+  void dMatrixSetLists(int rows, int cols, double * list, DMatrix & mat);
 
   // dimensions
   int dMatrixSize1(const DMatrix & mat);

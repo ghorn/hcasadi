@@ -21,12 +21,19 @@ extern "C"{
   // getters
   int sxFunctionGetNumInputs(const FX & fun);
   int sxFunctionGetNumOutputs(const FX & fun);
-  void sxFunctionGetInputs(const SXFunction & fun, int idx, SXMatrix & mat);
-  void sxFunctionGetOutputs(const SXFunction & fun, int idx, SXMatrix & mat);
+  void sxFunctionGetInputsSX(const SXFunction & fun, int idx, SXMatrix & mat);
+  void sxFunctionGetOutputsSX(const SXFunction & fun, int idx, SXMatrix & mat);
+  int sxFunctionGetInputSize1(  int idx, const SXFunction & fun );
+  int sxFunctionGetInputSize2(  int idx, const SXFunction & fun );
+  int sxFunctionGetOutputSize1( int idx, const SXFunction & fun );
+  int sxFunctionGetOutputSize2( int idx, const SXFunction & fun );
 
   // evaluate
-  void sxFunctionEvaluate(FX & fun, const double inputsArray[], const int inputRows[], const int inputCols[]);
-  void sxFunctionGetEvaluatedOutput(FX & fun, int outputIdx, int rows, int cols, double output[]);
+  void sxFunctionEvaluateInputOld(FX & fun, const double inputsArray[], const int inputRows[], const int inputCols[]);
+  void sxFunctionGetEvaluatedOutputOld(FX & fun, int outputIdx, int rows, int cols, double output[]);
+  void sxFunctionSetInput(int idx, FX & fun, const DMatrix & mIn);
+  void sxFunctionEvaluate(FX & fun);
+  void sxFunctionGetEvaluatedOutput(int idx, SXFunction & fun, DMatrix & mOut);
 
   // ad
   void sxFunctionGradient(SXFunction & fun, int idx, SXMatrix & output);

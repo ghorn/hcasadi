@@ -50,7 +50,7 @@ Executable springDdp
   Hs-Source-Dirs:  .
   Other-Modules:
   Build-depends:   hmatrix, gnuplot
-  Ghc-options: -O2 -dno-debug-output
+  Ghc-options: -pgml g++ -O2 -dno-debug-output
 
   Extra-lib-dirs:  /home/greg/hopt-o-mex/hcasadi_cppsrc, /home/greg/casadi/build/lib
   Extra-libraries: casadi_interface, casadi

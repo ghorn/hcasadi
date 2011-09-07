@@ -15,21 +15,26 @@ module Casadi.DMatrix
        , dMatrixZeros
        , dMatrixSize
        , dMatrixScale
---       , dMatrixInv
+       , dMatrixInv
        ) where
 
 import Casadi.CasadiInterfaceUtils
 
 import Foreign.C
+import Foreign.Marshal(newArray)
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Storable
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
+import Control.DeepSeq
 
 -- the DMatrix data type
 data DMatrixRaw = DMatrixRaw
 newtype DMatrix = DMatrix (ForeignPtr DMatrixRaw)
+
+instance NFData DMatrix where
+  rnf x = x `seq` ()
 
 instance Storable DMatrixRaw where
   sizeOf _ = fromIntegral $ unsafePerformIO c_dMatrixSizeOfAddress
@@ -37,12 +42,12 @@ instance Storable DMatrixRaw where
 
 -- foreign imports
 foreign import ccall unsafe "dMatrixSizeOfAddress" c_dMatrixSizeOfAddress :: IO CInt
-foreign import ccall unsafe "dMatrixDuplicate" c_dMatrixDuplicate :: (Ptr DMatrixRaw) -> IO (Ptr DMatrixRaw)
 foreign import ccall unsafe "&dMatrixDelete" c_dMatrixDelete :: FunPtr (Ptr DMatrixRaw -> IO ())
 foreign import ccall unsafe "dMatrixZeros" c_dMatrixZeros :: CInt -> CInt -> IO (Ptr DMatrixRaw)
 foreign import ccall unsafe "dMatrixShow" c_dMatrixShow :: Ptr CChar -> CInt -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixAt" c_dMatrixAt :: (Ptr DMatrixRaw) -> CInt -> CInt -> IO CDouble
-foreign import ccall unsafe "dMatrixSet" c_dMatrixSet :: CDouble -> CInt -> CInt -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixSetList" c_dMatrixSetList :: CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixSetLists" c_dMatrixSetLists :: CInt -> CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixSize1" c_dMatrixSize1 :: (Ptr DMatrixRaw) -> IO CInt
 foreign import ccall unsafe "dMatrixSize2" c_dMatrixSize2 :: (Ptr DMatrixRaw) -> IO CInt
 
@@ -56,12 +61,6 @@ foreign import ccall unsafe "dMatrixInv" c_dMatrixInv :: (Ptr DMatrixRaw) -> (Pt
 
 
 ----------------- create -------------------------
-dMatrixDuplicate :: DMatrix -> IO DMatrix
-dMatrixDuplicate (DMatrix old) = mask_ $ do
-  new <- withForeignPtr old c_dMatrixDuplicate >>= newForeignPtr c_dMatrixDelete
-  return $ DMatrix new
-
-
 dMatrixZeros :: (Int, Int) -> IO DMatrix
 dMatrixZeros (n,m) = mask_ $ do
   let n' = safeToCInt n
@@ -80,16 +79,19 @@ dMatrixZeros (n,m) = mask_ $ do
 
 dMatrixFromList :: [Double] -> DMatrix
 dMatrixFromList dList = unsafePerformIO $ do
-  m0 <- dMatrixZeros (length dList, 1)
-  let indexedDList = zip dList $ take (length dList) [0..]
-  return $ foldl (\acc (d,idx) -> dMatrixSet acc (idx,0) d) m0 indexedDList
+  dListPtr <- newArray (map realToFrac dList)
+  DMatrix m0 <- dMatrixZeros (length dList, 1)
+  withForeignPtr m0 $ c_dMatrixSetList (fromIntegral $ length dList) dListPtr
+  return $ DMatrix m0
 
 dMatrixFromLists :: [[Double]] -> DMatrix
 dMatrixFromLists dLists = unsafePerformIO $ do
-  m0 <- dMatrixZeros (length dLists, length (head dLists))
-  let indexOneList list k = zip3 list (repeat k) [0..]
-      indexedDList = concat $ zipWith indexOneList dLists [0..]
-  return $ foldl (\acc (d, idx0, idx1) -> dMatrixSet acc (idx0,idx1) d) m0 indexedDList
+  let rows = length dLists
+      cols = length (head dLists)
+  dListPtr <- newArray $ map realToFrac (concat dLists)
+  DMatrix m0 <- dMatrixZeros (rows, cols)
+  withForeignPtr m0 $ c_dMatrixSetLists (fromIntegral rows) (fromIntegral cols) dListPtr
+  return  $ DMatrix m0
 
 ---------------- show -------------------
 dMatrixShow :: DMatrix -> String
@@ -104,16 +106,6 @@ dMatrixAt :: DMatrix -> (Int,Int) -> IO Double
 dMatrixAt (DMatrix matIn) (n,m) = do
   dOut <- withForeignPtr matIn (\matIn' -> c_dMatrixAt matIn' (fromIntegral n) (fromIntegral m))
   return $ realToFrac dOut
-
-
-dMatrixSet :: DMatrix -> (Int,Int) -> Double -> DMatrix
-dMatrixSet (DMatrix matIn) (n,m) val = unsafePerformIO $ do
-  DMatrix matOut <- dMatrixDuplicate (DMatrix matIn)
-  let n' = fromIntegral n
-      m' = fromIntegral m
-  withForeignPtr matOut (\matOut' -> c_dMatrixSet (realToFrac val) n' m' matOut')
-  return (DMatrix matOut)
-
 
 ---------------- dimensions --------------------
 dMatrixSize :: DMatrix -> (Int,Int)

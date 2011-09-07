@@ -67,16 +67,35 @@ int sxFunctionGetNumOutputs(const FX & fun){
   return fun.getNumOutputs();
 }
 
-void sxFunctionGetInputs(const SXFunction & fun, int idx, SXMatrix & mat){
+void sxFunctionGetInputsSX(const SXFunction & fun, int idx, SXMatrix & mat){
   mat = fun.inputSX(idx);
 }
 
-void sxFunctionGetOutputs(const SXFunction & fun, int idx, SXMatrix & mat){
+void sxFunctionGetOutputsSX(const SXFunction & fun, int idx, SXMatrix & mat){
   mat = fun.outputSX(idx);
 }
 
+int sxFunctionGetInputSize1( int idx, const SXFunction & fun ){
+  return fun.inputSX(idx).size1();
+}
+
+int sxFunctionGetInputSize2( int idx, const SXFunction & fun ){
+  return fun.inputSX(idx).size2();
+}
+
+int sxFunctionGetOutputSize1( int idx, const SXFunction & fun ){
+  return fun.outputSX(idx).size1();
+}
+
+int sxFunctionGetOutputSize2( int idx, const SXFunction & fun ){
+  return fun.outputSX(idx).size2();
+}
+
+
+
+
 /************ evaluate *************/
-void sxFunctionEvaluate(FX & fun, const double inputsArray[], const int inputRows[], const int inputCols[]){
+void sxFunctionEvaluateInputOld(FX & fun, const double inputsArray[], const int inputRows[], const int inputCols[]){
   // setup inputs
   int inputCounter = 0;
   for (int kth_input=0; kth_input<fun.getNumInputs(); kth_input++){
@@ -93,7 +112,7 @@ void sxFunctionEvaluate(FX & fun, const double inputsArray[], const int inputRow
   fun.evaluate();
 }
 
-void sxFunctionGetEvaluatedOutput(FX & fun, int outputIdx, int rows, int cols, double output[]){
+void sxFunctionGetEvaluatedOutputOld(FX & fun, int outputIdx, int rows, int cols, double output[]){
   // retrieve an output
   DMatrix anOutput(rows, cols, 0.0);
   fun.getOutput( anOutput, outputIdx );
@@ -105,6 +124,30 @@ void sxFunctionGetEvaluatedOutput(FX & fun, int outputIdx, int rows, int cols, d
       outputCounter++;
     }
   }
+}
+
+
+void sxFunctionSetInput(int idx, FX & fun, const DMatrix & mIn){
+  //  cerr << "(cpp) sxFunctionSetInput idx: " << idx << ", &fun: " << &fun << ", &mIn: " << &mIn << ", val: " << mIn << endl;
+  if (idx >= fun.getNumInputs()){
+    cerr << "index " << idx << " >= fun.getNumInputs() (" << fun.getNumInputs() << ")\n";
+    throw 1;
+  }
+  fun.setInput( mIn, idx );
+}
+
+
+void sxFunctionEvaluate(FX & fun){
+  fun.evaluate();
+}
+
+void sxFunctionGetEvaluatedOutput(int idx, SXFunction & fun, DMatrix & mOut){
+  //cerr << "(cpp) sxFunctionGetEvaluatedOutput idx: " << idx << ", &fun: " << &fun << ", &mOut: " << &mOut << endl;
+  if (idx >= fun.getNumOutputs()){
+    cerr << "index " << idx << " >= fun.getNumOutputs() (" << fun.getNumOutputs() << ")\n";
+    throw 1;
+  }
+  fun.getOutput( mOut, idx );
 }
 
 

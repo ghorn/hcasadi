@@ -22,14 +22,6 @@ int dMatrixSizeOfAddress(){
   return sizeof(DMatrix*);
 }
 
-DMatrix * dMatrixDuplicate(const DMatrix & old){
-  DMatrix * out = new DMatrix(old);
-  #ifdef COUT_MEMORY_MANAGEMENT
-  cout << "(cpp) duplicate " << out << ", val: " << *out << endl;
-  #endif
-  return out;
-}
-
 void dMatrixDelete(DMatrix * const d){
   #ifdef COUT_MEMORY_MANAGEMENT
   cout << "(cpp) deleting d matrix at " << d << endl;
@@ -62,8 +54,19 @@ double dMatrixAt(const DMatrix & mat, int n, int m){
   return (mat.indexed(n,m)).at(0);
 }
 
-void dMatrixSet(const double d, int n, int m, DMatrix & mat){
-  mat.indexed_assignment(n, m, d);
+void dMatrixSetList(int length, double * list, DMatrix & mat){
+  for (int k=0; k<length; k++)
+    mat.indexed_assignment(k, 0, list[k]);
+}
+
+void dMatrixSetLists(int rows, int cols, double * list, DMatrix & mat){
+  int k=0;
+  for (int row=0; row<rows; row++){
+    for (int col=0; col<cols; col++){
+      mat.indexed_assignment(row, col, list[k]);
+      k++;
+    }
+  }
 }
 
 int dMatrixSize1(const DMatrix & mat){

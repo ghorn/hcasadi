@@ -13,60 +13,59 @@ module DdpCasadi
 
 import Casadi hiding ((<>), trans)
 import Casadi.SXFunction
+--import Casadi.DMatrix
 import Hom(State, Action, Cost, Ode, Quad(..), evalQuad)
 import Numeric.LinearAlgebra((<>),fromList, fromLists, toList, toLists, inv, dot, trans)
 import Data.List(mapAccumL)
-import System.IO.Unsafe(unsafePerformIO)
 
 type BacksweepOutput a = (Quad a, [[a]], [a])
 
 -- prepare casadi SXFunction
-prepareQFunction :: Int -> Int -> Cost SX -> Ode SX -> IO SXFunction
-prepareQFunction nx nu costFunction dode = do
-  let x   = sxMatrixSymbolic "x"   (nx,1)
-      u   = sxMatrixSymbolic "u"   (nu,1)
-      vxx = sxMatrixSymbolic "vxx" (nx,nx)
-      vx  = sxMatrixSymbolic "vx"  (nx,1)
-      v0  = sxMatrixSymbolic "v0"  (1,1)
-      x0  = sxMatrixSymbolic "x0"  (nx,1)
-      
-  let -- reshape SXMatrices into lists
-      x'   = Casadi.toList x
-      u'   = Casadi.toList u
-      vxx' = Casadi.toLists vxx
-      vx'  = Casadi.toList vx
-      v0'  = head (Casadi.toList v0)
-      x0'  = Casadi.toList x0
-      quad = Quad vxx' vx' v0' x0'
-      
-      -- the qFunction
-      q = Casadi.fromList [(costFunction x' u') + (evalQuad quad (dode x' u'))]
-      qFun = sxFunctionCreate [x,u,vxx,vx,v0,x0] [q]
-      
-      -- the quadratic expansion
-      qx  = sxFunctionGradientAt qFun 0
-      qu  = sxFunctionGradientAt qFun 1
-      qxx = sxFunctionHessianAt qFun (0,0)
-      qxu = sxFunctionHessianAt qFun (0,1)
-      quu = sxFunctionHessianAt qFun (1,1)
+prepareQFunction :: Int -> Int -> Cost SX -> Ode SX -> SXFunction
+prepareQFunction nx nu costFunction dode = sxFunctionCreate [x,u,vxx,vx,v0,x0] [q, qx, qu, qxx, qxu, quu]
+  where
+    x   = sxMatrixSymbolic "x"   (nx,1)
+    u   = sxMatrixSymbolic "u"   (nu,1)
+    vxx = sxMatrixSymbolic "vxx" (nx,nx)
+    vx  = sxMatrixSymbolic "vx"  (nx,1)
+    v0  = sxMatrixSymbolic "v0"  (1,1)
+    x0  = sxMatrixSymbolic "x0"  (nx,1)
 
-  return $ sxFunctionCreate [x,u,vxx,vx,v0,x0] [q, qx, qu, qxx, qxu, quu]
+    -- reshape SXMatrices into lists
+    x'   = Casadi.toList x
+    u'   = Casadi.toList u
+    vxx' = Casadi.toLists vxx
+    vx'  = Casadi.toList vx
+    v0'  = head (Casadi.toList v0)
+    x0'  = Casadi.toList x0
+    quad = Quad vxx' vx' v0' x0'
+
+    -- the qFunction
+    q = Casadi.fromList [(costFunction x' u') + (evalQuad quad (dode x' u'))]
+    qFun = sxFunctionCreate [x,u,vxx,vx,v0,x0] [q]
+
+    -- the quadratic expansion
+    qx  = sxFunctionGradientAt qFun 0
+    qu  = sxFunctionGradientAt qFun 1
+    qxx = sxFunctionHessianAt qFun (0,0)
+    qxu = sxFunctionHessianAt qFun (0,1)
+    quu = sxFunctionHessianAt qFun (1,1)
+
 
 -- evaluate
---evalQFunction :: (Real a) => SXFunction -> (State a, Action a, Quad a) -> IO (a,[a],[a],[[a]],[[a]],[[a]])
-evalQFunction :: SXFunction -> (State Double, Action Double, Quad Double) -> IO ([[Double]],[[Double]],[[Double]],[[Double]],[[Double]],[[Double]])
-evalQFunction qExpansion (x, u, Quad vxx vx v0 x0) = do
-  [q,qx,qu,qxx,qxu,quu] <- sxFunctionEvaluate qExpansion [[x],[u],vxx,[vx],[[v0]],[x0]]
-  return (q,qx,qu,qxx,qxu,quu)
-
+evalQFunction :: SXFunction -> (State Double, Action Double, Quad Double) -> ([[Double]],[[Double]],[[Double]],[[Double]],[[Double]],[[Double]])
+evalQFunction qExpansion (x, u, Quad vxx vx v0 x0) = qOut
+  where
+    [q,qx,qu,qxx,qxu,quu] = sxFunctionEvaluateLists qExpansion [[x],[u],vxx,[vx],[[v0]],[x0]]
+    qOut = ( q, qx, qu, qxx, qxu, quu)
 
 ----------------------- convenience function -----------------------
 -- prepare ddp  
 prepareDdp :: (forall a. Floating a => Cost a) -> (forall a. Floating a => Ode a) -> Int -> Int -> [(Double,Double)]
-       -> IO ([State Double] -> [Action Double] -> [([State Double], [Action Double], [BacksweepOutput Double])])
-prepareDdp cost dode nx nu uBounds = do
-  qFun <- prepareQFunction nx nu cost dode
-  return $ ddp qFun dode uBounds
+       -> ([State Double] -> [Action Double] -> [([State Double], [Action Double], [BacksweepOutput Double])])
+prepareDdp cost dode nx nu uBounds = ddp qFun dode uBounds
+  where
+    qFun = prepareQFunction nx nu cost dode
   
   
 -- iterate ddp'
@@ -140,7 +139,7 @@ backPropagate :: SXFunction -> State Double -> Action Double -> Quad Double -> B
 backPropagate qFunction x u nextValue = (Quad vxx vx v0 x, feedbackGains, openLoopControl)
   where
     -- q functions to lists to matrices/vectors
-    (q0', qx', qu', qxx', qxu', quu') = unsafePerformIO $ do (evalQFunction qFunction (x,u,nextValue))
+    (q0', qx', qu', qxx', qxu', quu') = evalQFunction qFunction (x,u,nextValue)
     qxx = Numeric.LinearAlgebra.fromLists qxx'
     quu = Numeric.LinearAlgebra.fromLists quu'
     qxu = Numeric.LinearAlgebra.fromLists qxu'
