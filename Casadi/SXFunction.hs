@@ -265,6 +265,6 @@ sxFunctionUnsafeSetInput (SXFunction fun) idx (DMatrix input) = do
 sxFunctionUnsafeGetOutput :: SXFunction -> Int -> IO DMatrix
 sxFunctionUnsafeGetOutput (SXFunction fun) idx = do 
 --  putStrLn $ "sxFunctionUnsafeGetOutput          idx: " ++ (show idx)
-  DMatrix mOut <- dMatrixZeros (sxFunctionGetOutputDim (SXFunction fun) idx)
+  DMatrix mOut <- dMatrixNewZeros (sxFunctionGetOutputDim (SXFunction fun) idx)
   withForeignPtrs2 (c_sxFunctionGetEvaluatedOutput (fromIntegral idx)) fun mOut
   return $ DMatrix mOut

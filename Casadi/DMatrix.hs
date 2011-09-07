@@ -12,7 +12,8 @@ module Casadi.DMatrix
        , dMatrixToList
        , dMatrixFromList
        , dMatrixFromLists
-       , dMatrixZeros
+       , dMatrixNewZeros
+       , zeros
        , dMatrixSize
        , dMatrixScale
        , dMatrixInv
@@ -61,15 +62,15 @@ foreign import ccall unsafe "dMatrixInv" c_dMatrixInv :: (Ptr DMatrixRaw) -> (Pt
 
 
 ----------------- create -------------------------
-dMatrixZeros :: (Int, Int) -> IO DMatrix
-dMatrixZeros (n,m) = mask_ $ do
+dMatrixNewZeros :: (Int, Int) -> IO DMatrix
+dMatrixNewZeros (n,m) = mask_ $ do
   let n' = safeToCInt n
       m' = safeToCInt m
       
       safeToCInt :: Int -> CInt
       safeToCInt x
         | and [toInteger x <= maxCInt, toInteger x >= minCInt] = fromIntegral x
-        | otherwise = error "Error - dMatrixZeros dimensions too big"
+        | otherwise = error "Error - dMatrixNewZeros dimensions too big"
         where
           maxCInt = fromIntegral (maxBound :: CInt)
           minCInt = fromIntegral (minBound :: CInt)
@@ -77,20 +78,25 @@ dMatrixZeros (n,m) = mask_ $ do
   mat <- c_dMatrixZeros n' m' >>= newForeignPtr c_dMatrixDelete
   return $ DMatrix mat
 
+zeros :: (Int, Int) -> DMatrix
+zeros dimensions = unsafePerformIO $ do
+  mOut <- dMatrixNewZeros dimensions
+  return mOut
+
 dMatrixFromList :: [Double] -> DMatrix
 dMatrixFromList dList = unsafePerformIO $ do
   dListPtr <- newArray (map realToFrac dList)
-  DMatrix m0 <- dMatrixZeros (length dList, 1)
+  DMatrix m0 <- dMatrixNewZeros (length dList, 1)
   withForeignPtr m0 $ c_dMatrixSetList (fromIntegral $ length dList) dListPtr
   return $ DMatrix m0
 
 dMatrixFromLists :: [[Double]] -> DMatrix
 dMatrixFromLists dLists = unsafePerformIO $ do
-  let rows = length dLists
-      cols = length (head dLists)
+  let rows' = length dLists
+      cols' = length (head dLists)
   dListPtr <- newArray $ map realToFrac (concat dLists)
-  DMatrix m0 <- dMatrixZeros (rows, cols)
-  withForeignPtr m0 $ c_dMatrixSetLists (fromIntegral rows) (fromIntegral cols) dListPtr
+  DMatrix m0 <- dMatrixNewZeros (rows', cols')
+  withForeignPtr m0 $ c_dMatrixSetLists (fromIntegral rows') (fromIntegral cols') dListPtr
   return  $ DMatrix m0
 
 ---------------- show -------------------
@@ -139,7 +145,7 @@ dMatrixPlus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
         where
           sizeM0 = dMatrixSize (DMatrix m0)
           sizeM1 = dMatrixSize (DMatrix m1)
-  DMatrix mOut <- dMatrixZeros size'
+  DMatrix mOut <- dMatrixNewZeros size'
   withForeignPtrs3 c_dMatrixPlus m0 m1 mOut
   return $ DMatrix mOut
 
@@ -151,7 +157,7 @@ dMatrixMinus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
         where
           sizeM0 = dMatrixSize (DMatrix m0)
           sizeM1 = dMatrixSize (DMatrix m1)
-  DMatrix mOut <- dMatrixZeros size'
+  DMatrix mOut <- dMatrixNewZeros size'
   withForeignPtrs3 c_dMatrixMinus m0 m1 mOut
   return $ DMatrix mOut
 
@@ -164,13 +170,13 @@ dMM (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
           (rowsM0, colsM0) = dMatrixSize (DMatrix m0)
           (rowsM1, colsM1) = dMatrixSize (DMatrix m1)
 
-  DMatrix mOut <- dMatrixZeros size'
+  DMatrix mOut <- dMatrixNewZeros size'
   withForeignPtrs3 c_dMM m0 m1 mOut
   return $ DMatrix mOut
 
 dMatrixTranspose :: DMatrix -> DMatrix
 dMatrixTranspose (DMatrix mIn) = unsafePerformIO $ do
-  DMatrix mOut <- dMatrixZeros $ dMatrixSize (DMatrix mIn)
+  DMatrix mOut <- dMatrixNewZeros $ dMatrixSize (DMatrix mIn)
   withForeignPtrs2 c_dMatrixTranspose mIn mOut
   return $ DMatrix mOut
 
@@ -186,13 +192,13 @@ dMatrixIsEqual (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
 
 dMatrixScale :: Double -> DMatrix -> DMatrix
 dMatrixScale scalar (DMatrix mIn) = unsafePerformIO $ do
-  DMatrix mOut <- dMatrixZeros (1,1)
+  DMatrix mOut <- dMatrixNewZeros (1,1)
   withForeignPtrs2 (c_dMatrixScale $ realToFrac scalar) mIn mOut
   return $ DMatrix mOut
 
 dMatrixInv :: DMatrix -> DMatrix
 dMatrixInv (DMatrix mIn) = unsafePerformIO $ do
-  DMatrix mOut <- dMatrixZeros (1,1)
+  DMatrix mOut <- dMatrixNewZeros (1,1)
   withForeignPtrs2 c_dMatrixInv mIn mOut
   return $ DMatrix mOut
 
