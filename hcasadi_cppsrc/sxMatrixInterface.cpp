@@ -121,6 +121,10 @@ void sxMatrixMinus(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut){
   mOut = m0 - m1;
 }
 
+void sxMatrixNegate(const SXMatrix & m0, SXMatrix & mOut){
+  mOut = -m0;
+}
+
 void sxMM(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut){
   mOut = prod(m0, m1);
 }

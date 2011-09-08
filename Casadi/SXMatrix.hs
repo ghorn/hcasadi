@@ -56,6 +56,7 @@ foreign import ccall unsafe "sxMatrixSize2" c_sxMatrixSize2 :: (Ptr SXMatrixRaw)
 
 foreign import ccall unsafe "sxMatrixPlus" c_sxMatrixPlus :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 foreign import ccall unsafe "sxMatrixMinus" c_sxMatrixMinus :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixNegate" c_sxMatrixNegate :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 foreign import ccall unsafe "sxMM" c_sxMM :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 foreign import ccall unsafe "sxMatrixTranspose" c_sxMatrixTranspose :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 foreign import ccall unsafe "sxMatrixIsEqual" c_sxMatrixIsEqual :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO CInt
@@ -194,6 +195,13 @@ sxMatrixMinus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   withForeignPtrs3 c_sxMatrixMinus m0 m1 mOut
   return $ SXMatrix mOut
 
+sxMatrixNegate :: SXMatrix -> SXMatrix
+{-# NOINLINE sxMatrixNegate #-}
+sxMatrixNegate (SXMatrix m0) = unsafePerformIO $ do
+  SXMatrix mOut <- sxMatrixZeros (sxMatrixSize (SXMatrix m0))
+  withForeignPtrs2 c_sxMatrixNegate m0 mOut
+  return $ SXMatrix mOut
+
 
 sxMM :: SXMatrix -> SXMatrix -> SXMatrix
 {-# NOINLINE sxMM #-}
@@ -273,6 +281,8 @@ instance Num SXMatrix where
   signum = error "signum not defined for instance Num SXMatrix"
 
   fromInteger = sxMatrixFromIntegral
+
+  negate = sxMatrixNegate
 
 instance Fractional SXMatrix where
   (/) m0 m1 = m0 * (recip m1)

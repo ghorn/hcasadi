@@ -17,9 +17,6 @@ extern "C"{
   void dMatrixDelete(DMatrix * const d);
   DMatrix * dMatrixZeros(int n, int m);
 
-  // show
-  void dMatrixShow(char * stringOut, int strLen, const DMatrix & d);
-
   // getters/setters
   double dMatrixAt(const DMatrix & mat, int n, int m);
   void dMatrixSet(const double scalar, int n, int m, DMatrix & mat);
@@ -33,6 +30,7 @@ extern "C"{
   // math
   void dMatrixPlus(const DMatrix & m0, const DMatrix & m1, DMatrix & mOut);
   void dMatrixMinus(const DMatrix & m0, const DMatrix & m1, DMatrix & mOut);
+  void dMatrixNegate(const DMatrix & m0, DMatrix & mOut);
   void dMM(const DMatrix & m0, const DMatrix & m1, DMatrix & mOut);
   void dMatrixTranspose(const DMatrix & mIn, DMatrix & mOut);
   int dMatrixIsEqual(const DMatrix & m0, const DMatrix & m1);

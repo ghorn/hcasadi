@@ -35,6 +35,7 @@ extern "C"{
   // math
   void sxMatrixPlus(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
   void sxMatrixMinus(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
+  void sxMatrixNegate(const SXMatrix & m0, SXMatrix & mOut);
   void sxMM(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
   void sxMatrixTranspose(const SXMatrix & mIn, SXMatrix & mOut);
   int sxMatrixIsEqual(const SXMatrix & m0, const SXMatrix & m1);

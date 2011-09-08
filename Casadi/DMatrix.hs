@@ -47,7 +47,6 @@ instance Storable DMatrixRaw where
 foreign import ccall unsafe "dMatrixSizeOfAddress" c_dMatrixSizeOfAddress :: IO CInt
 foreign import ccall unsafe "&dMatrixDelete" c_dMatrixDelete :: FunPtr (Ptr DMatrixRaw -> IO ())
 foreign import ccall unsafe "dMatrixZeros" c_dMatrixZeros :: CInt -> CInt -> IO (Ptr DMatrixRaw)
-foreign import ccall unsafe "dMatrixShow" c_dMatrixShow :: Ptr CChar -> CInt -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixAt" c_dMatrixAt :: (Ptr DMatrixRaw) -> CInt -> CInt -> IO CDouble
 foreign import ccall unsafe "dMatrixSetList" c_dMatrixSetList :: CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixSetLists" c_dMatrixSetLists :: CInt -> CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
@@ -56,6 +55,7 @@ foreign import ccall unsafe "dMatrixSize2" c_dMatrixSize2 :: (Ptr DMatrixRaw) ->
 
 foreign import ccall unsafe "dMatrixPlus" c_dMatrixPlus :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixMinus" c_dMatrixMinus :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixNegate" c_dMatrixNegate :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMM" c_dMM :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixTranspose" c_dMatrixTranspose :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixIsEqual" c_dMatrixIsEqual :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO CInt
@@ -103,15 +103,6 @@ dMatrixFromLists dLists = unsafePerformIO $ do
   DMatrix m0 <- dMatrixNewZeros (rows', cols')
   withForeignPtr m0 $ c_dMatrixSetLists (fromIntegral rows') (fromIntegral cols') dListPtr
   return  $ DMatrix m0
-
----------------- show -------------------
-dMatrixShow :: DMatrix -> String
-{-# NOINLINE dMatrixShow #-}
-dMatrixShow (DMatrix s) = unsafePerformIO $ do
-  (stringRef, stringLength) <- newCStringLen $ replicate 4096 ' '
-  withForeignPtr s $ c_dMatrixShow stringRef (fromIntegral stringLength)
-  peekCString stringRef
-
 
 --------------- getters/setters ---------------------
 dMatrixAt :: DMatrix -> (Int,Int) -> IO Double
@@ -164,13 +155,22 @@ dMatrixMinus :: DMatrix -> DMatrix -> DMatrix
 dMatrixMinus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   let size'
         | sizeM0 == sizeM1 = sizeM0
-        | otherwise      = error "dMatrixMinus can't add matrices of different dimensions"
+        | otherwise        = error $ "dMatrixMinus can't subtract " ++ (show (dMatrixSize (DMatrix m0))) ++ " matrix by " ++ (show (dMatrixSize (DMatrix m1))) ++ " matrix"
+--        | otherwise        = error $ "dMatrixMinus can't subtract " ++ (show (dMatrixSize (DMatrix m0))) ++ " matrix " ++ (show (DMatrix m0)) ++ " by " ++ (show (dMatrixSize (DMatrix m1))) ++ " matrix " ++ (show (DMatrix m1))
         where
           sizeM0 = dMatrixSize (DMatrix m0)
           sizeM1 = dMatrixSize (DMatrix m1)
   DMatrix mOut <- dMatrixNewZeros size'
   withForeignPtrs3 c_dMatrixMinus m0 m1 mOut
   return $ DMatrix mOut
+
+dMatrixNegate :: DMatrix -> DMatrix
+{-# NOINLINE dMatrixNegate #-}
+dMatrixNegate (DMatrix m0) = unsafePerformIO $ do
+  DMatrix mOut <- dMatrixNewZeros (dMatrixSize (DMatrix m0))
+  withForeignPtrs2 c_dMatrixNegate m0 mOut
+  return $ DMatrix mOut
+
 
 dMM :: DMatrix -> DMatrix -> DMatrix
 {-# NOINLINE dMM #-}
@@ -218,10 +218,14 @@ dMatrixInv (DMatrix mIn) = unsafePerformIO $ do
   withForeignPtrs2 c_dMatrixInv mIn mOut
   return $ DMatrix mOut
 
-
 ----------------- typeclass stuff ------------------
 instance Show DMatrix where
-  show d = dMatrixShow d
+  show d = f (dMatrixSize d)
+    where
+      f (1,1) = show $ head (toList d)
+      f (1,_) = show $ toList d
+      f (_,1) = show $ toList d
+      f (_,_) = show $ toLists d
 
 instance Eq DMatrix where
   (==) = dMatrixIsEqual
@@ -241,6 +245,8 @@ instance Num DMatrix where
   abs = error "abs not defined for instance Num DMatrix"
   signum = error "signum not defined for instance Num DMatrix"
   fromInteger i = dMatrixFromList [fromIntegral i]
+
+  negate = dMatrixNegate
 
 instance Fractional DMatrix where
   (/) m0 m1 = m0 * (recip m1)

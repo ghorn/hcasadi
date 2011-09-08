@@ -38,17 +38,6 @@ DMatrix * dMatrixZeros(int n, int m){
 }
 
 
-/******************** show *******************/
-void dMatrixShow(char * stringOut, int strLen, const DMatrix & d){
-  ostringstream dOutStream;
-  dOutStream << d;
-  strncpy(stringOut, dOutStream.str().c_str(), strLen);
-
-  if (dOutStream.str().length() > strLen)
-    cerr << "(cpp) ERROR - dMatrixShow trying to write " << dOutStream.str().length() << " characters to output string with capacity of " << strLen << " characters\n";
-}
-
-
 /******************** accessors *******************/
 double dMatrixAt(const DMatrix & mat, int n, int m){
   return (mat.indexed(n,m)).at(0);
@@ -85,6 +74,10 @@ void dMatrixPlus(const DMatrix & m0, const DMatrix & m1, DMatrix & mOut){
 
 void dMatrixMinus(const DMatrix & m0, const DMatrix & m1, DMatrix & mOut){
   mOut = m0 - m1;
+}
+
+void dMatrixNegate(const DMatrix & m0, DMatrix & mOut){
+  mOut = -m0;
 }
 
 void dMM(const DMatrix & m0, const DMatrix & m1, DMatrix & mOut){
