@@ -13,7 +13,7 @@ extern "C"{
 #endif
 
   // memory management
-  SX * sxCreateSymbolic(char * charName);
+  SX * sxCreateSymbolic(const char * const name);
   SX * sxNewDouble(double in);
   SX * sxNewInt(int in);
   void sxDelete(SX * const sx);

@@ -32,11 +32,6 @@ extern "C"{
 			  int numOutputs, DMatrix * outputs[],
 			  FX & fun);
 
-  // ad
-  void sxFunctionGradient(SXFunction & fun, int idx, SXMatrix & output);
-  void sxFunctionJacobian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output);
-  void sxFunctionHessian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output);
-
 #ifdef __cplusplus
 }
 #endif

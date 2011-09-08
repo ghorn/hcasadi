@@ -24,11 +24,15 @@ import Foreign.Ptr
 import Foreign.ForeignPtr
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
---import Data.Ratio(numerator, denominator)
+import Control.DeepSeq
+  --import Data.Ratio(numerator, denominator)
 
 -- the SX data type
 data SXRaw = SXRaw
 newtype SX = SX (ForeignPtr SXRaw)
+
+instance NFData SX where
+  rnf x = x `seq` ()
 
 -- foreign imports
 foreign import ccall unsafe "sxInterface.hpp sxCreateSymbolic" c_sxCreateSymbolic :: Ptr CChar -> IO (Ptr SXRaw)

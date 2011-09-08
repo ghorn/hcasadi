@@ -18,10 +18,6 @@ using namespace CasADi;
 
 
 /******************** memory management *******************/
-int dMatrixSizeOfAddress(){
-  return sizeof(DMatrix*);
-}
-
 void dMatrixDelete(DMatrix * const d){
   #ifdef COUT_MEMORY_MANAGEMENT
   cout << "(cpp) deleting d matrix at " << d << endl;
@@ -32,7 +28,7 @@ void dMatrixDelete(DMatrix * const d){
 DMatrix * dMatrixZeros(int n, int m){
   DMatrix * out = new DMatrix( n, m, 0.0 );
   #ifdef COUT_MEMORY_MANAGEMENT
-  cout << "(cpp) new d zeros at " << out << ", val: " << *out << endl;
+  cout << "(cpp) new d zeros at " << out << endl;
   #endif
   return out;
 }

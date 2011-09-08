@@ -82,8 +82,6 @@ int sxFunctionGetOutputSize2( int idx, const SXFunction & fun ){
 }
 
 
-
-
 /************ evaluate *************/
 void sxFunctionEvaluate(int numInputs, const DMatrix * inputs[],
 			int numOutputs, DMatrix * outputs[],
@@ -93,22 +91,4 @@ void sxFunctionEvaluate(int numInputs, const DMatrix * inputs[],
   fun.evaluate();
   for (int k=0; k<numOutputs; k++)
     fun.getOutput( *(outputs[k]), k );
-}
-
-/*********************** differentiation *************************/
-void sxFunctionGradient(SXFunction & fun, int idx, SXMatrix & output){
-  output = SXMatrix( fun.grad( idx, 0 ) );
-  makeDense(output);
-}
-
-void sxFunctionJacobian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output){
-  output = SXMatrix( fun.jac( idxIn, idxOut ) );
-  makeDense(output);
-}
-
-void sxFunctionHessian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output){
-  SXMatrix theGrad(fun.grad(idxIn));
-  makeDense(theGrad);
-  output = jacobian(theGrad, fun.inputSX(idxOut));
-  makeDense(output);
 }

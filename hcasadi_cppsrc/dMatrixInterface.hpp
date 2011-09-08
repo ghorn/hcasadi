@@ -13,7 +13,6 @@ extern "C"{
 #endif
 
   // memory management
-  int dMatrixSizeOfAddress(void);
   void dMatrixDelete(DMatrix * const d);
   DMatrix * dMatrixZeros(int n, int m);
 

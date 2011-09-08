@@ -3,12 +3,11 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
-
 module Casadi.Matrix( Matrix(..) ) where
 
 class (Num a, Fractional a, Num b, Fractional b, Floating b) => Matrix a b | a -> b where
   trans :: a -> a
-  dim :: a -> (Int, Int)
+  size :: a -> (Int, Int)
   rows :: a -> Int
   cols :: a -> Int
   toList :: a -> [b]
@@ -19,5 +18,6 @@ class (Num a, Fractional a, Num b, Fractional b, Floating b) => Matrix a b | a -
   inv :: a -> a
   toSingleton :: a -> b
   scale :: b -> a -> a
+  zeros :: (Int,Int) -> a
 
   toSingleton = head . toList

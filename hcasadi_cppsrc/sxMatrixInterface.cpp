@@ -18,20 +18,14 @@ using namespace CasADi;
 
 
 /******************** memory management *******************/
-int sxMatrixSizeOfAddress(){
-  return sizeof(SXMatrix*);
-}
-
-SXMatrix * sxMatrixCreateSymbolic(char * charPrefix, int n, int m){
-  string prefix;
+SXMatrix * sxMatrixCreateSymbolic(const char * const prefix, int n, int m){
   SXMatrix * out;
-  prefix.assign(charPrefix);
   if (n == 1 && m == 1)
     out = new SXMatrix(create_symbolic(prefix));
   else if (m == 1)
     out = new SXMatrix(create_symbolic(prefix, n));
   else if (n == 1)
-    out = new SXMatrix(create_symbolic(prefix, m));
+    out = new SXMatrix(create_symbolic(prefix, 1, m));
   else
     out = new SXMatrix(create_symbolic(prefix, n, m));
 
@@ -70,9 +64,9 @@ SXMatrix * sxMatrixZeros(int n, int m){
 void sxMatrixShow(char * stringOut, int strLen, const SXMatrix & sx){
   ostringstream sxOutStream;
   sxOutStream << sx;
-  strncpy(stringOut, sxOutStream.str().c_str(), strLen);
+  strncpy(stringOut, sxOutStream.str().c_str(), strLen-1);
 
-  if (sxOutStream.str().length() > strLen)
+  if (sxOutStream.str().length() >= strLen-1)
     cerr << "(cpp) ERROR - sxMatrixShow trying to write " << sxOutStream.str().length() << " characters to output string with capacity of " << strLen << " characters\n";
 }
 

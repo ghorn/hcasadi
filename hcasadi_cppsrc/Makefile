@@ -7,6 +7,7 @@ CXX = g++
 LIB = libcasadi_interface.a
 
 SRC = \
+	adInterface.cpp \
 	dMatrixInterface.cpp \
 	sxInterface.cpp \
 	sxMatrixInterface.cpp \

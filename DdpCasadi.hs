@@ -13,7 +13,6 @@ module DdpCasadi
 
 import Casadi
 import Casadi.SXFunction
-import Casadi.DMatrix
 import Hom(Cost, Ode, Quad(..), evalQuad)
 import qualified Numeric.LinearAlgebra as LA
 import Numeric.LinearAlgebra((<>))
@@ -23,8 +22,11 @@ type BacksweepOutput = (Quad DMatrix, DMatrix, DMatrix)
 
 -- prepare casadi SXFunction
 prepareQFunction :: Int -> Int -> Cost SXMatrix SX -> Ode SXMatrix -> SXFunction
-prepareQFunction nx nu costFunction dode = sxFunctionCreate [x,u,vxx,vx,v0,x0] [q, qx, qu, qxx, qxu, quu]
+prepareQFunction nx nu costFunction dode = sxFunctionCreate
+                                           [x,u,vxx,vx,v0,x0]
+                                           [fromList [q], qx, qu, qxx, qxu, quu]
   where
+    -- inputs
     x   = sxMatrixSymbolic "x"   (nx,1)
     u   = sxMatrixSymbolic "u"   (nu,1)
     vxx = sxMatrixSymbolic "vxx" (nx,nx)
@@ -35,20 +37,13 @@ prepareQFunction nx nu costFunction dode = sxFunctionCreate [x,u,vxx,vx,v0,x0] [
     -- reshape SXMatrices into lists
     quad = Quad vxx vx v0 x0
 
-    -- the qFunction
-    q = fromList [thisCost + nextCost]
-      where
-        thisCost = costFunction x u
-        nextCost = evalQuad quad (dode x u)
-
-    qFun = sxFunctionCreate [x,u,vxx,vx,v0,x0] [q]
-
-    -- the quadratic expansion
-    qx  = sxFunctionGradientAt qFun 0
-    qu  = sxFunctionGradientAt qFun 1
-    qxx = sxFunctionHessianAt qFun (0,0)
-    qxu = sxFunctionHessianAt qFun (0,1)
-    quu = sxFunctionHessianAt qFun (1,1)
+    -- q function and its quadratic expansion
+    q = (costFunction x u) + (evalQuad quad (dode x u))
+    qx = gradient q x
+    qu = gradient q u
+    qxx = hessian q x
+    quu = hessian q u
+    qxu = jacobian qx u
 
 prepareDodeFunction :: Int -> Int -> Ode SXMatrix -> SXFunction
 prepareDodeFunction nx nu dode = sxFunctionCreate [x,u] [xNext]
@@ -126,9 +121,9 @@ backSweep' :: SXFunction -> (DMatrix, DMatrix) -> [BacksweepOutput] -> [Backswee
 -- end step - Vnext is 0 so q fcn is cost function
 backSweep' qFunction (x,u) [] = [backPropagate qFunction x u (Quad vxx vx v0 x0)]
   where
-    x0 =  zeros $ dim x
+    x0 =  zeros $ size x
     vxx = zeros (rows x, rows x)
-    vx =  zeros $ dim x
+    vx =  zeros $ size x
     v0 =  zeros (1,1)
 -- all non-end steps
 backSweep' qFunction (x,u) acc@((v,_,_):_) = (backPropagate qFunction x u v):acc

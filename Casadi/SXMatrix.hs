@@ -8,15 +8,11 @@ module Casadi.SXMatrix
        (
          SXMatrix(..)
        , SXMatrixRaw(..)
-       , sxMatrixTranspose
        , sxMatrixCreateSymbolic
-       , sxMatrixToLists
-       , sxMatrixToList
-       , sxMatrixFromList
-       , sxMatrixZeros
-       , sxMatrixSize
-       , sxMatrixScale
-       , sxMatrixInv
+       , sxMatrixNewZeros
+       , gradient
+       , hessian
+       , jacobian
        ) where
 
 import Casadi.SX
@@ -26,39 +22,59 @@ import Casadi.Matrix
 import Foreign.C
 import Foreign.ForeignPtr
 import Foreign.Ptr
-import Foreign.Storable
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
+import Control.DeepSeq
 
 -- the SXMatrix data type
 data SXMatrixRaw = SXMatrixRaw
 newtype SXMatrix = SXMatrix (ForeignPtr SXMatrixRaw)
 
-instance Storable SXMatrixRaw where
-  sizeOf _ = fromIntegral $ unsafePerformIO c_sxMatrixSizeOfAddress
-  alignment _ = fromIntegral $ unsafePerformIO c_sxMatrixSizeOfAddress
+instance NFData SXMatrix where
+  rnf x = x `seq` ()
 
 -- foreign imports
-foreign import ccall unsafe "sxMatrixSizeOfAddress" c_sxMatrixSizeOfAddress :: IO CInt
-foreign import ccall unsafe "sxMatrixCreateSymbolic" c_sxMatrixCreateSymbolic :: Ptr CChar -> CInt -> CInt -> IO (Ptr SXMatrixRaw)
-foreign import ccall unsafe "sxMatrixDuplicate" c_sxMatrixDuplicate :: (Ptr SXMatrixRaw) -> IO (Ptr SXMatrixRaw)
-foreign import ccall unsafe "&sxMatrixDelete" c_sxMatrixDelete :: FunPtr (Ptr SXMatrixRaw -> IO ())
-foreign import ccall unsafe "sxMatrixZeros" c_sxMatrixZeros :: CInt -> CInt -> IO (Ptr SXMatrixRaw)
-foreign import ccall unsafe "sxMatrixShow" c_sxMatrixShow :: Ptr CChar -> CInt -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall unsafe "sxMatrixAt" c_sxMatrixAt :: (Ptr SXMatrixRaw) -> CInt -> CInt -> (Ptr SXRaw) -> IO ()
-foreign import ccall unsafe "sxMatrixSet" c_sxMatrixSet :: (Ptr SXRaw) -> CInt -> CInt -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall unsafe "sxMatrixSize1" c_sxMatrixSize1 :: (Ptr SXMatrixRaw) -> IO CInt
-foreign import ccall unsafe "sxMatrixSize2" c_sxMatrixSize2 :: (Ptr SXMatrixRaw) -> IO CInt
+foreign import ccall unsafe "sxMatrixCreateSymbolic" c_sxMatrixCreateSymbolic
+  :: Ptr CChar -> CInt -> CInt -> IO (Ptr SXMatrixRaw)
+foreign import ccall unsafe "sxMatrixDuplicate" c_sxMatrixDuplicate
+  :: (Ptr SXMatrixRaw) -> IO (Ptr SXMatrixRaw)
+foreign import ccall unsafe "&sxMatrixDelete" c_sxMatrixDelete
+  :: FunPtr (Ptr SXMatrixRaw -> IO ())
+foreign import ccall unsafe "sxMatrixZeros" c_sxMatrixZeros
+  :: CInt -> CInt -> IO (Ptr SXMatrixRaw)
+foreign import ccall unsafe "sxMatrixShow" c_sxMatrixShow
+  :: Ptr CChar -> CInt -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixAt" c_sxMatrixAt
+  :: (Ptr SXMatrixRaw) -> CInt -> CInt -> (Ptr SXRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixSet" c_sxMatrixSet
+  :: (Ptr SXRaw) -> CInt -> CInt -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixSize1" c_sxMatrixSize1
+  :: (Ptr SXMatrixRaw) -> IO CInt
+foreign import ccall unsafe "sxMatrixSize2" c_sxMatrixSize2
+  :: (Ptr SXMatrixRaw) -> IO CInt
+foreign import ccall unsafe "sxMatrixPlus" c_sxMatrixPlus
+  :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixMinus" c_sxMatrixMinus
+  :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixNegate" c_sxMatrixNegate
+  :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMM" c_sxMM
+  :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixTranspose" c_sxMatrixTranspose
+  :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixIsEqual" c_sxMatrixIsEqual
+  :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO CInt
+foreign import ccall unsafe "sxMatrixScale" c_sxMatrixScale
+  :: (Ptr SXRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxMatrixInv" c_sxMatrixInv
+  :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 
-foreign import ccall unsafe "sxMatrixPlus" c_sxMatrixPlus :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall unsafe "sxMatrixMinus" c_sxMatrixMinus :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall unsafe "sxMatrixNegate" c_sxMatrixNegate :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall unsafe "sxMM" c_sxMM :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall unsafe "sxMatrixTranspose" c_sxMatrixTranspose :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall unsafe "sxMatrixIsEqual" c_sxMatrixIsEqual :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO CInt
-foreign import ccall unsafe "sxMatrixScale" c_sxMatrixScale :: (Ptr SXRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-foreign import ccall unsafe "sxMatrixInv" c_sxMatrixInv :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
-
+foreign import ccall unsafe "myGradient" c_myGradient
+  :: (Ptr SXRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "myHessian" c_myHessian
+  :: (Ptr SXRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+foreign import ccall unsafe "myJacobian" c_myJacobian
+  :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 
 ----------------- create -------------------------
 sxMatrixCreateSymbolic :: String -> (Int, Int) -> IO SXMatrix
@@ -67,20 +83,22 @@ sxMatrixCreateSymbolic prefix (n,m) = mask_ $ do
   mat <- c_sxMatrixCreateSymbolic cPrefix (fromIntegral n) (fromIntegral m) >>= newForeignPtr c_sxMatrixDelete
   return $ SXMatrix mat
 
+
 sxMatrixDuplicate :: SXMatrix -> IO SXMatrix
 sxMatrixDuplicate (SXMatrix old) = mask_ $ do
   new <- withForeignPtr old c_sxMatrixDuplicate >>= newForeignPtr c_sxMatrixDelete
   return $ SXMatrix new
 
-sxMatrixZeros :: (Int, Int) -> IO SXMatrix
-sxMatrixZeros (n,m) = mask_ $ do
+
+sxMatrixNewZeros :: (Int, Int) -> IO SXMatrix
+sxMatrixNewZeros (n,m) = mask_ $ do
   let n' = safeToCInt n
       m' = safeToCInt m
       
       safeToCInt :: Int -> CInt
       safeToCInt x
         | and [toInteger x <= maxCInt, toInteger x >= minCInt] = fromIntegral x
-        | otherwise = error "Error - sxMatrixZeros dimensions too big"
+        | otherwise = error "Error - sxMatrixNewZeros dimensions too big"
         where
           maxCInt = fromIntegral (maxBound :: CInt)
           minCInt = fromIntegral (minBound :: CInt)
@@ -88,12 +106,21 @@ sxMatrixZeros (n,m) = mask_ $ do
   mat <- c_sxMatrixZeros n' m' >>= newForeignPtr c_sxMatrixDelete
   return $ SXMatrix mat
 
+
+sxMatrixZeros :: (Int,Int) -> SXMatrix
+{-# NOINLINE sxMatrixZeros #-}
+sxMatrixZeros dim = unsafePerformIO $ do
+  mat <- sxMatrixNewZeros dim
+  return mat
+
+
 sxMatrixFromList :: [SX] -> SXMatrix
 {-# NOINLINE sxMatrixFromList #-}
 sxMatrixFromList sxList = unsafePerformIO $ do
-  m0 <- sxMatrixZeros (length sxList, 1)
+  m0 <- sxMatrixNewZeros (length sxList, 1)
   let indexedSXList = zip sxList $ take (length sxList) [0..]
   return $ foldl (\acc (sx,idx) -> sxMatrixSet acc (idx,0) sx) m0 indexedSXList
+
 
 ---------------- show -------------------
 sxMatrixShow :: SXMatrix -> String
@@ -121,7 +148,6 @@ sxMatrixSet (SXMatrix matIn) (n,m) (SX val) = unsafePerformIO $ do
   return (SXMatrix matOut)
 
 
-
 ---------------- dimensions --------------------
 sxMatrixSize :: SXMatrix -> (Int,Int)
 {-# NOINLINE sxMatrixSize #-}
@@ -137,6 +163,7 @@ sxMatrixToLists mat = unsafePerformIO $ do
   let f row = mapM (\col -> sxMatrixAt mat (row, col)) [0..m-1]
       (n,m) = sxMatrixSize mat
   mapM f [0..n-1]
+
 
 -- turns n by 1 matrix into a list of SX, returns error if matrix is not n by 1
 sxMatrixToList :: SXMatrix -> [SX]
@@ -158,9 +185,10 @@ sxMatrixPlus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
         where
           sizeM0 = sxMatrixSize (SXMatrix m0)
           sizeM1 = sxMatrixSize (SXMatrix m1)
-  SXMatrix mOut <- sxMatrixZeros size'
+  SXMatrix mOut <- sxMatrixNewZeros size'
   withForeignPtrs3 c_sxMatrixPlus m0 m1 mOut
   return $ SXMatrix mOut
+
 
 sxMatrixMinus :: SXMatrix -> SXMatrix -> SXMatrix
 {-# NOINLINE sxMatrixMinus #-}
@@ -171,14 +199,15 @@ sxMatrixMinus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
         where
           sizeM0 = sxMatrixSize (SXMatrix m0)
           sizeM1 = sxMatrixSize (SXMatrix m1)
-  SXMatrix mOut <- sxMatrixZeros size'
+  SXMatrix mOut <- sxMatrixNewZeros size'
   withForeignPtrs3 c_sxMatrixMinus m0 m1 mOut
   return $ SXMatrix mOut
+
 
 sxMatrixNegate :: SXMatrix -> SXMatrix
 {-# NOINLINE sxMatrixNegate #-}
 sxMatrixNegate (SXMatrix m0) = unsafePerformIO $ do
-  SXMatrix mOut <- sxMatrixZeros (sxMatrixSize (SXMatrix m0))
+  SXMatrix mOut <- sxMatrixNewZeros (sxMatrixSize (SXMatrix m0))
   withForeignPtrs2 c_sxMatrixNegate m0 mOut
   return $ SXMatrix mOut
 
@@ -193,7 +222,7 @@ sxMM (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
           (rowsM0, colsM0) = sxMatrixSize (SXMatrix m0)
           (rowsM1, colsM1) = sxMatrixSize (SXMatrix m1)
 
-  SXMatrix mOut <- sxMatrixZeros size'
+  SXMatrix mOut <- sxMatrixNewZeros size'
   withForeignPtrs3 c_sxMM m0 m1 mOut
   return $ SXMatrix mOut
 
@@ -201,7 +230,7 @@ sxMM (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
 sxMatrixTranspose :: SXMatrix -> SXMatrix
 {-# NOINLINE sxMatrixTranspose #-}
 sxMatrixTranspose (SXMatrix mIn) = unsafePerformIO $ do
-  SXMatrix mOut <- sxMatrixZeros $ sxMatrixSize (SXMatrix mIn)
+  SXMatrix mOut <- sxMatrixNewZeros $ sxMatrixSize (SXMatrix mIn)
   withForeignPtrs2 c_sxMatrixTranspose mIn mOut
   return $ SXMatrix mOut
 
@@ -220,16 +249,18 @@ sxMatrixIsEqual (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
 sxMatrixScale :: SX -> SXMatrix -> SXMatrix
 {-# NOINLINE sxMatrixScale #-}
 sxMatrixScale (SX scalar) (SXMatrix mIn) = unsafePerformIO $ do
-  SXMatrix mOut <- sxMatrixZeros (1,1)
+  SXMatrix mOut <- sxMatrixNewZeros (1,1)
   withForeignPtrs3 c_sxMatrixScale scalar mIn mOut
   return $ SXMatrix mOut
+
 
 sxMatrixInv :: SXMatrix -> SXMatrix
 {-# NOINLINE sxMatrixInv #-}
 sxMatrixInv (SXMatrix mIn) = unsafePerformIO $ do
-  SXMatrix mOut <- sxMatrixZeros (1,1)
+  SXMatrix mOut <- sxMatrixNewZeros (1,1)
   withForeignPtrs2 c_sxMatrixInv mIn mOut
   return $ SXMatrix mOut
+
 
 sxMatrixFromIntegral :: Integral a => a -> SXMatrix
 {-# NOINLINE sxMatrixFromIntegral #-}
@@ -237,9 +268,39 @@ sxMatrixFromIntegral i = unsafePerformIO $ do
   s <- sxNewIntegral i
   return $ sxMatrixFromList [s]
 
+
+----------------- ad -----------------------
+gradient :: SX -> SXMatrix -> SXMatrix
+{-# NOINLINE gradient #-}
+gradient (SX expRaw) (SXMatrix argsRaw) = unsafePerformIO $ do
+  SXMatrix mOut <- sxMatrixNewZeros (1,1)
+  withForeignPtrs3 c_myGradient expRaw argsRaw mOut
+  return $ (SXMatrix mOut)
+
+hessian :: SX -> SXMatrix -> SXMatrix
+{-# NOINLINE hessian #-}
+hessian (SX expRaw) (SXMatrix argsRaw) = unsafePerformIO $ do
+  SXMatrix mOut <- sxMatrixNewZeros (1,1)
+  withForeignPtrs3 c_myHessian expRaw argsRaw mOut
+  return $ (SXMatrix mOut)
+
+jacobian :: SXMatrix -> SXMatrix -> SXMatrix
+{-# NOINLINE jacobian #-}
+jacobian (SXMatrix expRaw) (SXMatrix argsRaw) = unsafePerformIO $ do
+  SXMatrix mOut <- sxMatrixNewZeros (1,1)
+  withForeignPtrs3 c_myJacobian expRaw argsRaw mOut
+  return $ (SXMatrix mOut)
+
+
 ----------------- typeclass stuff ------------------
 instance Show SXMatrix where
-  show sx = sxMatrixShow sx
+  show m = f (sxMatrixSize m)
+    where
+      f (1,1) = "[[" ++ (sxMatrixShow m) ++ "]]"
+      f (_,1) = sxMatrixShow m
+      f (1,_) = init $ sxMatrixShow m
+      f (_,_) = init $ sxMatrixShow m
+
 
 instance Eq SXMatrix where
   (==) = sxMatrixIsEqual
@@ -264,6 +325,7 @@ instance Num SXMatrix where
 
   negate = sxMatrixNegate
 
+
 instance Fractional SXMatrix where
   (/) m0 m1 = m0 * (recip m1)
   recip mat = sxMatrixInv mat
@@ -272,7 +334,7 @@ instance Fractional SXMatrix where
 
 instance Matrix SXMatrix SX where
   trans = sxMatrixTranspose
-  dim = sxMatrixSize
+  size = sxMatrixSize
   rows = fst . sxMatrixSize
   cols = snd . sxMatrixSize
   toList = sxMatrixToList
@@ -282,3 +344,4 @@ instance Matrix SXMatrix SX where
   concatMat mats = fromList $ concat $ map toList mats
   inv = sxMatrixInv
   scale = sxMatrixScale
+  zeros = sxMatrixZeros

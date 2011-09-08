@@ -13,8 +13,7 @@ extern "C"{
 #endif
 
   // memory management
-  int sxMatrixSizeOfAddress(void);
-  SXMatrix * sxMatrixCreateSymbolic(char * charPrefix, int n, int m);
+  SXMatrix * sxMatrixCreateSymbolic(const char * const prefix, int n, int m);
   SXMatrix * sxMatrixDuplicate(const SXMatrix & old);
   void sxMatrixDelete(SXMatrix * const sx);
   SXMatrix * sxMatrixZeros(int n, int m);

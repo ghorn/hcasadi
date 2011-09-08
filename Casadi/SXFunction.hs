@@ -23,6 +23,7 @@ module Casadi.SXFunction
 
 import Casadi.DMatrix
 import Casadi.SXMatrix
+import Casadi.Matrix
 import Casadi.CasadiInterfaceUtils
 
 import Foreign.C
@@ -32,10 +33,14 @@ import Foreign.Marshal(newArray)
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
 import Text.Printf
+import Control.DeepSeq
 
 -- the SXFunction data type
 data SXFunctionRaw = SXFunctionRaw
 newtype SXFunction = SXFunction (ForeignPtr SXFunctionRaw)
+
+instance NFData SXFunction where
+  rnf x = x `seq` ()
 
 -- foreign imports
 foreign import ccall unsafe "sxFunctionCreate" c_sxFunctionCreate
@@ -117,7 +122,7 @@ sxFunctionGetInputsSX (SXFunction fun) idx = unsafePerformIO $ do
     then error $ printf "Error in sxFunctionGetInputsSX - requested input index: %d >= numInputs (SXFunction fun): %d" idx (sxFunctionNumInputs (SXFunction fun))
     else do return ()
 
-  SXMatrix mat <- sxMatrixZeros (1::Int,1::Int)
+  SXMatrix mat <- sxMatrixNewZeros (1::Int,1::Int)
   withForeignPtrs2 (\fun' mat' -> c_sxFunctionGetInputsSX fun' (fromIntegral idx) mat') fun mat
   return (SXMatrix mat)
 
@@ -129,7 +134,7 @@ sxFunctionGetOutputsSX (SXFunction fun) idx = unsafePerformIO $ do
     then error $ printf "Error in sxFunctionGetOutputsSX - requested output index: %d >= numOutputs (SXFunction fun): %d" idx (sxFunctionNumOutputs (SXFunction fun))
     else do return ()
 
-  SXMatrix mat <- sxMatrixZeros (1::Int,1::Int)
+  SXMatrix mat <- sxMatrixNewZeros (1::Int,1::Int)
   withForeignPtrs2 (\fun' mat' -> c_sxFunctionGetOutputsSX fun' (fromIntegral idx) mat') fun mat
   return (SXMatrix mat)
 
@@ -160,11 +165,11 @@ sxFunctionGradientAt (SXFunction fun) idxInput = unsafePerformIO $ do
     else do return ()
 
   -- don't take gradient of vector valued function
-  if (1,1) /= (sxMatrixSize $ sxFunctionGetOutputsSX (SXFunction fun) 0)
+  if (1,1) /= (size $ sxFunctionGetOutputsSX (SXFunction fun) 0)
     then error $ printf "Error in sxFunctionGradientAt - requested gradient of non-scalar"
     else do return ()
 
-  SXMatrix mat <- sxMatrixZeros (1::Int,1::Int)
+  SXMatrix mat <- sxMatrixNewZeros (1::Int,1::Int)
   withForeignPtrs2 (\fun' mat' -> c_sxFunctionGradient fun' (fromIntegral idxInput) mat') fun mat
   return $ (SXMatrix mat)
 
@@ -186,7 +191,7 @@ sxFunctionJacobianAt (SXFunction fun) (idx0, idx1) = unsafePerformIO $ do
     then error $ printf "Error in sxFunctionJacobianAt - requested jacobian index: (%d,%d) is outside numInputs (SXFunction fun): %d" idx0 idx1 (sxFunctionNumInputs (SXFunction fun))
     else do return ()
 
-  SXMatrix mat <- sxMatrixZeros (1::Int,1::Int)
+  SXMatrix mat <- sxMatrixNewZeros (1::Int,1::Int)
   withForeignPtrs2 (\fun' mat' -> c_sxFunctionJacobian fun' (fromIntegral idx0) (fromIntegral idx1) mat') fun mat
   return $ (SXMatrix mat)
 
@@ -200,11 +205,11 @@ sxFunctionHessianAt (SXFunction fun) (idx0, idx1) = unsafePerformIO $ do
     else do return ()
 
   -- don't take hessian of vector valued function
-  if (1,1) /= (sxMatrixSize $ sxFunctionGetOutputsSX (SXFunction fun) 0)
+  if (1,1) /= (size $ sxFunctionGetOutputsSX (SXFunction fun) 0)
     then error $ printf "Error in sxFunctionHessianAt - requested hessian of non-scalar"
     else do return ()
 
-  SXMatrix mat <- sxMatrixZeros (1::Int,1::Int)
+  SXMatrix mat <- sxMatrixNewZeros (1::Int,1::Int)
   withForeignPtrs2 (\fun' mat' -> c_sxFunctionHessian fun' (fromIntegral idx0) (fromIntegral idx1) mat') fun mat
   return $ (SXMatrix mat)
 
@@ -232,5 +237,5 @@ sxFunctionEvaluate fun@(SXFunction funRaw) inputs = unsafePerformIO $ do
 sxFunctionEvaluateLists :: SXFunction -> [[[Double]]] -> [[[Double]]]
 {-# NOINLINE sxFunctionEvaluateLists #-}
 sxFunctionEvaluateLists fun inputs = unsafePerformIO $ do
-  let outNew = map dMatrixToLists $ sxFunctionEvaluate fun $ map dMatrixFromLists inputs
+  let outNew = map toLists $ sxFunctionEvaluate fun $ map fromLists inputs
   return outNew

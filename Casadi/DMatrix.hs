@@ -8,16 +8,7 @@ module Casadi.DMatrix
        (
          DMatrix(..)
        , DMatrixRaw(..)
-       , dMatrixTranspose
-       , dMatrixToLists
-       , dMatrixToList
-       , dMatrixFromList
-       , dMatrixFromLists
        , dMatrixNewZeros
-       , zeros
-       , dMatrixSize
-       , dMatrixScale
-       , dMatrixInv
        ) where
 
 import Casadi.CasadiInterfaceUtils
@@ -27,10 +18,10 @@ import Foreign.C
 import Foreign.Marshal(newArray)
 import Foreign.ForeignPtr
 import Foreign.Ptr
-import Foreign.Storable
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
 import Control.DeepSeq
+import Data.List(intersperse)
 
 -- the DMatrix data type
 data DMatrixRaw = DMatrixRaw
@@ -39,28 +30,37 @@ newtype DMatrix = DMatrix (ForeignPtr DMatrixRaw)
 instance NFData DMatrix where
   rnf x = x `seq` ()
 
-instance Storable DMatrixRaw where
-  sizeOf _ = fromIntegral $ unsafePerformIO c_dMatrixSizeOfAddress
-  alignment _ = fromIntegral $ unsafePerformIO c_dMatrixSizeOfAddress
-
 -- foreign imports
-foreign import ccall unsafe "dMatrixSizeOfAddress" c_dMatrixSizeOfAddress :: IO CInt
-foreign import ccall unsafe "&dMatrixDelete" c_dMatrixDelete :: FunPtr (Ptr DMatrixRaw -> IO ())
-foreign import ccall unsafe "dMatrixZeros" c_dMatrixZeros :: CInt -> CInt -> IO (Ptr DMatrixRaw)
-foreign import ccall unsafe "dMatrixAt" c_dMatrixAt :: (Ptr DMatrixRaw) -> CInt -> CInt -> IO CDouble
-foreign import ccall unsafe "dMatrixSetList" c_dMatrixSetList :: CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMatrixSetLists" c_dMatrixSetLists :: CInt -> CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMatrixSize1" c_dMatrixSize1 :: (Ptr DMatrixRaw) -> IO CInt
-foreign import ccall unsafe "dMatrixSize2" c_dMatrixSize2 :: (Ptr DMatrixRaw) -> IO CInt
-
-foreign import ccall unsafe "dMatrixPlus" c_dMatrixPlus :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMatrixMinus" c_dMatrixMinus :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMatrixNegate" c_dMatrixNegate :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMM" c_dMM :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMatrixTranspose" c_dMatrixTranspose :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMatrixIsEqual" c_dMatrixIsEqual :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO CInt
-foreign import ccall unsafe "dMatrixScale" c_dMatrixScale :: CDouble -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMatrixInv" c_dMatrixInv :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "&dMatrixDelete" c_dMatrixDelete
+  :: FunPtr (Ptr DMatrixRaw -> IO ())
+foreign import ccall unsafe "dMatrixZeros" c_dMatrixZeros
+  :: CInt -> CInt -> IO (Ptr DMatrixRaw)
+foreign import ccall unsafe "dMatrixAt" c_dMatrixAt
+  :: (Ptr DMatrixRaw) -> CInt -> CInt -> IO CDouble
+foreign import ccall unsafe "dMatrixSetList" c_dMatrixSetList
+  :: CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixSetLists" c_dMatrixSetLists
+  :: CInt -> CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixSize1" c_dMatrixSize1
+  :: (Ptr DMatrixRaw) -> IO CInt
+foreign import ccall unsafe "dMatrixSize2" c_dMatrixSize2
+  :: (Ptr DMatrixRaw) -> IO CInt
+foreign import ccall unsafe "dMatrixPlus" c_dMatrixPlus
+  :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixMinus" c_dMatrixMinus
+  :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixNegate" c_dMatrixNegate
+  :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMM" c_dMM
+  :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixTranspose" c_dMatrixTranspose
+  :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixIsEqual" c_dMatrixIsEqual
+  :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO CInt
+foreign import ccall unsafe "dMatrixScale" c_dMatrixScale
+  :: CDouble -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixInv" c_dMatrixInv
+  :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
 
 
 ----------------- create -------------------------
@@ -80,11 +80,13 @@ dMatrixNewZeros (n,m) = mask_ $ do
   mat <- c_dMatrixZeros n' m' >>= newForeignPtr c_dMatrixDelete
   return $ DMatrix mat
 
-zeros :: (Int, Int) -> DMatrix
-{-# NOINLINE zeros #-}
-zeros dimensions = unsafePerformIO $ do
+
+dMatrixZeros :: (Int, Int) -> DMatrix
+{-# NOINLINE dMatrixZeros #-}
+dMatrixZeros dimensions = unsafePerformIO $ do
   mOut <- dMatrixNewZeros dimensions
   return mOut
+
 
 dMatrixFromList :: [Double] -> DMatrix
 {-# NOINLINE dMatrixFromList #-}
@@ -93,6 +95,7 @@ dMatrixFromList dList = unsafePerformIO $ do
   DMatrix m0 <- dMatrixNewZeros (length dList, 1)
   withForeignPtr m0 $ c_dMatrixSetList (fromIntegral $ length dList) dListPtr
   return $ DMatrix m0
+
 
 dMatrixFromLists :: [[Double]] -> DMatrix
 {-# NOINLINE dMatrixFromLists #-}
@@ -104,11 +107,13 @@ dMatrixFromLists dLists = unsafePerformIO $ do
   withForeignPtr m0 $ c_dMatrixSetLists (fromIntegral rows') (fromIntegral cols') dListPtr
   return  $ DMatrix m0
 
+
 --------------- getters/setters ---------------------
 dMatrixAt :: DMatrix -> (Int,Int) -> IO Double
 dMatrixAt (DMatrix matIn) (n,m) = do
   dOut <- withForeignPtr matIn (\matIn' -> c_dMatrixAt matIn' (fromIntegral n) (fromIntegral m))
   return $ realToFrac dOut
+
 
 ---------------- dimensions --------------------
 dMatrixSize :: DMatrix -> (Int,Int)
@@ -125,6 +130,7 @@ dMatrixToLists mat = unsafePerformIO $ do
   let f row = mapM (\col -> dMatrixAt mat (row, col)) [0..m-1]
       (n,m) = dMatrixSize mat
   mapM f [0..n-1]
+
 
 -- turns n by 1 matrix into a list of D, returns error if matrix is not n by 1
 dMatrixToList :: DMatrix -> [Double]
@@ -150,19 +156,20 @@ dMatrixPlus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   withForeignPtrs3 c_dMatrixPlus m0 m1 mOut
   return $ DMatrix mOut
 
+
 dMatrixMinus :: DMatrix -> DMatrix -> DMatrix
 {-# NOINLINE dMatrixMinus #-}
 dMatrixMinus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   let size'
         | sizeM0 == sizeM1 = sizeM0
-        | otherwise        = error $ "dMatrixMinus can't subtract " ++ (show (dMatrixSize (DMatrix m0))) ++ " matrix by " ++ (show (dMatrixSize (DMatrix m1))) ++ " matrix"
---        | otherwise        = error $ "dMatrixMinus can't subtract " ++ (show (dMatrixSize (DMatrix m0))) ++ " matrix " ++ (show (DMatrix m0)) ++ " by " ++ (show (dMatrixSize (DMatrix m1))) ++ " matrix " ++ (show (DMatrix m1))
+        | otherwise        = error $ "dMatrixMinus can't subtract " ++ (show (dMatrixSize (DMatrix m0))) ++ " matrix\n" ++ (show (DMatrix m0)) ++ "\nby " ++ (show (dMatrixSize (DMatrix m1))) ++ " matrix\n" ++ (show (DMatrix m1))
         where
           sizeM0 = dMatrixSize (DMatrix m0)
           sizeM1 = dMatrixSize (DMatrix m1)
   DMatrix mOut <- dMatrixNewZeros size'
   withForeignPtrs3 c_dMatrixMinus m0 m1 mOut
   return $ DMatrix mOut
+
 
 dMatrixNegate :: DMatrix -> DMatrix
 {-# NOINLINE dMatrixNegate #-}
@@ -186,6 +193,7 @@ dMM (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   withForeignPtrs3 c_dMM m0 m1 mOut
   return $ DMatrix mOut
 
+
 dMatrixTranspose :: DMatrix -> DMatrix
 {-# NOINLINE dMatrixTranspose #-}
 dMatrixTranspose (DMatrix mIn) = unsafePerformIO $ do
@@ -204,12 +212,14 @@ dMatrixIsEqual (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
     else
     return False
 
+
 dMatrixScale :: Double -> DMatrix -> DMatrix
 {-# NOINLINE dMatrixScale #-}
 dMatrixScale scalar (DMatrix mIn) = unsafePerformIO $ do
   DMatrix mOut <- dMatrixNewZeros (1,1)
   withForeignPtrs2 (c_dMatrixScale $ realToFrac scalar) mIn mOut
   return $ DMatrix mOut
+
 
 dMatrixInv :: DMatrix -> DMatrix
 {-# NOINLINE dMatrixInv #-}
@@ -218,18 +228,20 @@ dMatrixInv (DMatrix mIn) = unsafePerformIO $ do
   withForeignPtrs2 c_dMatrixInv mIn mOut
   return $ DMatrix mOut
 
+
 ----------------- typeclass stuff ------------------
 instance Show DMatrix where
   show d = f (dMatrixSize d)
     where
-      f (1,1) = show $ head (toList d)
-      f (1,_) = show $ toList d
+      f (1,1) = show $ toLists d
       f (_,1) = show $ toList d
-      f (_,_) = show $ toLists d
+      f (1,_) = show $ toLists d
+      f (_,_) = '[': (concat $ intersperse "\n " $ map show (toLists d)) ++ "]"
 
 instance Eq DMatrix where
   (==) = dMatrixIsEqual
   (/=) d0 d1 = not $ d0 == d1
+
 
 instance Num DMatrix where
   (+) = dMatrixPlus
@@ -248,6 +260,7 @@ instance Num DMatrix where
 
   negate = dMatrixNegate
 
+
 instance Fractional DMatrix where
   (/) m0 m1 = m0 * (recip m1)
   recip mat = dMatrixInv mat
@@ -256,7 +269,7 @@ instance Fractional DMatrix where
 
 instance Matrix DMatrix Double where
   trans = dMatrixTranspose
-  dim = dMatrixSize
+  size = dMatrixSize
   rows = fst . dMatrixSize
   cols = snd . dMatrixSize
   toList = dMatrixToList
@@ -266,3 +279,4 @@ instance Matrix DMatrix Double where
   concatMat = error "concatMat not yet implemented for Matrix DMatrix Double"
   inv = dMatrixInv
   scale = dMatrixScale
+  zeros = dMatrixZeros
