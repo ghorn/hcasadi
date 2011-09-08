@@ -10,8 +10,6 @@ module Casadi.SXMatrix
        , SXMatrixRaw(..)
        , sxMatrixTranspose
        , sxMatrixCreateSymbolic
-       , sxMatrixListToUnsafeArray
-       , sxMatrixFreeUnsafeArray
        , sxMatrixToLists
        , sxMatrixToList
        , sxMatrixFromList
@@ -44,8 +42,6 @@ instance Storable SXMatrixRaw where
 foreign import ccall unsafe "sxMatrixSizeOfAddress" c_sxMatrixSizeOfAddress :: IO CInt
 foreign import ccall unsafe "sxMatrixCreateSymbolic" c_sxMatrixCreateSymbolic :: Ptr CChar -> CInt -> CInt -> IO (Ptr SXMatrixRaw)
 foreign import ccall unsafe "sxMatrixDuplicate" c_sxMatrixDuplicate :: (Ptr SXMatrixRaw) -> IO (Ptr SXMatrixRaw)
-foreign import ccall unsafe "sxMatrixDuplicateAt" c_sxMatrixDuplicateAt :: (Ptr SXMatrixRaw) -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall unsafe "sxMatrixFreeArray" c_sxMatrixFreeArray :: (Ptr SXMatrixRaw) -> CInt -> IO ()
 foreign import ccall unsafe "&sxMatrixDelete" c_sxMatrixDelete :: FunPtr (Ptr SXMatrixRaw -> IO ())
 foreign import ccall unsafe "sxMatrixZeros" c_sxMatrixZeros :: CInt -> CInt -> IO (Ptr SXMatrixRaw)
 foreign import ccall unsafe "sxMatrixShow" c_sxMatrixShow :: Ptr CChar -> CInt -> (Ptr SXMatrixRaw) -> IO ()
@@ -75,22 +71,6 @@ sxMatrixDuplicate :: SXMatrix -> IO SXMatrix
 sxMatrixDuplicate (SXMatrix old) = mask_ $ do
   new <- withForeignPtr old c_sxMatrixDuplicate >>= newForeignPtr c_sxMatrixDelete
   return $ SXMatrix new
-
--- returns an array of SXMatrix pointers
--- before the array is automatically freed by GC without freeing the individual elements, you must manually call sxMatrixFreeUnsafeArray
-sxMatrixListToUnsafeArray :: [SXMatrix] -> IO ((ForeignPtr SXMatrixRaw, Int))
-sxMatrixListToUnsafeArray matList = do
-  fArrayPtr <- mallocForeignPtrArray (length matList)
-
-  let setOneSXMatrix ((SXMatrix fSource),idx) = withForeignPtrs2 (\arrayPtr source -> c_sxMatrixDuplicateAt source (fromIntegral idx) arrayPtr) fArrayPtr fSource
-
-  _ <- mapM setOneSXMatrix $ zip matList [0..(length matList)-1]
-
-  return (fArrayPtr, length matList)
-
-sxMatrixFreeUnsafeArray :: ForeignPtr SXMatrixRaw -> Int -> IO ()
-sxMatrixFreeUnsafeArray matArray len = do
-  withForeignPtr matArray (\x -> c_sxMatrixFreeArray x (fromIntegral len))
 
 sxMatrixZeros :: (Int, Int) -> IO SXMatrix
 sxMatrixZeros (n,m) = mask_ $ do

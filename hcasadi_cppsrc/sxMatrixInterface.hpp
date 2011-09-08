@@ -16,8 +16,6 @@ extern "C"{
   int sxMatrixSizeOfAddress(void);
   SXMatrix * sxMatrixCreateSymbolic(char * charPrefix, int n, int m);
   SXMatrix * sxMatrixDuplicate(const SXMatrix & old);
-  void sxMatrixDuplicateAt(const SXMatrix & source, int idx, SXMatrix * destination[]);
-  void sxMatrixFreeArray(SXMatrix * matArray[], int n);
   void sxMatrixDelete(SXMatrix * const sx);
   SXMatrix * sxMatrixZeros(int n, int m);
 
