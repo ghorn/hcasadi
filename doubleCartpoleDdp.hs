@@ -5,18 +5,18 @@
 
 module Main where
 
-import Hom
 import Xyz
 import Quat
 import Integrators(rk4Step)
 import Vis
 import Odes.DoubleCartpole
 import DdpCasadi(prepareDdp)
+import Casadi
 
-type ControllerState a = ([State a], [Action a])
+type ControllerState = ([DMatrix], [DMatrix])
 
 -- cost fcn
-cost :: Floating a => State a -> Action a -> a
+cost :: Matrix a b => a -> a -> b
 --cost state action = 10*x*x + x'*x' - 100*cos(q1) - 100*cos(q2) + q1'*q1' + q2'*q2' + 0.001*u*u + barrier
 cost state action = 100*x*x
                     + 0.01*x'*x'
@@ -27,8 +27,8 @@ cost state action = 100*x*x
                     + 0.001*u*u
                     + barrier
   where
-    [x,q1,q2,x',q1',q2'] = state
-    [u] = action
+    [x,q1,q2,x',q1',q2'] = toList state
+    [u] = toList action
 
     -- barrier
     uUb =  2.1
@@ -38,7 +38,7 @@ cost state action = 100*x*x
     uBarrierLb = -mu*log( -uLb + u )
     barrier = sum[ uBarrierUb, uBarrierLb ]
 
-drawFun :: ([Double], ControllerState Double) -> IO ()
+drawFun :: (DMatrix, ControllerState) -> IO ()
 drawFun (state, (xTraj, uTraj)) = do
   let xyzToGLdouble (Xyz a b c) = Xyz (realToFrac a) (realToFrac b) (realToFrac c)
       bob0Path = VisLine (map (xyzToGLdouble . bob0Xyz) xTraj) (Rgb 1.0 0.1 0.1)
@@ -59,14 +59,19 @@ drawFun (state, (xTraj, uTraj)) = do
 dt :: Floating a => a
 dt = 0.01
 
-dode :: Floating a => State a -> Action a -> State a
+dode :: Matrix a b => a -> a -> a
 dode x u = rk4Step doubleCartpoleDxdt x u dt
+
+
+--"how would you derive a cost function from an end constraint xf?"
+--"look at d^2/dxdu at optimal point?"
+--"include noise?"
 
 -- run ddp
 main :: IO ()
 main = do let n = 50
-              x0 = [-0.2, 0.9*pi, 0.9*pi, 0, 0, 0::Double]
-              u0 = [0::Double]
+              x0 = fromList [-0.2, 0.9*pi, 0.9*pi, 0, 0, 0]
+              u0 = fromList [0]
 
               xTrajBadGuess = replicate n x0
               uTrajBadGuess = replicate n u0

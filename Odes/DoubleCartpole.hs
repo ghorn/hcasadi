@@ -17,8 +17,9 @@ import Vis
 import Integrators(rk4Step)
 import Xyz
 import Quat
+import Casadi
 
-import Graphics.UI.GLUT
+import Graphics.UI.GLUT hiding (Matrix)
 import Control.DeepSeq
 
 poleVisRadius :: (Floating a, Fractional a) => a
@@ -33,8 +34,8 @@ l2 :: (Floating a, Fractional a) => a
 l2 = 0.1
 
 
-doubleCartpoleDxdt :: Floating a => [a] -> [a] -> [a]
-doubleCartpoleDxdt state action = [x0d, x1d, x2d, x0dd, x1dd, x2dd] where
+doubleCartpoleDxdt :: Matrix a b => a -> a -> a
+doubleCartpoleDxdt state action = fromList [x0d, x1d, x2d, x0dd, x1dd, x2dd] where
 
 --    g  = 9.8;
 --    l1 = 0.1
@@ -75,70 +76,67 @@ doubleCartpoleDxdt state action = [x0d, x1d, x2d, x0dd, x1dd, x2dd] where
 
 --     dy(4:6) = D\( - C*y(4:6) - G + H*u );
     
-  [_, x1, x2, x0d, x1d, x2d] = state
-  [f] = action
+  [_, x1, x2, x0d, x1d, x2d] = toList state
+  [f] = toList action
     
   x0dd = (-50*f*(-3 + cos(2*(x1 - x2))) + (2*(x1d*x1d) - 200*cos(x1) + (x2d*x2d)*cos(x1 - x2))*sin(x1))/(10*(-4 + cos(2*x1) + cos(2*(x1 - x2))));
   x1dd = (-100*f*(-3*cos(x1) + cos(x1 - 2*x2)) - 1000*sin(x1) - 200*sin(x1 - 2*x2) + 4*(x1d*x1d)*cos(x2)*sin(2*x1 - x2) + (x2d*x2d)*(5*sin(x1 - x2) + sin(x1 + x2)))/(2*(-4 + cos(2*x1) + cos(2*(x1 - x2))));
   x2dd = (-2*(-200*cos(x1) + (x2d*x2d)*cos(x1 - x2) + 2*((x1d*x1d) - 50*f*sin(x1)))*sin(x1 - x2))/(-4 + cos(2*x1) + cos(2*(x1 - x2)));
 
 
-doubleCartpoleCart :: [Double] -> VisObject GLdouble GLfloat
-doubleCartpoleCart state' = VisBox (d,d,d) (cartXyz state) (Quat 1 0 0 0) (Rgb 0 0 0.5)
+doubleCartpoleCart :: DMatrix -> VisObject GLdouble GLfloat
+doubleCartpoleCart state = VisBox (d,d,d) (xyzRealToFrac $ cartXyz state) (Quat 1 0 0 0) (Rgb 0 0 0.5)
   where
-    state = map realToFrac state'
     d = 2*cartVisRadius
 
-cartXyz :: (Floating a, Fractional a) => [a] -> Xyz a
+cartXyz :: Matrix a b => a -> Xyz b
 cartXyz state = Xyz x y z
   where
-    (x:_) = state
+    (x:_) = toList state
     y = -poleVisRadius - cartVisRadius
     z = 0
 
-rod0Xyz :: (Floating a, Fractional a) => [a] -> Xyz a
+rod0Xyz :: Matrix a b => a -> Xyz b
 rod0Xyz state = (Xyz cartX 0 cartZ) + r_c2r0_n
   where
     Xyz cartX _ cartZ = cartXyz state
-    (_:q1:_) = state
+    (_:q1:_) = toList state
     r_c2r0_n = Xyz (-0.5*l1*sin(q1)) 0 (-0.5*l1*cos(q1))
     
-bob0Xyz :: (Floating a, Fractional a) => [a] -> Xyz a
+bob0Xyz :: Matrix a b => a -> Xyz b
 bob0Xyz state = (Xyz cartX 0 cartZ) + r_c2b0_n
   where
     Xyz cartX _ cartZ = cartXyz state
-    (_:q1:_) = state
+    (_:q1:_) = toList state
     r_c2b0_n = Xyz (-l1*sin(q1)) 0 (-l1*cos(q1))
 
-rod1Xyz :: (Floating a, Fractional a) => [a] -> Xyz a
+rod1Xyz :: Matrix a b => a -> Xyz b
 rod1Xyz state = (bob0Xyz state) + r_b02r1_n
   where
-    (_:_:q2:_) = state
+    (_:_:q2:_) = toList state
     r_b02r1_n = Xyz (-0.5*l2*sin(q2)) 0 (-0.5*l2*cos(q2))
 
-bob1Xyz :: (Floating a, Fractional a) => [a] -> Xyz a
+bob1Xyz :: Matrix a b => a -> Xyz b
 bob1Xyz state = (bob0Xyz state) + r_b02b1_n
   where
-    (_:_:q2:_) = state
+    (_:_:q2:_) = toList state
     r_b02b1_n = Xyz (-l2*sin(q2)) 0 (-l2*cos(q2))
 
-doubleCartpoleCylinder0 :: [Double] -> VisObject GLdouble GLfloat
-doubleCartpoleCylinder0 state' = cylinder
+doubleCartpoleCylinder0 :: DMatrix -> VisObject GLdouble GLfloat
+doubleCartpoleCylinder0 state = cylinder
   where
-    state = map realToFrac state'
-    (_:q1:_) = state
+    (_:q1:_) = map realToFrac $ toList state
 
     quat = Quat (cos(0.5*q1)) 0.0 (sin(0.5*q1)) 0.0
-    cylinder = VisCylinder (l1, poleVisRadius) (rod0Xyz state) quat (Rgb 0 1 1)
+    cylinder = VisCylinder (l1, poleVisRadius) (xyzRealToFrac $ rod0Xyz state) quat (Rgb 0 1 1)
 
-doubleCartpoleCylinder1 :: [Double] -> VisObject GLdouble GLfloat
-doubleCartpoleCylinder1 state' = cylinder
+doubleCartpoleCylinder1 :: DMatrix -> VisObject GLdouble GLfloat
+doubleCartpoleCylinder1 state = cylinder
   where
-    state = map realToFrac state'
-    (_:_:q2:_) = state
+    (_:_:q2:_) = map realToFrac $ toList state
 
     quat = Quat (cos(0.5*q2)) 0.0 (sin(0.5*q2)) 0.0
-    cylinder = VisCylinder (l1, poleVisRadius) (rod1Xyz state) quat (Rgb 0 1 0.3)
+    cylinder = VisCylinder (l1, poleVisRadius) (xyzRealToFrac $ rod1Xyz state) quat (Rgb 0 1 0.3)
 
 doubleCartpoleTrack :: VisObject GLdouble GLfloat
 doubleCartpoleTrack = VisBox (dx,dy,dz) (Xyz x y z) (Quat 1 0 0 0) (Rgb 0.6 0 0)
@@ -153,13 +151,13 @@ doubleCartpoleTrack = VisBox (dx,dy,dz) (Xyz x y z) (Quat 1 0 0 0) (Rgb 0.6 0 0)
 
 
 
-doubleCartpoleForceCylinder :: [Double] -> [Double] -> VisObject GLdouble GLfloat
+doubleCartpoleForceCylinder :: DMatrix -> DMatrix -> VisObject GLdouble GLfloat
 doubleCartpoleForceCylinder state action = VisCylinder (len, 0.01) (Xyz x0 y0 z0) quat (Rgb 1 1 0)
   where
     quat = Quat (sqrt(2)/2) 0 (-signum(u)*sqrt(2)/2) 0
 
-    u = realToFrac $ head action
-    x = realToFrac $ head state
+    u = realToFrac $ head $ toList action
+    x = realToFrac $ head $ toList state
 
     len = u/4
 
@@ -168,18 +166,18 @@ doubleCartpoleForceCylinder state action = VisCylinder (len, 0.01) (Xyz x0 y0 z0
     z0 = -3*cartVisRadius
 
 
-simFun :: ([Double] -> [Double] -> [Double])
-          -> ([Double] -> a -> IO ([Double], a))
-          -> ([Double], a) -> IO ([Double], a)
+simFun :: (DMatrix -> DMatrix -> DMatrix)
+          -> (DMatrix -> a -> IO (DMatrix, a))
+          -> (DMatrix, a) -> IO (DMatrix, a)
 simFun dode controller (x, controllerState) = do
   (u, newControllerState) <- controller x controllerState
   return (dode x u, newControllerState)
---  return (dode x [0], controllerState)
+
 
 doubleCartpoleVis :: (NFData a, Show a) => 
-                     ([Double] -> a -> IO ([Double], a))
-                     -> (([Double], a) -> IO ())
-                     -> ([Double], a)
+                     (DMatrix -> a -> IO (DMatrix, a))
+                     -> ((DMatrix, a) -> IO ())
+                     -> (DMatrix, a)
                      -> Double
                      -> IO ()
 doubleCartpoleVis controller drawFun x0 dt = vis (simFun dode controller) drawFun x0 dt

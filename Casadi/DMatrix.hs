@@ -1,7 +1,8 @@
 -- DMatrix.hs
 
 {-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
+--{-# OPTIONS_GHC -Wall -fno-cse -fno-full-laziness #-}
+{-# LANGUAGE ForeignFunctionInterface, MultiParamTypeClasses #-}
 
 module Casadi.DMatrix
        (
@@ -20,6 +21,7 @@ module Casadi.DMatrix
        ) where
 
 import Casadi.CasadiInterfaceUtils
+import Casadi.Matrix
 
 import Foreign.C
 import Foreign.Marshal(newArray)
@@ -79,11 +81,13 @@ dMatrixNewZeros (n,m) = mask_ $ do
   return $ DMatrix mat
 
 zeros :: (Int, Int) -> DMatrix
+{-# NOINLINE zeros #-}
 zeros dimensions = unsafePerformIO $ do
   mOut <- dMatrixNewZeros dimensions
   return mOut
 
 dMatrixFromList :: [Double] -> DMatrix
+{-# NOINLINE dMatrixFromList #-}
 dMatrixFromList dList = unsafePerformIO $ do
   dListPtr <- newArray (map realToFrac dList)
   DMatrix m0 <- dMatrixNewZeros (length dList, 1)
@@ -91,6 +95,7 @@ dMatrixFromList dList = unsafePerformIO $ do
   return $ DMatrix m0
 
 dMatrixFromLists :: [[Double]] -> DMatrix
+{-# NOINLINE dMatrixFromLists #-}
 dMatrixFromLists dLists = unsafePerformIO $ do
   let rows' = length dLists
       cols' = length (head dLists)
@@ -101,6 +106,7 @@ dMatrixFromLists dLists = unsafePerformIO $ do
 
 ---------------- show -------------------
 dMatrixShow :: DMatrix -> String
+{-# NOINLINE dMatrixShow #-}
 dMatrixShow (DMatrix s) = unsafePerformIO $ do
   (stringRef, stringLength) <- newCStringLen $ replicate 4096 ' '
   withForeignPtr s $ c_dMatrixShow stringRef (fromIntegral stringLength)
@@ -115,6 +121,7 @@ dMatrixAt (DMatrix matIn) (n,m) = do
 
 ---------------- dimensions --------------------
 dMatrixSize :: DMatrix -> (Int,Int)
+{-# NOINLINE dMatrixSize #-}
 dMatrixSize (DMatrix matIn) = unsafePerformIO $ do
   n <- withForeignPtr matIn c_dMatrixSize1
   m <- withForeignPtr matIn c_dMatrixSize2
@@ -122,6 +129,7 @@ dMatrixSize (DMatrix matIn) = unsafePerformIO $ do
 
 
 dMatrixToLists :: DMatrix -> [[Double]]
+{-# NOINLINE dMatrixToLists #-}
 dMatrixToLists mat = unsafePerformIO $ do
   let f row = mapM (\col -> dMatrixAt mat (row, col)) [0..m-1]
       (n,m) = dMatrixSize mat
@@ -129,6 +137,7 @@ dMatrixToLists mat = unsafePerformIO $ do
 
 -- turns n by 1 matrix into a list of D, returns error if matrix is not n by 1
 dMatrixToList :: DMatrix -> [Double]
+{-# NOINLINE dMatrixToList #-}
 dMatrixToList mat = unsafePerformIO $ do
   let (n,m) = dMatrixSize mat
   if m == 1
@@ -138,6 +147,7 @@ dMatrixToList mat = unsafePerformIO $ do
 
 ------------------------- math ---------------------------------
 dMatrixPlus :: DMatrix -> DMatrix -> DMatrix
+{-# NOINLINE dMatrixPlus #-}
 dMatrixPlus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   let size'
         | sizeM0 == sizeM1 = sizeM0
@@ -150,6 +160,7 @@ dMatrixPlus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   return $ DMatrix mOut
 
 dMatrixMinus :: DMatrix -> DMatrix -> DMatrix
+{-# NOINLINE dMatrixMinus #-}
 dMatrixMinus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   let size'
         | sizeM0 == sizeM1 = sizeM0
@@ -162,6 +173,7 @@ dMatrixMinus (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   return $ DMatrix mOut
 
 dMM :: DMatrix -> DMatrix -> DMatrix
+{-# NOINLINE dMM #-}
 dMM (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   let size'
         | colsM0 == rowsM1 = (rowsM0, colsM1)
@@ -175,6 +187,7 @@ dMM (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   return $ DMatrix mOut
 
 dMatrixTranspose :: DMatrix -> DMatrix
+{-# NOINLINE dMatrixTranspose #-}
 dMatrixTranspose (DMatrix mIn) = unsafePerformIO $ do
   DMatrix mOut <- dMatrixNewZeros $ dMatrixSize (DMatrix mIn)
   withForeignPtrs2 c_dMatrixTranspose mIn mOut
@@ -182,6 +195,7 @@ dMatrixTranspose (DMatrix mIn) = unsafePerformIO $ do
 
 
 dMatrixIsEqual :: DMatrix -> DMatrix -> Bool
+{-# NOINLINE dMatrixIsEqual #-}
 dMatrixIsEqual (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
   isEq <- withForeignPtrs2 c_dMatrixIsEqual m0 m1
   if (isEq == 1)
@@ -191,12 +205,14 @@ dMatrixIsEqual (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
     return False
 
 dMatrixScale :: Double -> DMatrix -> DMatrix
+{-# NOINLINE dMatrixScale #-}
 dMatrixScale scalar (DMatrix mIn) = unsafePerformIO $ do
   DMatrix mOut <- dMatrixNewZeros (1,1)
   withForeignPtrs2 (c_dMatrixScale $ realToFrac scalar) mIn mOut
   return $ DMatrix mOut
 
 dMatrixInv :: DMatrix -> DMatrix
+{-# NOINLINE dMatrixInv #-}
 dMatrixInv (DMatrix mIn) = unsafePerformIO $ do
   DMatrix mOut <- dMatrixNewZeros (1,1)
   withForeignPtrs2 c_dMatrixInv mIn mOut
@@ -230,3 +246,17 @@ instance Fractional DMatrix where
   (/) m0 m1 = m0 * (recip m1)
   recip mat = dMatrixInv mat
   fromRational x = dMatrixFromList [fromRational x :: Double]
+
+
+instance Matrix DMatrix Double where
+  trans = dMatrixTranspose
+  dim = dMatrixSize
+  rows = fst . dMatrixSize
+  cols = snd . dMatrixSize
+  toList = dMatrixToList
+  toLists = dMatrixToLists
+  fromList = dMatrixFromList
+  fromLists = dMatrixFromLists
+  concatMat = error "concatMat not yet implemented for Matrix DMatrix Double"
+  inv = dMatrixInv
+  scale = dMatrixScale

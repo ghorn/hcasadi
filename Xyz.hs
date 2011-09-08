@@ -1,6 +1,9 @@
 -- Xyz.hs
 
+{-# OPTIONS_GHC -Wall #-}
+
 module Xyz( Xyz(..)
+          , xyzRealToFrac
           ) where
 
 data Xyz a = Xyz a a a deriving (Show, Eq)
@@ -13,3 +16,6 @@ instance (Num a) => Num (Xyz a) where
   abs = error "abs undefined for Xyz"
   signum = error "signum undefined for Xyz"
   fromInteger = error "fromInteger undefined for Xyz"
+
+xyzRealToFrac :: (Real a, Fractional b) => Xyz a -> Xyz b
+xyzRealToFrac (Xyz x' y' z') = Xyz (realToFrac x') (realToFrac y') (realToFrac z')

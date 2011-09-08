@@ -54,8 +54,8 @@ data MultipleShooting = MultipleShooting { system :: System
                                          , designVars :: SXMatrix
                                          }
 
-devectorize :: [Double] -> MultipleShooting -> ([[Double]], [[Double]], [Double])
-devectorize sol ms = (xTraj, uTraj, params')
+devectorize :: [Double] -> MultipleShooting -> ([DMatrix], [DMatrix], DMatrix)
+devectorize sol ms = (map fromList xTraj, map fromList uTraj, params')
   where
     (xDims, uDims) = unzip $ map (\(Cost _ d) -> d) (costs (system ms))
     (sol', xTraj) = mapAccumL f sol xDims

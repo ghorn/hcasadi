@@ -1,9 +1,9 @@
 -- SX.hs
 
 {-# OPTIONS_GHC -Wall #-}
+--{-# OPTIONS_GHC -Wall -fno-cse -fno-full-laziness #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
---module Main where
 module Casadi.SX
        (
          SX(..)
@@ -12,6 +12,8 @@ module Casadi.SX
        , sxNewInt
        , sxNewIntegral
        , sxFromInt
+       , sxFromIntegral
+       , sxFromDouble
        , sxCreateSymbolic
        ) where
 
@@ -85,12 +87,14 @@ sxNewIntegral val
             minCInt = toInteger (minBound :: CInt)
 
 sxShow :: SX -> String
+{-# NOINLINE sxShow #-}
 sxShow (SX s) = unsafePerformIO $ do
   (stringRef, stringLength) <- newCStringLen $ replicate 512 ' '
   withForeignPtr s $ c_sxShow stringRef (fromIntegral stringLength)
   peekCString stringRef
 
 sxEqual :: SX -> SX -> Bool
+{-# NOINLINE sxEqual #-}
 sxEqual (SX sx0) (SX sx1) = unsafePerformIO $ do
   equalInt <- withForeignPtrs2 c_sxEqual sx0 sx1
   let equalBool
@@ -99,42 +103,49 @@ sxEqual (SX sx0) (SX sx1) = unsafePerformIO $ do
   return equalBool
 
 sxPlus :: SX -> SX -> SX
+{-# NOINLINE sxPlus #-}
 sxPlus (SX sx0) (SX sx1) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs3 c_sxPlus sx0 sx1 sxOut
   return (SX sxOut)
 
 sxMinus :: SX -> SX -> SX
+{-# NOINLINE sxMinus #-}
 sxMinus (SX sx0) (SX sx1) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs3 c_sxMinus sx0 sx1 sxOut
   return (SX sxOut)
 
 sxTimes :: SX -> SX -> SX
+{-# NOINLINE sxTimes #-}
 sxTimes (SX sx0) (SX sx1) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs3 c_sxTimes sx0 sx1 sxOut
   return (SX sxOut)
 
 sxDivide :: SX -> SX -> SX
+{-# NOINLINE sxDivide #-}
 sxDivide (SX sx0) (SX sx1) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs3 c_sxDivide sx0 sx1 sxOut
   return (SX sxOut)
 
 sxNegate :: SX -> SX
+{-# NOINLINE sxNegate #-}
 sxNegate (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxNegate sx sxOut
   return (SX sxOut)
 
 sxAbs :: SX -> SX
+{-# NOINLINE sxAbs #-}
 sxAbs (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxAbs sx sxOut
   return (SX sxOut)
 
 sxSignum :: SX -> SX
+{-# NOINLINE sxSignum #-}
 sxSignum (SX sx) = unsafePerformIO $ do
   sign <- withForeignPtr sx c_sxSignum
   if (sign == 1)
@@ -144,75 +155,103 @@ sxSignum (SX sx) = unsafePerformIO $ do
 
 
 sxPi :: SX
+{-# NOINLINE sxPi #-}
 sxPi = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtr sxOut $ c_sxPi
   return (SX sxOut)
 
 sxExp :: SX -> SX
+{-# NOINLINE sxExp #-}
 sxExp (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxExp sx sxOut
   return (SX sxOut)
 
 sxSqrt :: SX -> SX
+{-# NOINLINE sxSqrt #-}
 sxSqrt (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxSqrt sx sxOut
   return (SX sxOut)
 
 sxLog :: SX -> SX
+{-# NOINLINE sxLog #-}
 sxLog (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxLog sx sxOut
   return (SX sxOut)
 
 sxPow :: SX -> SX -> SX
+{-# NOINLINE sxPow #-}
 sxPow (SX sx0) (SX sx1) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs3 c_sxPow sx0 sx1 sxOut
   return (SX sxOut)
 
 sxSin :: SX -> SX
+{-# NOINLINE sxSin #-}
 sxSin (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxSin sx sxOut
   return (SX sxOut)
 
 sxCos :: SX -> SX
+{-# NOINLINE sxCos #-}
 sxCos (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxCos sx sxOut
   return (SX sxOut)
 
 sxTan :: SX -> SX
+{-# NOINLINE sxTan #-}
 sxTan (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxTan sx sxOut
   return (SX sxOut)
 
 sxArcsin :: SX -> SX
+{-# NOINLINE sxArcsin #-}
 sxArcsin (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxArcsin sx sxOut
   return (SX sxOut)
 
 sxArccos :: SX -> SX
+{-# NOINLINE sxArccos #-}
 sxArccos (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxArccos sx sxOut
   return (SX sxOut)
 
 sxArctan :: SX -> SX
+{-# NOINLINE sxArctan #-}
 sxArctan (SX sx) = unsafePerformIO $ do
   SX sxOut <- sxNewInt 0
   withForeignPtrs2 c_sxArctan sx sxOut
   return (SX sxOut)
 
+
+
+
 sxFromInt :: Int -> SX
+{-# NOINLINE sxFromInt #-}
 sxFromInt n = unsafePerformIO $ do
   sxOut <- sxNewInt n
   return sxOut
+
+sxFromIntegral :: Integral a => a -> SX
+{-# NOINLINE sxFromIntegral #-}
+sxFromIntegral n = unsafePerformIO $ do
+  sxOut <- sxNewIntegral n
+  return sxOut
+
+sxFromDouble :: Double -> SX
+{-# NOINLINE sxFromDouble #-}
+sxFromDouble val = unsafePerformIO $ do
+  s <- sxNewDouble val
+  return s
+
 
 -- typeclass stuff
 instance Eq SX where
@@ -229,16 +268,16 @@ instance Num SX where
   negate = sxNegate
   abs = sxAbs
   signum = sxSignum
-  fromInteger val = unsafePerformIO $ sxNewIntegral val
+  fromInteger = sxFromIntegral
 
 instance Fractional SX where
   (/) = sxDivide
-  recip sx = (unsafePerformIO $ sxNewInt 1)/sx
---  fromRational x = (unsafePerformIO $ sxNewIntegral num)/(unsafePerformIO $ sxNewIntegral den)
+  recip sx = (sxFromInt 1)/sx
+--  fromRational x = (sxFromIntegral num)/(sxFromIntegral den)
 --    where
 --      num = numerator x
 --      den = denominator x
-  fromRational x = unsafePerformIO $ sxNewDouble (fromRational x)
+  fromRational x = sxFromDouble (fromRational x)
 
 instance Floating SX where
   pi = sxPi
@@ -259,29 +298,3 @@ instance Floating SX where
   asinh = error "hyperbolic functions not yet implemented for SX"
   atanh = error "hyperbolic functions not yet implemented for SX"
   acosh = error "hyperbolic functions not yet implemented for SX"
-
---main :: IO ()
---main = do 
---  f <- sxNewDouble 10.1
---  g <- sxNewDouble 3.0
---  h <- sxNewDouble (-4.4)
---
---  putStrLn $ sxShow f
---  putStrLn $ sxShow g
---  putStrLn $ sxShow (sxPlus f g)
---  putStrLn $ sxShow (sxTimes f g)
---  putStrLn $ sxShow (sxMinus f g)
---  putStrLn $ sxShow (sxNegate f)
---  putStrLn $ sxShow (sxAbs f)
---  putStrLn $ sxShow (sxAbs h)
---  putStrLn $ sxShow (sxSignum f)
---  putStrLn $ sxShow (sxSignum h)
---
---  putStrLn $ sxShow (sxDivide f g)
---
---  putStrLn $ sxShow (sin f)
---  putStrLn $ sxShow (cos g)
---  putStrLn $ sxShow (tan h)
---  putStrLn $ sxShow (asin f)
---  putStrLn $ sxShow (acos g)
---  putStrLn $ sxShow (atan h)

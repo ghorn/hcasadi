@@ -127,84 +127,84 @@ Executable ipoptTest
         HSrtsmain
         f2c
 
-Executable cartpoleMs
-  Main-Is:         cartpoleMs.hs
-  Hs-Source-Dirs:  .
-  Other-Modules:   Casadi
-  Build-depends:
-  Ghc-options:     -threaded -pgml g++ -dno-debug-output -O2
---  Ghc-options:     -O2 -threaded -pgml g++ -dno-debug-output -auto-all -caf-all -fforce-recomp -rtsopts
-
-  Extra-lib-dirs:
-        /home/greg/hopt-o-mex/hcasadi_cppsrc
-        /home/greg/casadi/build/lib
-        /usr/local/lib/coin
-        /usr/local/lib/coin/ThirdParty
-        /home/greg/snopt7/lib
-
-  Extra-libraries:
-        casadi_interface
-        coinhsl
-        coinmumps
-        coinmetis
-        ipopt
-        ipopt_interface
-        csparse_interface
-        optimal_control
-        superlu_interface
-        casadi
-        csparse
-        gsl_interface
-        lapack_interface
-        superlu
-        tinyxml
-        snopt
-        snopt_c
-        snopt_cpp
-        snprint
-        snprint_c
-        snoptblas
-        snoptblas_c
-        HSrtsmain
-        f2c
-
-Executable doubleCartpoleMs
-  Main-Is:         doubleCartpoleMs.hs
-  Hs-Source-Dirs:  .
-  Other-Modules:   Casadi
-  Build-depends:
-  Ghc-options:     -threaded -pgml g++ -dno-debug-output -O2
---  Ghc-options:     -O2 -threaded -pgml g++ -dno-debug-output -auto-all -caf-all -fforce-recomp -rtsopts
-
-  Extra-lib-dirs:
-        /home/greg/hopt-o-mex/hcasadi_cppsrc
-        /home/greg/casadi/build/lib
-        /usr/local/lib/coin
-        /usr/local/lib/coin/ThirdParty
-        /home/greg/snopt7/lib
-
-  Extra-libraries:
-        casadi_interface
-        coinhsl
-        coinmumps
-        coinmetis
-        ipopt
-        ipopt_interface
-        csparse_interface
-        optimal_control
-        superlu_interface
-        casadi
-        csparse
-        gsl_interface
-        lapack_interface
-        superlu
-        tinyxml
-        snopt
-        snopt_c
-        snopt_cpp
-        snprint
-        snprint_c
-        snoptblas
-        snoptblas_c
-        HSrtsmain
-        f2c
+--Executable cartpoleMs
+--  Main-Is:         cartpoleMs.hs
+--  Hs-Source-Dirs:  .
+--  Other-Modules:   Casadi
+--  Build-depends:
+--  Ghc-options:     -threaded -pgml g++ -dno-debug-output -O2
+----  Ghc-options:     -O2 -threaded -pgml g++ -dno-debug-output -auto-all -caf-all -fforce-recomp -rtsopts
+--
+--  Extra-lib-dirs:
+--        /home/greg/hopt-o-mex/hcasadi_cppsrc
+--        /home/greg/casadi/build/lib
+--        /usr/local/lib/coin
+--        /usr/local/lib/coin/ThirdParty
+--        /home/greg/snopt7/lib
+--
+--  Extra-libraries:
+--        casadi_interface
+--        coinhsl
+--        coinmumps
+--        coinmetis
+--        ipopt
+--        ipopt_interface
+--        csparse_interface
+--        optimal_control
+--        superlu_interface
+--        casadi
+--        csparse
+--        gsl_interface
+--        lapack_interface
+--        superlu
+--        tinyxml
+--        snopt
+--        snopt_c
+--        snopt_cpp
+--        snprint
+--        snprint_c
+--        snoptblas
+--        snoptblas_c
+--        HSrtsmain
+--        f2c
+--
+--Executable doubleCartpoleMs
+--  Main-Is:         doubleCartpoleMs.hs
+--  Hs-Source-Dirs:  .
+--  Other-Modules:   Casadi
+--  Build-depends:
+--  Ghc-options:     -threaded -pgml g++ -dno-debug-output -O2
+----  Ghc-options:     -O2 -threaded -pgml g++ -dno-debug-output -auto-all -caf-all -fforce-recomp -rtsopts
+--
+--  Extra-lib-dirs:
+--        /home/greg/hopt-o-mex/hcasadi_cppsrc
+--        /home/greg/casadi/build/lib
+--        /usr/local/lib/coin
+--        /usr/local/lib/coin/ThirdParty
+--        /home/greg/snopt7/lib
+--
+--  Extra-libraries:
+--        casadi_interface
+--        coinhsl
+--        coinmumps
+--        coinmetis
+--        ipopt
+--        ipopt_interface
+--        csparse_interface
+--        optimal_control
+--        superlu_interface
+--        casadi
+--        csparse
+--        gsl_interface
+--        lapack_interface
+--        superlu
+--        tinyxml
+--        snopt
+--        snopt_c
+--        snopt_cpp
+--        snprint
+--        snprint_c
+--        snoptblas
+--        snoptblas_c
+--        HSrtsmain
+--        f2c

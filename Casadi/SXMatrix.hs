@@ -1,7 +1,8 @@
 -- SXMatrix.hs
 
 {-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
+--{-# OPTIONS_GHC -Wall -fno-cse -fno-full-laziness #-}
+{-# LANGUAGE ForeignFunctionInterface, MultiParamTypeClasses #-}
 
 module Casadi.SXMatrix
        (
@@ -22,6 +23,7 @@ module Casadi.SXMatrix
 
 import Casadi.SX
 import Casadi.CasadiInterfaceUtils
+import Casadi.Matrix
 
 import Foreign.C
 import Foreign.ForeignPtr
@@ -30,10 +32,9 @@ import Foreign.Storable
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
 
--- the SXMatrix/SXVector data type
+-- the SXMatrix data type
 data SXMatrixRaw = SXMatrixRaw
 newtype SXMatrix = SXMatrix (ForeignPtr SXMatrixRaw)
---newtype SXVector = SXVector (ForeignPtr SXMatrixRaw)
 
 instance Storable SXMatrixRaw where
   sizeOf _ = fromIntegral $ unsafePerformIO c_sxMatrixSizeOfAddress
@@ -90,11 +91,6 @@ sxMatrixFreeUnsafeArray :: ForeignPtr SXMatrixRaw -> Int -> IO ()
 sxMatrixFreeUnsafeArray matArray len = do
   withForeignPtr matArray (\x -> c_sxMatrixFreeArray x (fromIntegral len))
 
---sxVectorCreateSymbolic :: String -> Int -> IO SXVector
---sxVectorCreateSymbolic prefix n = do
---  (SXMatrix p) <- sxMatrixCreateSymbolic prefix (n,1)
---  return (SXVector p)
-
 sxMatrixZeros :: (Int, Int) -> IO SXMatrix
 sxMatrixZeros (n,m) = mask_ $ do
   let n' = safeToCInt n
@@ -112,6 +108,7 @@ sxMatrixZeros (n,m) = mask_ $ do
   return $ SXMatrix mat
 
 sxMatrixFromList :: [SX] -> SXMatrix
+{-# NOINLINE sxMatrixFromList #-}
 sxMatrixFromList sxList = unsafePerformIO $ do
   m0 <- sxMatrixZeros (length sxList, 1)
   let indexedSXList = zip sxList $ take (length sxList) [0..]
@@ -119,13 +116,11 @@ sxMatrixFromList sxList = unsafePerformIO $ do
 
 ---------------- show -------------------
 sxMatrixShow :: SXMatrix -> String
+{-# NOINLINE sxMatrixShow #-}
 sxMatrixShow (SXMatrix s) = unsafePerformIO $ do
   (stringRef, stringLength) <- newCStringLen $ replicate 4096 ' '
   withForeignPtr s $ c_sxMatrixShow stringRef (fromIntegral stringLength)
   peekCString stringRef
-
---sxVectorShow :: SXVector -> String
---sxVectorShow (SXVector s) = sxMatrixShow (SXMatrix s)
 
 
 --------------- getters/setters ---------------------
@@ -136,6 +131,7 @@ sxMatrixAt (SXMatrix matIn) (n,m) = do
   return (SX sxOut)
 
 sxMatrixSet :: SXMatrix -> (Int,Int) -> SX -> SXMatrix
+{-# NOINLINE sxMatrixSet #-}
 sxMatrixSet (SXMatrix matIn) (n,m) (SX val) = unsafePerformIO $ do
   SXMatrix matOut <- sxMatrixDuplicate (SXMatrix matIn)
   let n' = fromIntegral n
@@ -143,25 +139,19 @@ sxMatrixSet (SXMatrix matIn) (n,m) (SX val) = unsafePerformIO $ do
   withForeignPtrs2 (\val' matOut' -> c_sxMatrixSet val' n' m' matOut') val matOut
   return (SXMatrix matOut)
 
---sxVectorAt :: SXVector -> Int -> IO SX
---sxVectorAt (SXVector vecIn) n = sxMatrixAt (SXMatrix vecIn) (n,0)
-
 
 
 ---------------- dimensions --------------------
 sxMatrixSize :: SXMatrix -> (Int,Int)
+{-# NOINLINE sxMatrixSize #-}
 sxMatrixSize (SXMatrix matIn) = unsafePerformIO $ do
   n <- withForeignPtr matIn c_sxMatrixSize1
   m <- withForeignPtr matIn c_sxMatrixSize2
   return (fromIntegral n, fromIntegral m)
 
---sxVectorLength :: SXVector -> Int
---sxVectorLength (SXVector vecIn)
---  | m == 1    = n
---  | otherwise = error "Error - sxVectorLength got size: (n, m /= 1)"
---  where (n,m) = sxMatrixSize (SXMatrix vecIn)
 
 sxMatrixToLists :: SXMatrix -> [[SX]]
+{-# NOINLINE sxMatrixToLists #-}
 sxMatrixToLists mat = unsafePerformIO $ do
   let f row = mapM (\col -> sxMatrixAt mat (row, col)) [0..m-1]
       (n,m) = sxMatrixSize mat
@@ -169,6 +159,7 @@ sxMatrixToLists mat = unsafePerformIO $ do
 
 -- turns n by 1 matrix into a list of SX, returns error if matrix is not n by 1
 sxMatrixToList :: SXMatrix -> [SX]
+{-# NOINLINE sxMatrixToList #-}
 sxMatrixToList mat = unsafePerformIO $ do
   let (n,m) = sxMatrixSize mat
   if m == 1
@@ -178,6 +169,7 @@ sxMatrixToList mat = unsafePerformIO $ do
 
 ------------------------- math ---------------------------------
 sxMatrixPlus :: SXMatrix -> SXMatrix -> SXMatrix
+{-# NOINLINE sxMatrixPlus #-}
 sxMatrixPlus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   let size'
         | sizeM0 == sizeM1 = sizeM0
@@ -190,6 +182,7 @@ sxMatrixPlus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   return $ SXMatrix mOut
 
 sxMatrixMinus :: SXMatrix -> SXMatrix -> SXMatrix
+{-# NOINLINE sxMatrixMinus #-}
 sxMatrixMinus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   let size'
         | sizeM0 == sizeM1 = sizeM0
@@ -201,17 +194,9 @@ sxMatrixMinus (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   withForeignPtrs3 c_sxMatrixMinus m0 m1 mOut
   return $ SXMatrix mOut
 
---sxVectorPlus :: SXVector -> SXVector -> SXVector
---sxVectorPlus (SXVector v0) (SXVector v1) = (SXVector vOut)
---  where
---    (SXMatrix vOut) = sxMatrixPlus (SXMatrix v0) (SXMatrix v1)
-
---sxVectorMinus :: SXVector -> SXVector -> SXVector
---sxVectorMinus (SXVector v0) (SXVector v1) = (SXVector vOut)
---  where
---    (SXMatrix vOut) = sxMatrixMinus (SXMatrix v0) (SXMatrix v1)
 
 sxMM :: SXMatrix -> SXMatrix -> SXMatrix
+{-# NOINLINE sxMM #-}
 sxMM (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   let size'
         | colsM0 == rowsM1 = (rowsM0, colsM1)
@@ -224,17 +209,9 @@ sxMM (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   withForeignPtrs3 c_sxMM m0 m1 mOut
   return $ SXMatrix mOut
 
---sxMV :: SXMatrix -> SXVector -> SXVector
---sxMV (SXMatrix mat) (SXVector vIn) = SXVector vOut
---  where
---    SXMatrix vOut = sxMM (SXMatrix mat) (SXMatrix vIn)
-
---sxVM :: SXVector -> SXMatrix -> SXVector
---sxVM (SXVector vIn) (SXMatrix mat) = SXVector vOut
---  where
---    SXMatrix vOut = sxMM (sxMatrixTranspose (SXMatrix vIn)) (SXMatrix mat)
 
 sxMatrixTranspose :: SXMatrix -> SXMatrix
+{-# NOINLINE sxMatrixTranspose #-}
 sxMatrixTranspose (SXMatrix mIn) = unsafePerformIO $ do
   SXMatrix mOut <- sxMatrixZeros $ sxMatrixSize (SXMatrix mIn)
   withForeignPtrs2 c_sxMatrixTranspose mIn mOut
@@ -242,6 +219,7 @@ sxMatrixTranspose (SXMatrix mIn) = unsafePerformIO $ do
 
 
 sxMatrixIsEqual :: SXMatrix -> SXMatrix -> Bool
+{-# NOINLINE sxMatrixIsEqual #-}
 sxMatrixIsEqual (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   isEq <- withForeignPtrs2 c_sxMatrixIsEqual m0 m1
   if (isEq == 1)
@@ -250,43 +228,35 @@ sxMatrixIsEqual (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
     else
     return False
 
---sxVectorIsEqual :: SXVector -> SXVector -> Bool
---sxVectorIsEqual (SXVector v0) (SXVector v1) = unsafePerformIO $ do
---  isEq <- withForeignPtrs2 c_sxMatrixIsEqual v0 v1
---  if (isEq == 1)
---    then
---    return True
---    else
---    return False
-
 
 sxMatrixScale :: SX -> SXMatrix -> SXMatrix
+{-# NOINLINE sxMatrixScale #-}
 sxMatrixScale (SX scalar) (SXMatrix mIn) = unsafePerformIO $ do
   SXMatrix mOut <- sxMatrixZeros (1,1)
   withForeignPtrs3 c_sxMatrixScale scalar mIn mOut
   return $ SXMatrix mOut
 
 sxMatrixInv :: SXMatrix -> SXMatrix
+{-# NOINLINE sxMatrixInv #-}
 sxMatrixInv (SXMatrix mIn) = unsafePerformIO $ do
   SXMatrix mOut <- sxMatrixZeros (1,1)
   withForeignPtrs2 c_sxMatrixInv mIn mOut
   return $ SXMatrix mOut
 
+sxMatrixFromIntegral :: Integral a => a -> SXMatrix
+{-# NOINLINE sxMatrixFromIntegral #-}
+sxMatrixFromIntegral i = unsafePerformIO $ do
+  s <- sxNewIntegral i
+  return $ sxMatrixFromList [s]
 
 ----------------- typeclass stuff ------------------
 instance Show SXMatrix where
   show sx = sxMatrixShow sx
 
---instance Show SXVector where
---  show sx = sxVectorShow sx
-
 instance Eq SXMatrix where
   (==) = sxMatrixIsEqual
   (/=) sx0 sx1 = not $ sx0 == sx1
 
---instance Eq SXVector where
---  (==) = sxVectorIsEqual
---  (/=) sx0 sx1 = not $ sx0 == sx1
 
 instance Num SXMatrix where
   (+) = sxMatrixPlus
@@ -301,9 +271,8 @@ instance Num SXMatrix where
 
   abs = error "abs not defined for instance Num SXMatrix"
   signum = error "signum not defined for instance Num SXMatrix"
-  fromInteger i = unsafePerformIO $ do
-    s <- sxNewIntegral i
-    return $ sxMatrixFromList [s]
+
+  fromInteger = sxMatrixFromIntegral
 
 instance Fractional SXMatrix where
   (/) m0 m1 = m0 * (recip m1)
@@ -311,30 +280,15 @@ instance Fractional SXMatrix where
   fromRational x = sxMatrixFromList [fromRational x :: SX]
 
 
---instance Num SXVector where
---  (+) = sxVectorPlus
---  (-) = sxVectorMinus
---  (*) = error "(*) not defined for instance Num SXVector"
---  abs = error "abs not defined for instance Num SXVector"
---  signum = error "signum not defined for instance Num SXVector"
---  fromInteger = error "fromInteger not defined for instance Num SXVector"
-
-
-
---main :: IO ()
---main = do
---  mA <- sxMatrixCreateSymbolic "A" (2,2)
---  mB <- sxMatrixCreateSymbolic "B" (2,2)
---  mC <- sxMatrixCreateSymbolic "C" (4,1)
---  u <- sxVectorCreateSymbolic "u" 3
---  v <- sxVectorCreateSymbolic "u" 3
---
---  print $ mA == mB
---  print $ mA == mA
---  print $ mA * mB
---  print $ mA + mB
---  print $ u + v
---  print $ u - v
---
---  print $ sxMatrixToLists mA
---  print $ sxMatrixToList mC
+instance Matrix SXMatrix SX where
+  trans = sxMatrixTranspose
+  dim = sxMatrixSize
+  rows = fst . sxMatrixSize
+  cols = snd . sxMatrixSize
+  toList = sxMatrixToList
+  toLists = sxMatrixToLists
+  fromList = sxMatrixFromList
+  fromLists = error "sxMatrixFromLists not yet implemented"
+  concatMat mats = fromList $ concat $ map toList mats
+  inv = sxMatrixInv
+  scale = sxMatrixScale

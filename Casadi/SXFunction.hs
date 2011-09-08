@@ -1,6 +1,7 @@
 -- SXFunction.hs
 
 {-# OPTIONS_GHC -Wall #-}
+--{-# OPTIONS_GHC -Wall -fno-cse -fno-full-laziness #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
 module Casadi.SXFunction
@@ -69,6 +70,7 @@ sxFunctionCreate' (SXMatrix m0) (SXMatrix m1) = mask_ $ do
   return $ SXFunction fun
 
 sxFunctionCreate :: [SXMatrix] -> [SXMatrix] -> SXFunction
+{-# NOINLINE sxFunctionCreate #-}
 sxFunctionCreate mListIn mListOut = unsafePerformIO $ mask_ $ do
   (mArrayIn,  lArrayIn)  <- sxMatrixListToUnsafeArray mListIn
   (mArrayOut, lArrayOut) <- sxMatrixListToUnsafeArray mListOut
@@ -85,16 +87,19 @@ sxFunctionCreate mListIn mListOut = unsafePerformIO $ mask_ $ do
 
 ------------------- getters -----------------------
 sxFunctionNumInputs :: SXFunction -> Int
+{-# NOINLINE sxFunctionNumInputs #-}
 sxFunctionNumInputs (SXFunction fun) = unsafePerformIO $ do
   num <- withForeignPtr fun c_sxFunctionGetNumInputs
   return $ fromIntegral num
 
 sxFunctionNumOutputs :: SXFunction -> Int
+{-# NOINLINE sxFunctionNumOutputs #-}
 sxFunctionNumOutputs (SXFunction fun) = unsafePerformIO $ do
   num <- withForeignPtr fun c_sxFunctionGetNumOutputs
   return $ fromIntegral num
 
 sxFunctionGetInputsSX :: SXFunction -> Int -> SXMatrix
+{-# NOINLINE sxFunctionGetInputsSX #-}
 sxFunctionGetInputsSX (SXFunction fun) idx = unsafePerformIO $ do
   if idx >= sxFunctionNumInputs (SXFunction fun)
     then error $ printf "Error in sxFunctionGetInputsSX - requested input index: %d >= numInputs (SXFunction fun): %d" idx (sxFunctionNumInputs (SXFunction fun))
@@ -105,6 +110,7 @@ sxFunctionGetInputsSX (SXFunction fun) idx = unsafePerformIO $ do
   return (SXMatrix mat)
 
 sxFunctionGetOutputsSX :: SXFunction -> Int -> SXMatrix
+{-# NOINLINE sxFunctionGetOutputsSX #-}
 sxFunctionGetOutputsSX (SXFunction fun) idx = unsafePerformIO $ do
   if idx >= sxFunctionNumOutputs (SXFunction fun)
     then error $ printf "Error in sxFunctionGetOutputsSX - requested output index: %d >= numOutputs (SXFunction fun): %d" idx (sxFunctionNumOutputs (SXFunction fun))
@@ -115,12 +121,14 @@ sxFunctionGetOutputsSX (SXFunction fun) idx = unsafePerformIO $ do
   return (SXMatrix mat)
 
 sxFunctionGetInputDim :: SXFunction -> Int -> (Int, Int)
+{-# NOINLINE sxFunctionGetInputDim #-}
 sxFunctionGetInputDim (SXFunction fun) idx = unsafePerformIO $ do
   size1 <- withForeignPtr fun $ c_sxFunctionGetInputSize1 (fromIntegral idx)
   size2 <- withForeignPtr fun $ c_sxFunctionGetInputSize2 (fromIntegral idx)
   return (fromIntegral size1, fromIntegral size2)
 
 sxFunctionGetOutputDim :: SXFunction -> Int -> (Int, Int)
+{-# NOINLINE sxFunctionGetOutputDim #-}
 sxFunctionGetOutputDim (SXFunction fun) idx = unsafePerformIO $ do
   size1 <- withForeignPtr fun $ c_sxFunctionGetOutputSize1 (fromIntegral idx)
   size2 <- withForeignPtr fun $ c_sxFunctionGetOutputSize2 (fromIntegral idx)
@@ -128,6 +136,7 @@ sxFunctionGetOutputDim (SXFunction fun) idx = unsafePerformIO $ do
 
 ----------------------- AD -----------------------
 sxFunctionGradientAt :: SXFunction -> Int -> SXMatrix
+{-# NOINLINE sxFunctionGradientAt #-}
 sxFunctionGradientAt (SXFunction fun) idxInput = unsafePerformIO $ do
   -- don't take gradient with respect to non-existant input
   if idxInput >= sxFunctionNumInputs (SXFunction fun)
@@ -149,6 +158,7 @@ sxFunctionGradients fun = map (sxFunctionGradientAt fun) $ take (sxFunctionNumIn
 
 
 sxFunctionJacobianAt :: SXFunction -> (Int, Int) -> SXMatrix
+{-# NOINLINE sxFunctionJacobianAt #-}
 sxFunctionJacobianAt (SXFunction fun) (idx0, idx1) = unsafePerformIO $ do
   -- don't take jacobian with respect to non-existant output
   if idx0 >= sxFunctionNumOutputs (SXFunction fun)
@@ -166,6 +176,7 @@ sxFunctionJacobianAt (SXFunction fun) (idx0, idx1) = unsafePerformIO $ do
 
 
 sxFunctionHessianAt :: SXFunction -> (Int, Int) -> SXMatrix
+{-# NOINLINE sxFunctionHessianAt #-}
 sxFunctionHessianAt (SXFunction fun) (idx0, idx1) = unsafePerformIO $ do
   -- don't take hessian with respect to non-existant input
   if any (\x -> x >= sxFunctionNumInputs (SXFunction fun)) [idx0, idx1]
@@ -228,6 +239,7 @@ sxFunctionEvaluateListsOld fun input = do
   return ret
 
 sxFunctionEvaluateLists :: SXFunction -> [[[Double]]] -> [[[Double]]]
+{-# NOINLINE sxFunctionEvaluateLists #-}
 sxFunctionEvaluateLists fun inputs = unsafePerformIO $ do
   let outNew = map dMatrixToLists $ sxFunctionEvaluate fun $ map dMatrixFromLists inputs
 
@@ -241,6 +253,7 @@ sxFunctionEvaluateLists fun inputs = unsafePerformIO $ do
 
 
 sxFunctionEvaluate :: SXFunction -> [DMatrix] -> [DMatrix]
+{-# NOINLINE sxFunctionEvaluate #-}
 sxFunctionEvaluate fun@(SXFunction funRaw) inputs = unsafePerformIO $ do
 --  putStrLn "\n\n=========================== sxFunctionEvaluateDMatrix called =============================="
 --  putStrLn "sxFunctionEvaluateDMatrix inputs: "

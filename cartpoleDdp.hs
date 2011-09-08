@@ -5,22 +5,22 @@
 
 module Main where
 
-import Hom
 import Xyz
 import Quat
 import Integrators(rk4Step)
 import Vis
 import Odes.Cartpole
+import Casadi
 import DdpCasadi(prepareDdp)
 
-type ControllerState a = ([State a], [Action a])
+type ControllerState = ([DMatrix], [DMatrix])
 
 -- cost fcn
-cost :: Floating a => State a -> Action a -> a
+cost :: Matrix a b => a -> a -> b
 cost state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u + barrier
   where
-    [x, x', theta, theta'] = state
-    [u] = action
+    [x, x', theta, theta'] = toList state
+    [u] = toList action
 
     -- barrier
     uUb =  10.1
@@ -30,7 +30,7 @@ cost state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u 
     uBarrierLb = -mu*log( -uLb + u )
     barrier = uBarrierUb + uBarrierLb
 
-drawFun :: ([Double], ControllerState Double) -> IO ()
+drawFun :: (DMatrix, ControllerState) -> IO ()
 drawFun (state, (xTraj, uTraj)) = do
   let bobPath = VisLine (map cartpoleBob xTraj) (Rgb 1.0 0.1 0.1)
       axes = VisAxes (0.5, 5) (Xyz 0 0 0.5) (Quat 1 0 0 0)
@@ -42,14 +42,14 @@ drawFun (state, (xTraj, uTraj)) = do
 dt :: Floating a => a
 dt = 0.025
 
-dode :: Floating a => State a -> Action a -> State a
+dode :: Matrix a b => a -> a -> a
 dode x u = rk4Step cartpoleDxdt x u dt
 
 -- run ddp
 main :: IO ()
 main = do let n = 70
-              x0 = [-10,0,0.01,0::Double]
-              u0 = [0::Double]
+              x0 = fromList [-10,0,0.01,0::Double]
+              u0 = fromList [0::Double]
 
               xTrajBadGuess = replicate n x0
               uTrajBadGuess = replicate n u0
