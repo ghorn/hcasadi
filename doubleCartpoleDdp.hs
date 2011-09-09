@@ -10,7 +10,7 @@ import Quat
 import Integrators(rk4Step)
 import Vis
 import Odes.DoubleCartpole
-import DdpCasadi(prepareDdp)
+import Ddp(prepareDdp)
 import Casadi
 
 type ControllerState = ([DMatrix], [DMatrix])

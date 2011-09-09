@@ -8,7 +8,7 @@ module Main where
 import Hom
 import Integrators
 import Casadi
-import DdpCasadi(prepareDdp)
+import Ddp(prepareDdp)
 import Graphics.Gnuplot.Simple
 
 -- ode

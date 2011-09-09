@@ -1,9 +1,9 @@
--- DdpCasadi.hs
+-- Ddp.hs
 
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleContexts, RankNTypes #-}
 
-module DdpCasadi
+module Ddp
        (
          prepareQFunction,
          evalQFunction,
@@ -144,4 +144,3 @@ backPropagate qFunction x u nextValue = (Quad vxx vx v0 x, feedbackGains, openLo
     
     -- open loop control
     openLoopControl = u - ((inv quu) * qu)
-  

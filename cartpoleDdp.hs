@@ -11,7 +11,7 @@ import Integrators(rk4Step)
 import Vis
 import Odes.Cartpole
 import Casadi
-import DdpCasadi(prepareDdp)
+import Ddp(prepareDdp)
 
 type ControllerState = ([DMatrix], [DMatrix])
 
