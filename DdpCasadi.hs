@@ -14,8 +14,6 @@ module DdpCasadi
 import Casadi
 import Casadi.SXFunction
 import Hom(Cost, Ode, Quad(..), evalQuad)
-import qualified Numeric.LinearAlgebra as LA
-import Numeric.LinearAlgebra((<>))
 import Data.List(mapAccumL)
 
 type BacksweepOutput = (Quad DMatrix, DMatrix, DMatrix)
@@ -134,25 +132,17 @@ backPropagate :: SXFunction -> DMatrix -> DMatrix -> Quad DMatrix -> BacksweepOu
 backPropagate qFunction x u nextValue = (Quad vxx vx v0 x, feedbackGains, openLoopControl)
   where
     -- q functions to lists to matrices/vectors
-    (q0', qx', qu', qxx', qxu', quu') = evalQFunction qFunction (x,u,nextValue)
-    qxx = LA.fromLists $ toLists qxx' :: LA.Matrix Double
-    quu = LA.fromLists $ toLists quu' :: LA.Matrix Double
-    qxu = (LA.fromLists $ toLists qxu') :: LA.Matrix Double
-    qx = LA.fromList $ toList qx' :: LA.Vector Double
-    qu = LA.fromList $ toList qu' :: LA.Vector Double
-    q0 = head (toList q0') :: Double
-    
-    -- value function
-    vxx' = qxx - (qxu <> (LA.inv quu) <> (LA.trans qxu))
-    vx' = qx - ( qu <> (LA.inv quu) <> (LA.trans qxu))
-    v0' = q0 - (qu `LA.dot` ((LA.inv quu) <> qu))
+    (q0, qx, qu, qxx, qxu, quu) = evalQFunction qFunction (x,u,nextValue)
 
-    vxx = fromLists $ LA.toLists $ vxx'
-    vx  = fromList  $ LA.toList $ vx'
-    v0  = fromList [v0']
+    -- value function update
+    vxx' =  qxx - (qxu * (inv quu) * (trans qxu))
+    vxx = scale 0.5 (vxx' + (trans vxx'))
+    vx  = (trans qx) - ((trans qu) * (inv quu) * (trans qxu))
+    v0  = q0- ((trans qu)*((inv quu) * qu))
     
     -- feedback gain
-    feedbackGains = fromLists $ LA.toLists $ - (LA.inv quu) <> (LA.trans qxu)
+    feedbackGains =  -(inv quu) * (trans qxu)
     
     -- open loop control
-    openLoopControl = u - (fromList $ LA.toList $ (LA.inv quu) <> qu)
+    openLoopControl = u - ((inv quu) * qu)
+  
