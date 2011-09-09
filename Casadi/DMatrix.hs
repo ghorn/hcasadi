@@ -22,6 +22,8 @@ import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
 import Control.DeepSeq
 import Data.List(intersperse)
+import Data.Tuple(swap)
+
 
 -- the DMatrix data type
 data DMatrixRaw = DMatrixRaw
@@ -199,7 +201,7 @@ dMM (DMatrix m0) (DMatrix m1) = unsafePerformIO $ do
 dMatrixTranspose :: DMatrix -> DMatrix
 {-# NOINLINE dMatrixTranspose #-}
 dMatrixTranspose (DMatrix mIn) = unsafePerformIO $ do
-  DMatrix mOut <- dMatrixNewZeros $ dMatrixSize (DMatrix mIn)
+  DMatrix mOut <- dMatrixNewZeros $ swap (dMatrixSize (DMatrix mIn))
   withForeignPtrs2 c_dMatrixTranspose mIn mOut
   return $ DMatrix mOut
 
