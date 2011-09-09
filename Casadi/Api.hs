@@ -12,12 +12,14 @@ are either used to instance the Matrix typeclass or are given shorter names in t
 module Casadi.Api
        (
          SX(..)
+       , SXFunction(..)
        , SXMatrix(..)
        , DMatrix(..)
        , Matrix(..)
        , sxSymbolic
        , sxMatrixSymbolic
        , sxFunction
+       , sxFunctionEvaluate
        , sxInt
        , sxDouble
        , gradient

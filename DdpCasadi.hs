@@ -12,7 +12,6 @@ module DdpCasadi
        ) where
 
 import Casadi
-import Casadi.SXFunction
 import Hom(Cost, Ode, Quad(..), evalQuad)
 import Data.List(mapAccumL)
 
@@ -20,7 +19,7 @@ type BacksweepOutput = (Quad DMatrix, DMatrix, DMatrix)
 
 -- prepare casadi SXFunction
 prepareQFunction :: Int -> Int -> Cost SXMatrix SX -> Ode SXMatrix -> SXFunction
-prepareQFunction nx nu costFunction dode = sxFunctionCreate
+prepareQFunction nx nu costFunction dode = sxFunction
                                            [x,u,vxx,vx,v0,x0]
                                            [fromList [q], qx, qu, qxx, qxu, quu]
   where
@@ -44,7 +43,7 @@ prepareQFunction nx nu costFunction dode = sxFunctionCreate
     qxu = jacobian qx u
 
 prepareDodeFunction :: Int -> Int -> Ode SXMatrix -> SXFunction
-prepareDodeFunction nx nu dode = sxFunctionCreate [x,u] [xNext]
+prepareDodeFunction nx nu dode = sxFunction [x,u] [xNext]
   where
     x   = sxMatrixSymbolic "x"   (nx,1)
     u   = sxMatrixSymbolic "u"   (nu,1)
