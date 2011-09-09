@@ -61,6 +61,8 @@ foreign import ccall unsafe "dMatrixScale" c_dMatrixScale
   :: CDouble -> (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixInv" c_dMatrixInv
   :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixVertcat" c_dMatrixVertcat
+  :: Ptr (Ptr DMatrixRaw) -> CInt -> (Ptr DMatrixRaw) -> IO ()
 
 
 ----------------- create -------------------------
@@ -229,6 +231,27 @@ dMatrixInv (DMatrix mIn) = unsafePerformIO $ do
   return $ DMatrix mOut
 
 
+dMatrixVertcat :: [DMatrix] -> DMatrix
+{-# NOINLINE dMatrixVertcat #-}
+dMatrixVertcat inputs = unsafePerformIO $ do
+  -- turn input DMatrix lists into [Ptr DMatrixRaw]
+  let unsafeInputPtrs :: [Ptr DMatrixRaw]
+      unsafeInputPtrs = map (\(DMatrix mat) -> unsafeForeignPtrToPtr mat) inputs
+      nIn  = fromIntegral $ length inputs
+      
+  -- turn [Ptr SXMatrixRaw] into Ptr (Ptr DMatrixRaw)
+  inputPtrArray <- newArray unsafeInputPtrs
+
+  DMatrix mOutRaw <- dMatrixNewZeros (sum $ map rows inputs, cols (head inputs))
+
+  withForeignPtr mOutRaw $ c_dMatrixVertcat inputPtrArray nIn
+
+  -- touch all [ForeignPtr DMatrixRaw] for unsafeForeignPtrToPtr safety
+  mapM_ (\(DMatrix d) -> touchForeignPtr d) inputs
+
+  return (DMatrix mOutRaw)
+
+
 ----------------- typeclass stuff ------------------
 instance Show DMatrix where
   show d = f (dMatrixSize d)
@@ -276,7 +299,7 @@ instance Matrix DMatrix Double where
   toLists = dMatrixToLists
   fromList = dMatrixFromList
   fromLists = dMatrixFromLists
-  concatMat = error "concatMat not yet implemented for Matrix DMatrix Double"
+  vertcat = dMatrixVertcat
   inv = dMatrixInv
   scale = dMatrixScale
   zeros = dMatrixZeros

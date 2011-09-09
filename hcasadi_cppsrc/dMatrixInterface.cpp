@@ -97,3 +97,10 @@ void dMatrixScale(const double scalar, const DMatrix & mIn, DMatrix & mOut){
 void dMatrixInv(const DMatrix & mIn, DMatrix & mOut){
   mOut = inv(mIn);
 }
+
+void dMatrixVertcat(const DMatrix * mIn[], int nIn, DMatrix & mOut){
+  vector<DMatrix> inputs(0);
+  for (int k=0; k<nIn; k++)
+    inputs.push_back(*(mIn[k]));
+  mOut = vertcat(inputs);
+}

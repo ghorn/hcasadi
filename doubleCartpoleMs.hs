@@ -13,13 +13,11 @@ import qualified Data.Map as DM
 import Data.Maybe (fromJust)
 import Graphics.UI.GLUT
 
-type ControllerState a = ([[a]], [[a]], [a])
+type ControllerState = ([DMatrix], [DMatrix], DMatrix)
 
 -- ode
 doubleCartpoleOde :: Ode
-doubleCartpoleOde = Ode doubleCartpoleDxdt' (6,1)
-  where
-    doubleCartpoleDxdt' x u = fromList $ doubleCartpoleDxdt (toList x) (toList u)
+doubleCartpoleOde = Ode doubleCartpoleDxdt (6,1)
 
 -- cost fcn
 cpCost :: Cost
@@ -44,7 +42,7 @@ cpCostFinal' :: SXMatrix -> SXMatrix -> SX
 cpCostFinal' x u = 10*(cpCost' x u)
 
 
-drawFun :: ([Double], ControllerState Double) -> IO ()
+drawFun :: (DMatrix, ControllerState) -> IO ()
 drawFun (state, (xTraj, uTraj, _)) = do
   let xyzToGLdouble (Xyz a b c) = Xyz (realToFrac a) (realToFrac b) (realToFrac c)
       bob0Path = VisLine (map (xyzToGLdouble . bob0Xyz) xTraj) (Rgb 1.0 0.1 0.1)
@@ -73,13 +71,13 @@ main = do
       sys = replaceFinalCost cpCostFinal $ simpleSystem doubleCartpoleOde cpCost dt n
       ms = multipleShooting sys (fromList [tEnd])
 
-      x0 = [0, 0.9*pi, 0.9*pi, 0, 0, 0]
-      xf = [0,0,0,0,0,0]
+      x0 = fromList [0, 0.9*pi, 0.9*pi, 0, 0, 0] :: DMatrix
+      xf = fromList [0,0,0,0,0,0] :: DMatrix
       xBounds = [(-10,10), (-4*pi,4*pi), (-4*pi,4*pi), (-50,50), (-20*pi, 20*pi), (-20*pi, 20*pi)]
   
-      xGuess = concat $ replicate n x0
+      xGuess = concat $ replicate n (toList x0)
       uGuess = concat $ replicate n [0]
-      badGuess = concat [xGuess,uGuess]++[1::Double]
+      badGuess = fromList $ xGuess ++ uGuess ++ [1::Double]
   
       x0Sx = head $ states ms
       xfSx = last $ states ms
@@ -95,7 +93,7 @@ main = do
 
   msSolve <- multipleShootingSolver ms []
   (sol0,_) <- msSolve bounds badGuess
-  print $ length sol0
+  print $ rows sol0
 
   let simController x (xTrajPrev, uTrajPrev, paramsPrev) = do
         let bounds' = concat [ boundEqs ms x0Sx x
@@ -107,7 +105,7 @@ main = do
             xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
             uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
             
-            guess = concat (xTraj0 ++ uTraj0 ++ [paramsPrev])
+            guess = vertcat (xTraj0 ++ uTraj0 ++ [paramsPrev])
             
         (sol, _) <- msSolve bounds' guess
         

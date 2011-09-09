@@ -14,7 +14,7 @@ class (Num a, Fractional a, Num b, Fractional b, Floating b) => Matrix a b | a -
   toLists :: a -> [[b]]
   fromList :: [b] -> a
   fromLists :: [[b]] -> a
-  concatMat :: [a] -> a
+  vertcat :: [a] -> a
   inv :: a -> a
   toSingleton :: a -> b
   scale :: b -> a -> a

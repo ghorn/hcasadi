@@ -38,26 +38,29 @@ SnoptSolver::~SnoptSolver()
 }
 
 void
-SnoptSolver::setGuess(const double _xGuess[]){
-  memcpy( x, _xGuess, n*sizeof(double) );
+SnoptSolver::setGuess(const DMatrix & _xGuess){
+  for (int k=0; k<n; k++)
+    x[k] = _xGuess.indexed(k,0).at(0);
 }
 
 void
-SnoptSolver::setXBounds(const double _xlb[], const double _xub[]){
-  memcpy( xlow, _xlb, n*sizeof(double) );
-  memcpy( xupp, _xub, n*sizeof(double) );
+SnoptSolver::setXBounds(const DMatrix & _xlb, const DMatrix & _xub){
+  for (int k=0; k<n; k++){
+    xlow[k] = _xlb.indexed(k,0).at(0);
+    xupp[k] = _xub.indexed(k,0).at(0);
+  }
 }
 
 void
-SnoptSolver::setFBounds(const double _Flb[], const double _Fub[]){
+SnoptSolver::setFBounds(const DMatrix & _Flb, const DMatrix & _Fub){
   // set bound on objective function
   Flow[0] = -SNOPT_INFINITY;
   Fupp[0] = SNOPT_INFINITY;
 
   // set bound on nonlinear constraints
-  if (neF > 1){
-    memcpy( &(Flow[1]), _Flb, (neF-1)*sizeof(double) );
-    memcpy( &(Fupp[1]), _Fub, (neF-1)*sizeof(double) );
+  for (int k=0; k<neF-1; k++){
+    Flow[k+1] = _Flb.indexed(k,0).at(0);
+    Fupp[k+1] = _Fub.indexed(k,0).at(0);
   }
 
   // correct for constant offset in F
@@ -72,8 +75,9 @@ SnoptSolver::setFBounds(const double _Flb[], const double _Fub[]){
 }
 
 double
-SnoptSolver::getSolution(double _xOpt[]){
-  memcpy( _xOpt, x, n*sizeof(double) );
+SnoptSolver::getSolution(DMatrix & _xOpt){
+  for (int k=0; k<n; k++)
+    _xOpt.indexed_assignment(k, 0, x[k]);
   return F[objRow - FIRST_FORTRAN_INDEX] + objAdd;
 }
 

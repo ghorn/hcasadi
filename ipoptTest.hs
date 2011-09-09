@@ -10,24 +10,24 @@ import NLP.NLP
 import NLP.Snopt
 import Casadi
 
-rosenbrock :: Floating a => [a] -> a
-rosenbrock [x0,x1] = (1-x0)*(1-x0) + 100*(x1-x0*x0)*(x1-x0*x0)
-rosenbrock _ = error "wrong number of inputs to rosenbrock"
+rosenbrock :: Matrix a b => a -> b
+rosenbrock inputs = (1-x0)*(1-x0) + 100*(x1-x0*x0)*(x1-x0*x0)
+  where
+    [x0,x1] = toList inputs
 
 -- box constraints only rosenbrock
-solveRosenbrock :: IO ([Double], Double)
+solveRosenbrock :: IO (DMatrix, Double)
 solveRosenbrock = do
   let x = sxMatrixSymbolic "x" (2,1)
-      [x0,x1] = toList x
+      objFun = rosenbrock x
       constraints = fromList []
-      objFun = rosenbrock $ [x0,x1]
   
-      xGuess = [-0.9, 1.0]
-      xLb = [-10,-10]
-      xUb = [10,10]
-      
-      gLb = []
-      gUb = []
+      xGuess = fromList [-0.9, 1.0]
+      xLb = fromList [-10,-10]
+      xUb = fromList [10,10]
+
+      gLb = fromList []
+      gUb = fromList []
 
 --  solver <- createSolver IpoptExactHessian x objFun constraints
   solver <- createSolver Snopt x objFun constraints
@@ -36,19 +36,19 @@ solveRosenbrock = do
   
   
 -- quadratic with y >= 1 - x
-solveQuadratic :: IO ([Double], Double)
+solveQuadratic :: IO (DMatrix, Double)
 solveQuadratic = do
   let x = sxMatrixSymbolic "x" (2,1)
       [x0,x1] = toList x
-      constraints = fromList [1 - x0 - x1]
       objFun = x0*x0 + x1*x1
+      constraints = fromList [1 - x0 - x1]
   
-      xGuess = [0.0, 0.0]
-      xLb = [-10,-10]
-      xUb = [10,10]
-      
-      gLb = [-1e25]
-      gUb = [0]
+      xGuess = fromList [0.0, 0.0]
+      xLb = fromList [-10,-10]
+      xUb = fromList [10,10]
+
+      gLb = fromList [-1e25]
+      gUb = fromList [0]
 
 --  solver <- createSolver IpoptExactHessian x objFun constraints
   solver <- createSolver Snopt x objFun constraints
@@ -58,9 +58,9 @@ solveQuadratic = do
 
 main :: IO ()
 main = do
---  (rSol,rVal) <- solveRosenbrock
+  (rSol,rVal) <- solveRosenbrock
   (qSol,qVal) <- solveQuadratic
   
   putStrLn "\n"
---  putStrLn $ "rosenbrock sol: " ++ (show rSol) ++ ", optimal value: " ++ (show rVal)
+  putStrLn $ "rosenbrock sol: " ++ (show rSol) ++ ", optimal value: " ++ (show rVal)
   putStrLn $ "quadratic sol: " ++ (show qSol) ++ ", optimal value: " ++ (show qVal)

@@ -39,12 +39,12 @@ void snoptSolverDelete(SnoptSolver * const solver){
 }
 
 double snoptSolverSolve(SnoptSolver & solver,
-			const double xguess[],
-			const double xlb[],
-			const double xub[],
-			const double flb[],
-			const double fub[],
-			double xOpt[])
+                        const DMatrix & xguess,
+                        const DMatrix & xlb,
+                        const DMatrix & xub,
+                        const DMatrix & flb,
+                        const DMatrix & fub,
+                        DMatrix & xOpt)
 {
   solver.setGuess(xguess);
   solver.setXBounds(xlb, xub);

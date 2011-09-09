@@ -11,6 +11,7 @@ module NLP.Ipopt
 
 import Casadi.SX
 import Casadi.SXMatrix
+import Casadi.DMatrix
 import NLP.NLP
 
 import Foreign.C
@@ -34,5 +35,5 @@ foreign import ccall unsafe "ipoptSolverCreate" c_ipoptSolverCreate :: Ptr SXMat
 foreign import ccall unsafe "ipoptSolverCreateExactHessian" c_ipoptSolverCreateExactHessian :: Ptr SXMatrixRaw -> Ptr SXRaw -> Ptr SXMatrixRaw -> IO (Ptr IpoptExactHessian)
 foreign import ccall unsafe "&ipoptSolverDelete" c_ipoptSolverDelete :: FunPtr (Ptr Ipopt -> IO ())
 foreign import ccall unsafe "&ipoptSolverDelete" c_ipoptSolverDeleteExactHessian :: FunPtr (Ptr IpoptExactHessian -> IO ())
-foreign import ccall unsafe "ipoptSolverSolve" c_ipoptSolverSolve :: Ptr Ipopt -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> IO CDouble
-foreign import ccall unsafe "ipoptSolverSolve" c_ipoptSolverSolveExactHessian :: Ptr IpoptExactHessian -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> IO CDouble
+foreign import ccall unsafe "ipoptSolverSolve" c_ipoptSolverSolve :: Ptr Ipopt -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> IO CDouble
+foreign import ccall unsafe "ipoptSolverSolve" c_ipoptSolverSolveExactHessian :: Ptr IpoptExactHessian -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> Ptr DMatrixRaw -> IO CDouble

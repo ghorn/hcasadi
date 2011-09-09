@@ -33,10 +33,10 @@ public:
   ~SnoptSolver(void);
   SnoptSolver(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
 
-  void setGuess(const double _xGuess[]);
-  void setXBounds(const double _xlb[], const double _xub[]);
-  void setFBounds(const double _Flb[], const double _Fub[]);
-  double getSolution(double _xOpt[]);
+  void setGuess(const DMatrix & _xGuess);
+  void setXBounds(const DMatrix & _xlb, const DMatrix & _xub);
+  void setFBounds(const DMatrix & _Flb, const DMatrix & _Fub);
+  double getSolution(DMatrix & _xOpt);
 
   void solve(void);
 

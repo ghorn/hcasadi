@@ -341,7 +341,7 @@ instance Matrix SXMatrix SX where
   toLists = sxMatrixToLists
   fromList = sxMatrixFromList
   fromLists = error "sxMatrixFromLists not yet implemented"
-  concatMat mats = fromList $ concat $ map toList mats
+  vertcat mats = fromList $ concat $ map toList mats
   inv = sxMatrixInv
   scale = sxMatrixScale
   zeros = sxMatrixZeros

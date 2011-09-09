@@ -13,13 +13,11 @@ import qualified Data.Map as DM
 import Data.Maybe (fromJust)
 import Graphics.UI.GLUT
 
-type ControllerState a = ([[a]], [[a]], [a])
+type ControllerState = ([DMatrix], [DMatrix], DMatrix)
 
 -- ode
 cartpoleOde :: Ode
-cartpoleOde = Ode cartpoleDxdt' (4,1)
-  where
-    cartpoleDxdt' x u = fromList $ cartpoleDxdt (toList x) (toList u)
+cartpoleOde = Ode cartpoleDxdt (4,1)
 
 -- cost fcn
 cpCost :: Cost
@@ -32,7 +30,7 @@ cpCost' state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u
     [u] = toList action
 
 
-drawFun :: ([Double], ControllerState Double) -> IO ()
+drawFun :: (DMatrix, ControllerState) -> IO ()
 drawFun (state, (xTraj, uTraj, _)) = do
   let bobPath = VisLine (map cartpoleBob xTraj) (Rgb 1.0 0.1 0.1)
       axes = VisAxes (0.5, 5) (Xyz 0 0 0.5) (Quat 1 0 0 0)
@@ -55,12 +53,12 @@ main = do
       sys = simpleSystem cartpoleOde cpCost dt n
       ms = multipleShooting sys (fromList [tEnd])
 
-      x0 = [-10,0,0.01,0]
-      xf = [0,0,pi,0]
+      x0 = fromList [-10,0,0.01,0] :: DMatrix
+      xf = fromList [0,0,pi,0] :: DMatrix
       xBounds = [(-10,10), (-50,50), (-4*pi,4*pi), (-20*pi, 20*pi)]
-  
-      xBadGuess = (replicate ((rows $ designVars ms) - 1) (1.0::Double))++[5::Double]
-  
+
+      xBadGuess = fromList $ (replicate ((rows $ designVars ms) - 1) (1.0::Double))++[5::Double]
+
       x0Sx = head $ states ms
       xfSx = last $ states ms
       xMiddle = init (tail $ states ms)
@@ -76,7 +74,7 @@ main = do
 
   msSolve <- multipleShootingSolver ms []
   (sol0,_) <- msSolve bounds xBadGuess
-  print $ length sol0
+  print $ rows sol0
 
   let simController x (xTrajPrev, uTrajPrev, paramsPrev) = do
         let bounds' = concat [ boundEqs ms x0Sx x
@@ -89,7 +87,7 @@ main = do
             xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
             uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
             
-            guess = concat (xTraj0 ++ uTraj0 ++ [paramsPrev])
+            guess = vertcat $ xTraj0 ++ uTraj0 ++ [paramsPrev]
             
         (sol, _) <- msSolve bounds' guess
         

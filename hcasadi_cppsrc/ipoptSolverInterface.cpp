@@ -92,8 +92,11 @@ void ipoptSolverDelete(IpoptSolver * const solver){
   delete solver;
 }
 
-double ipoptSolverSolve(IpoptSolver & solver, double guess[], double lb[], double ub[], double gMin[], double gMax[], double sol[]){
-  int nx = solver.input().size1();
+double ipoptSolverSolve(IpoptSolver & solver,
+			const DMatrix & guess,
+			const DMatrix & lb, const DMatrix & ub,
+			const DMatrix & gMin, const DMatrix & gMax,
+			DMatrix & sol){
 
   solver.setInput(    lb, NLP_LBX);
   solver.setInput(    ub, NLP_UBX);

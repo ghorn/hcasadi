@@ -35,6 +35,7 @@ extern "C"{
   int dMatrixIsEqual(const DMatrix & m0, const DMatrix & m1);
   void dMatrixScale(const double scalar, const DMatrix & mIn, DMatrix & mOut);
   void dMatrixInv(const DMatrix & mIn, DMatrix & mOut);
+  void dMatrixVertcat(const DMatrix * mIn[], int nIn, DMatrix & mOut);
 
 #ifdef __cplusplus
 }
