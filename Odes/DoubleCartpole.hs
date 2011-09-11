@@ -156,7 +156,7 @@ doubleCartpoleForceCylinder state action = VisCylinder (len, 0.01) (Xyz x0 y0 z0
   where
     quat = Quat (sqrt(2)/2) 0 (-signum(u)*sqrt(2)/2) 0
 
-    u = realToFrac $ head $ toList action
+    u = -(realToFrac $ head $ toList action)
     x = realToFrac $ head $ toList state
 
     len = u/4
