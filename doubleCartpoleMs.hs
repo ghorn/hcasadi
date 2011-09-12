@@ -1,5 +1,7 @@
 -- doubleCartpoleMs.hs
 
+--{-# OPTIONS_GHC -Wall #-}
+
 module Main where
 
 import Vis
@@ -8,10 +10,6 @@ import Casadi
 import Odes.DoubleCartpole
 import Xyz
 import Quat
-
-import qualified Data.Map as DM
-import Data.Maybe (fromJust)
-import Graphics.UI.GLUT
 
 type ControllerState = ([DMatrix], [DMatrix], DMatrix)
 
@@ -61,10 +59,13 @@ drawFun (state, (xTraj, uTraj, _)) = do
 simDt :: Floating a => a
 simDt = 0.005
 
+timeDialationFactor :: Double
+timeDialationFactor = 1.0 :: Double
+
 main :: IO ()
 main = do
   let n = 50
-
+  
       tEnd =  sxSymbolic "tEnd"
       dt = tEnd/(sxInt (n-1))
 
@@ -114,4 +115,4 @@ main = do
 
         return (u, ctrlState)
   
-  doubleCartpoleVis simController drawFun (x0, devectorize sol0 ms) simDt
+  doubleCartpoleVis simController drawFun (x0, devectorize sol0 ms) simDt timeDialationFactor

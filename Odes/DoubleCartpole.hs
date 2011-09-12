@@ -179,7 +179,9 @@ doubleCartpoleVis :: (NFData a, Show a) =>
                      -> ((DMatrix, a) -> IO ())
                      -> (DMatrix, a)
                      -> Double
+                     -> Double
                      -> IO ()
-doubleCartpoleVis controller drawFun x0 dt = vis (simFun dode controller) drawFun x0 dt
+doubleCartpoleVis controller drawFun x0 simDt timeDialationFactor = visOut
   where
-    dode x u = rk4Step doubleCartpoleDxdt x u dt
+    visOut = vis (simFun dode controller) drawFun x0 (simDt/timeDialationFactor)
+    dode x u = rk4Step doubleCartpoleDxdt x u simDt

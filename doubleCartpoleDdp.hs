@@ -58,6 +58,9 @@ drawFun (state, (xTraj, uTraj)) = do
 dt :: Floating a => a
 dt = 0.01
 
+timeDialationFactor :: Double
+timeDialationFactor = 0.25
+
 dode :: Matrix a b c => a -> a -> a
 dode x u = rk4Step doubleCartpoleDxdt x u dt
 
@@ -89,4 +92,5 @@ main = do let n = 50
                     u = head uTrajPrev
                 return (u, (xTraj', uTraj'))
 
+          doubleCartpoleVis simController drawFun (x0, (xTraj, uTraj)) dt timeDialationFactor
           print "hi"

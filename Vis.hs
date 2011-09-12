@@ -16,7 +16,6 @@ import Data.IORef ( IORef, newIORef )
 import System.Exit ( exitWith, ExitCode(ExitSuccess) )
 import Graphics.UI.GLUT
 import Data.Time.Clock
-import System.Posix.Unistd(usleep)
 import Control.Concurrent
 import Control.Monad
 import Control.DeepSeq
@@ -153,8 +152,8 @@ drawObjects objects = do
             zAxis = VisArrow (size, aspectRatio) (Xyz 0 0 0) (Xyz 0 0 1) (Rgb 0 0 1)
         drawObjects [xAxis, yAxis, zAxis]
 
-display :: MVar a -> Camera -> (a -> IO ()) -> DisplayCallback
-display stateMVar camera userDrawFun = do
+display :: MVar a -> MVar Bool -> Camera -> (a -> IO ()) -> DisplayCallback
+display stateMVar visReadyMVar camera userDrawFun = do
    clear [ ColorBuffer, DepthBuffer ]
    
    -- draw the scene
@@ -182,6 +181,8 @@ display stateMVar camera userDrawFun = do
    
    flush
    swapBuffers
+   _ <- swapMVar visReadyMVar True
+   return ()
 
 
 reshape :: ReshapeCallback
@@ -195,12 +196,11 @@ reshape size@(Size w h) = do
    postRedisplay Nothing
 
 
-keyboardMouse :: ThreadId -> Camera -> KeyboardMouseCallback
-keyboardMouse simThreadId camera key keyState _ _ = do
+keyboardMouse :: Camera -> KeyboardMouseCallback
+keyboardMouse camera key keyState _ _ = do
   case (key, keyState) of
     (Char '\27', Down) -> do
       -- kill sim thread when main loop finishes
-      killThread simThreadId
       exitWith ExitSuccess
 
     (SpecialKey KeyLeft, Down)  -> print "left"
@@ -280,22 +280,34 @@ vis userSimFun userDrawFun x0 ts = do
   -- create internal state
   stateMVar <- newMVar x0
   camera <- makeCamera
+  visReadyMVar <- newMVar False
 
   -- start sim thread
-  simThreadId <- forkIO $ simThread stateMVar userSimFun ts
-
+  _ <- forkIO $ simThread stateMVar visReadyMVar userSimFun ts
+  
   -- setup callbacks
-  displayCallback $= display stateMVar camera userDrawFun
+  displayCallback $= display stateMVar visReadyMVar camera userDrawFun
   reshapeCallback $= Just reshape
-  keyboardMouseCallback $= Just (keyboardMouse simThreadId camera)
+  keyboardMouseCallback $= Just (keyboardMouse camera)
   motionCallback $= Just (motion camera)
+
 
   -- start main loop
   mainLoop
 
 
-simThread :: NFData a => MVar a -> (a -> IO a) -> Double -> IO ()
-simThread stateMVar userSimFun ts = do
+simThread :: NFData a => MVar a -> MVar Bool -> (a -> IO a) -> Double -> IO ()
+simThread stateMVar visReadyMVar userSimFun ts = do
+  let waitUntilDisplayIsReady :: IO ()
+      waitUntilDisplayIsReady = do 
+        visReady <- readMVar visReadyMVar
+        if not visReady
+          then do threadDelay 10000
+                  waitUntilDisplayIsReady
+          else do return ()
+  
+  waitUntilDisplayIsReady
+  
   t0 <- getCurrentTime
   lastTimeRef <- newIORef t0
 
@@ -304,7 +316,8 @@ simThread stateMVar userSimFun ts = do
     currentTime <- getCurrentTime
     lastTime <- get lastTimeRef
     let usRemaining :: Int
-        usRemaining = round $ 1e6*(ts - (realToFrac (diffUTCTime currentTime lastTime)))
+        usRemaining = round $ 1e6*(ts - realToFrac (diffUTCTime currentTime lastTime))
+
     if usRemaining <= 0
       -- slept for long enough, do a sim iteration
       then do
@@ -323,4 +336,4 @@ simThread stateMVar userSimFun ts = do
         postRedisplay Nothing
 
       else do -- need to sleep longer
-        usleep usRemaining
+        threadDelay usRemaining
