@@ -145,3 +145,9 @@ void sxArccos(const SX & sxIn, SX & sxOut){
 void sxArctan(const SX & sxIn, SX & sxOut){
   sxOut = atan(sxIn);
 }
+
+
+/*************** bound ***************/
+void sxBound(const SX & lb, const SX & ub, const SX & sxIn, SX & sxOut){
+  sxOut = sxIn + (ub - sxIn)*(sxIn > ub) + (lb - sxIn)*(sxIn < lb);
+}

@@ -15,9 +15,11 @@ module Casadi.SX
        , sxFromIntegral
        , sxFromDouble
        , sxCreateSymbolic
+       , sxBound
        ) where
 
 import Casadi.CasadiInterfaceUtils
+import Casadi.Matrix
 
 import Foreign.C
 import Foreign.Ptr
@@ -62,6 +64,7 @@ foreign import ccall unsafe "sxInterface.hpp sxArcsin" c_sxArcsin :: Ptr SXRaw -
 foreign import ccall unsafe "sxInterface.hpp sxArccos" c_sxArccos :: Ptr SXRaw -> Ptr SXRaw -> IO ()
 foreign import ccall unsafe "sxInterface.hpp sxArctan" c_sxArctan :: Ptr SXRaw -> Ptr SXRaw -> IO ()
 
+foreign import ccall unsafe "sxInterface.hpp sxBound" c_sxBound :: Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> Ptr SXRaw -> IO ()
 
 -- creation
 sxCreateSymbolic :: String -> IO SX
@@ -237,7 +240,6 @@ sxArctan (SX sx) = unsafePerformIO $ do
 
 
 
-
 sxFromInt :: Int -> SX
 {-# NOINLINE sxFromInt #-}
 sxFromInt n = unsafePerformIO $ do
@@ -255,6 +257,26 @@ sxFromDouble :: Double -> SX
 sxFromDouble val = unsafePerformIO $ do
   s <- sxNewDouble val
   return s
+
+
+sxBound :: SX -> (SX, SX) -> SX
+{-# NOINLINE sxBound #-}
+sxBound (SX sxIn) (SX sxLb, SX sxUb) = unsafePerformIO $ do
+  (SX sxOut) <- sxNewDouble 0
+  
+  let sxLb'  = unsafeForeignPtrToPtr sxLb
+      sxUb'  = unsafeForeignPtrToPtr sxUb
+      sxIn'  = unsafeForeignPtrToPtr sxIn
+      sxOut' = unsafeForeignPtrToPtr sxOut
+  
+  c_sxBound sxLb' sxUb' sxIn' sxOut'
+  
+  touchForeignPtr sxLb
+  touchForeignPtr sxUb
+  touchForeignPtr sxIn
+  touchForeignPtr sxOut
+  
+  return (SX sxOut)
 
 
 -- typeclass stuff
@@ -302,3 +324,6 @@ instance Floating SX where
   asinh = error "hyperbolic functions not yet implemented for SX"
   atanh = error "hyperbolic functions not yet implemented for SX"
   acosh = error "hyperbolic functions not yet implemented for SX"
+
+instance Boundable SX where
+  bound = sxBound

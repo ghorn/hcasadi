@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
 module Casadi.Matrix( Matrix(..)
+                    , Boundable(..)
                     ) where
 
 import Casadi.SXFunctionRaw
@@ -13,7 +14,7 @@ import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.C
 
-class (NFData a, NFData b, Num a, Fractional a, Num b, Fractional b, Floating b) => Matrix a b c | a -> b c where
+class (NFData a, NFData b, Num a, Fractional a, Num b, Fractional b, Floating b, Boundable a) => Matrix a b c | a -> b c where
   trans :: a -> a
   size :: a -> (Int, Int)
   rows :: a -> Int
@@ -33,3 +34,6 @@ class (NFData a, NFData b, Num a, Fractional a, Num b, Fractional b, Floating b)
   c_sxFunctionEvaluate :: a -> CInt -> Ptr (Ptr c) -> CInt -> Ptr (Ptr c) -> Ptr SXFunctionRaw -> IO ()
 
   toSingleton = head . toList
+
+class Boundable a where
+  bound :: a -> (a, a) -> a

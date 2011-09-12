@@ -16,12 +16,14 @@ module Casadi.Api
        , SXMatrix(..)
        , DMatrix(..)
        , Matrix(..)
+       , Boundable(..)
        , sxSymbolic
        , sxMatrixSymbolic
        , sxFunction
        , sxFunctionEvaluate
        , sxInt
        , sxDouble
+       , sxBound
        , gradient
        , hessian
        , jacobian

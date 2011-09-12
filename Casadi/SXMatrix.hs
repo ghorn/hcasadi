@@ -353,3 +353,7 @@ instance Matrix SXMatrix SX SXMatrixRaw where
   c_sxFunctionEvaluate _ = c_sxFunctionEvaluateSXMatrix
   getForeignPtr (SXMatrix r) = r
   newZeros = sxMatrixNewZeros
+
+instance Boundable SXMatrix where
+  bound xs (lbs, ubs) = fromList $ zipWith bound (toList xs) (zip (toList lbs) (toList ubs))
+      

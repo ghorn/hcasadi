@@ -312,3 +312,12 @@ instance Matrix DMatrix Double DMatrixRaw where
   c_sxFunctionEvaluate _ = c_sxFunctionEvaluateDMatrix
   getForeignPtr (DMatrix r) = r
   newZeros = dMatrixNewZeros
+
+instance Boundable DMatrix where
+  bound xs (lbs, ubs) = fromList $ zipWith boundDouble (toList xs) (zip (toList lbs) (toList ubs))
+    where
+      boundDouble x (lb, ub)
+        | ub < lb = error $ "in boundDouble, ub (" ++ show ub ++ ") < lb (" ++ show lb ++ ")"
+        | x < lb = lb
+        | x > ub = ub
+        | otherwise = x
