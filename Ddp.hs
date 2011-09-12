@@ -5,8 +5,6 @@
 
 module Ddp
        (
-         prepareQFunction,
-         evalQFunction,
          prepareDdp,
          BacksweepOutput
        ) where
@@ -15,123 +13,111 @@ import Casadi
 import Hom(Cost, Ode, Quad(..), evalQuad)
 import Data.List(mapAccumL)
 
-type BacksweepOutput = (Quad DMatrix, DMatrix, DMatrix)
+type BacksweepOutput a = (Quad a, a, a)
 
--- prepare casadi SXFunction
-prepareQFunction :: Int -> Int -> Cost SXMatrix SX -> Ode SXMatrix -> SXFunction
-prepareQFunction nx nu costFunction dode = sxFunction
-                                           [x,u,vxx,vx,v0,x0]
-                                           [fromList [q], qx, qu, qxx, qxu, quu]
+prepareQFunction :: Matrix a b c => (Int, Int) -> Cost SXMatrix SX -> Ode SXMatrix
+                    -> ((a, a, Quad a) -> (a,a,a,a,a,a))
+prepareQFunction (nx, nu) costFunction dode = qFunctionRet
   where
-    -- inputs
-    x   = sxMatrixSymbolic "x"   (nx,1)
-    u   = sxMatrixSymbolic "u"   (nu,1)
-    vxx = sxMatrixSymbolic "vxx" (nx,nx)
-    vx  = sxMatrixSymbolic "vx"  (nx,1)
-    v0  = sxMatrixSymbolic "v0"  (1,1)
-    x0  = sxMatrixSymbolic "x0"  (nx,1)
-
-    -- reshape SXMatrices into lists
-    quad = Quad vxx vx v0 x0
-
+    x   = sxMatrixSymbolic "qFun_x"   (nx,1)
+    u   = sxMatrixSymbolic "qFun_u"   (nu,1)
+    vxx = sxMatrixSymbolic "qFun_vxx" (nx,nx)
+    vx  = sxMatrixSymbolic "qFun_vx"  (nx,1)
+    v0  = sxMatrixSymbolic "qFun_v0"  (1,1)
+    x0  = sxMatrixSymbolic "qFun_x0"  (nx,1)
+    
     -- q function and its quadratic expansion
-    q = (costFunction x u) + (evalQuad quad (dode x u))
+    q = (costFunction x u) + (evalQuad nextValue (dode x u))
+      where
+        nextValue = Quad vxx vx v0 x0
     qx = gradient q x
     qu = gradient q u
     qxx = hessian q x
     quu = hessian q u
     qxu = jacobian qx u
-
-prepareDodeFunction :: Int -> Int -> Ode SXMatrix -> SXFunction
-prepareDodeFunction nx nu dode = sxFunction [x,u] [xNext]
-  where
-    x   = sxMatrixSymbolic "x"   (nx,1)
-    u   = sxMatrixSymbolic "u"   (nu,1)
-    xNext = dode x u
-
--- evaluate
-evalQFunction :: SXFunction -> (DMatrix, DMatrix, Quad DMatrix) -> (DMatrix, DMatrix, DMatrix, DMatrix, DMatrix, DMatrix)
-evalQFunction qExpansion (x, u, Quad vxx vx v0 x0) = qOut
-  where
-    [q,qx,qu,qxx,qxu,quu] = sxFunctionEvaluate qExpansion [x, u, vxx, vx, v0, x0]
-    qOut = ( q, qx, qu, qxx, qxu, quu)
+    
+    qFunctionRet :: Matrix a b c => (a, a, Quad a) -> (a,a,a,a,a,a)
+    qFunctionRet (x', u', Quad vxx' vx' v0' x0') = (q', qx', qu', qxx', qxu', quu')
+      where
+        [q',qx',qu',qxx',qxu',quu'] = sxFunctionEvaluate qSXFunction [x',u', vxx', vx', v0', x0']
+        qSXFunction = sxFunction [x,u,vxx,vx,v0,x0] [fromList[q],qx,qu,qxx,qxu,quu]
 
 ----------------------- convenience function -----------------------
 -- prepare ddp  
-prepareDdp :: Cost SXMatrix SX -> Ode SXMatrix -> Int -> Int -> [(Double,Double)]
-              -> ([DMatrix] -> [DMatrix] -> [([DMatrix], [DMatrix], [BacksweepOutput])])
-prepareDdp cost dode nx nu uBounds = ddp qFun dode' uBounds
+prepareDdp :: Cost SXMatrix SX -> Ode SXMatrix -> (Int, Int) -> Int -> (SXMatrix, SXMatrix)
+              -> (  [DMatrix] -> [DMatrix] -> [([DMatrix], [DMatrix])]  )
+--              -> ([DMatrix] -> [DMatrix] -> [([DMatrix], [DMatrix], [BacksweepOutput a])])
+prepareDdp cost dode (nx,nu) nSteps uBounds = iterateDdp
   where
-    qFun = prepareQFunction nx nu cost dode
-    dodeFun = prepareDodeFunction nx nu dode
-    dode' x u = head $ sxFunctionEvaluate dodeFun [x,u]
-  
--- iterate ddp'
-ddp :: SXFunction -> Ode DMatrix -> [(Double,Double)] -> [DMatrix] -> [DMatrix] -> [([DMatrix], [DMatrix], [BacksweepOutput])]
-ddp qFun dode uBounds xTraj0 uTraj0 = iterate f x0
-  where
-    f (xTraj, uTraj, _) = ddp' qFun dode uBounds xTraj uTraj
-    x0 = ddp' qFun dode uBounds xTraj0 uTraj0
+    xTraj0  = map (\k -> sxMatrixSymbolic ("xTraj_"++show k) (nx,1)) [0..nSteps-1]
+    uTraj0  = map (\k -> sxMatrixSymbolic ("uTraj_"++show k) (nu,1)) [0..nSteps-1]
+
+    (xTrajNew, uTrajNew, bsOutput) = ddp (prepareQFunction (nx,nu) cost dode) dode uBounds xTraj0 uTraj0
+    
+    ddpSx :: SXFunction
+    ddpSx = sxFunction (xTraj0 ++ uTraj0) (xTrajNew++uTrajNew)
+
+    oneDdp :: [DMatrix] -> [DMatrix] -> ([DMatrix], [DMatrix])
+    oneDdp xTraj uTraj = (xOut,uOut)
+      where
+        xuOut = sxFunctionEvaluate ddpSx (xTraj ++ uTraj)
+        (xOut,uOut) = splitAt nSteps xuOut
+
+    iterateDdp xTraj0' uTraj0' = iterate (\(xTraj, uTraj) -> oneDdp xTraj uTraj) (oneDdp xTraj0' uTraj0')
 
 
 -- just one backsweep then forwardsweep
-ddp' :: SXFunction -> Ode DMatrix -> [(Double,Double)] -> [DMatrix] -> [DMatrix] -> ([DMatrix], [DMatrix], [BacksweepOutput])
-ddp' qFunction dode uBounds xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
+ddp :: Matrix a b c => ((a,a,Quad a) -> (a,a,a,a,a,a)) -> Ode a -> (a,a) -> [a] -> [a] -> ([a], [a], [BacksweepOutput a])
+ddp qFun dode uBounds xTraj0 uTraj0 = (xTraj, uTraj, backsweepTrajectory)
   where
-    backsweepTrajectory :: [BacksweepOutput]
-    backsweepTrajectory = backSweep qFunction xTraj0 uTraj0
+    backsweepTrajectory = backSweep qFun xTraj0 uTraj0
 
-    forwardsweepTrajectory :: [(DMatrix, DMatrix)]
     forwardsweepTrajectory = forwardSweep dode (head xTraj0) backsweepTrajectory uBounds
     (xTraj, uTraj) = unzip forwardsweepTrajectory
 
 
 -------------------------- forward sweep -----------------------------
-forwardSweep :: Ode DMatrix -> DMatrix -> [BacksweepOutput] -> [(Double,Double)]
-                -> [(DMatrix, DMatrix)]
+forwardSweep :: Matrix a b c => Ode a -> a -> [BacksweepOutput a] -> (a,a) -> [(a, a)]
 forwardSweep dode x0 backsweepTrajectory uBounds = snd $ mapAccumL (fSweep uBounds dode) x0 backsweepTrajectory
 
 
-fSweep :: [(Double,Double)] -> Ode DMatrix -> DMatrix -> BacksweepOutput -> (DMatrix, (DMatrix, DMatrix))
+fSweep :: Matrix a b c => (a,a) -> Ode a -> a -> BacksweepOutput a -> (a, (a, a))
 fSweep uBounds dode x (Quad _ _ _ x0, feedbackGain, uOpenLoop) = (xNext, (x, u))
   where
     u = mimoController uBounds x x0 feedbackGain uOpenLoop
     xNext = dode x u
 
-mimoController :: [(Double,Double)] -> DMatrix -> DMatrix -> DMatrix -> DMatrix -> DMatrix
+
+mimoController :: Matrix a b c => (a,a) -> a -> a -> a -> a -> a
 mimoController uBounds x x0 feedbackMatrix uOpenLoop = u
   where
     u' = uOpenLoop + feedbackMatrix*(x - x0)
-    u = fromList $ zipWith bound uBounds (toList u')
-      where
-        bound (lb,ub) u''
-          | u'' < lb  = lb
-          | u'' > ub  = ub
-          | otherwise = u''
+    u = bound u' uBounds
 
 
 -------------------------- backward sweep --------------------------
-backSweep :: SXFunction -> [DMatrix] -> [DMatrix] -> [BacksweepOutput]
-backSweep qFunction xTraj0 uTraj0 = foldr (\x acc -> backSweep' qFunction x acc) [] (zip xTraj0 uTraj0)
+backSweep :: Matrix a b c => ((a,a,Quad a) -> (a,a,a,a,a,a)) -> [a] -> [a] -> [BacksweepOutput a]
+backSweep qFun xTraj0 uTraj0 = foldr (\x acc -> backSweep' qFun x acc) [] (zip xTraj0 uTraj0)
 
-backSweep' :: SXFunction -> (DMatrix, DMatrix) -> [BacksweepOutput] -> [BacksweepOutput]
+backSweep' :: Matrix a b c => ((a,a,Quad a) -> (a,a,a,a,a,a)) -> (a, a) -> [BacksweepOutput a] -> [BacksweepOutput a]
 -- end step - Vnext is 0 so q fcn is cost function
-backSweep' qFunction (x,u) [] = [backPropagate qFunction x u (Quad vxx vx v0 x0)]
+backSweep' qFun (x,u) [] = [backPropagate qFun x u (Quad vxx vx v0 x0)]
   where
     x0 =  zeros $ size x
     vxx = zeros (rows x, rows x)
     vx =  zeros $ size x
     v0 =  zeros (1,1)
 -- all non-end steps
-backSweep' qFunction (x,u) acc@((v,_,_):_) = (backPropagate qFunction x u v):acc
+backSweep' qFun (x,u) acc@((v,_,_):_) = (backPropagate qFun x u v):acc
 
 
--- convert lists to matrix/vectors, apply the q function back propogation math, convert back to lists
-backPropagate :: SXFunction -> DMatrix -> DMatrix -> Quad DMatrix -> BacksweepOutput
-backPropagate qFunction x u nextValue = (Quad vxx vx v0 x, feedbackGains, openLoopControl)
+-- convert lists to matrix/vectors, apply the q function back propagation math, convert back to lists
+backPropagate :: Matrix a b c => ((a,a,Quad a) -> (a,a,a,a,a,a)) -> a -> a -> Quad a -> BacksweepOutput a
+backPropagate qFun x u nextValue = out
   where
+    out = (Quad vxx vx v0 x, feedbackGains, openLoopControl)
     -- q functions to lists to matrices/vectors
-    (q0, qx, qu, qxx, qxu, quu) = evalQFunction qFunction (x,u,nextValue)
+    (q0, qx, qu, qxx, qxu, quu) = qFun (x,u,nextValue)
 
     -- value function update
     vxx' =  qxx - (qxu * (inv quu) * (trans qxu))

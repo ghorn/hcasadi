@@ -48,20 +48,23 @@ dode x u = rk4Step cartpoleDxdt x u dt
 -- run ddp
 main :: IO ()
 main = do let n = 70
-              x0 = fromList [-10,0,0.01,0::Double]
-              u0 = fromList [0::Double]
+              x0 = fromList [-10,0,0.01,0]
+              u0 = fromList [0]
 
               xTrajBadGuess = replicate n x0
               uTrajBadGuess = replicate n u0
 
-              ddp = prepareDdp cost dode (4::Int) (1::Int) [(-10,10)]
+              uLbs = fromList [-10]
+              uUbs = fromList [10]
 
-              (xTraj, uTraj, _) = head $ drop 50 $ ddp xTrajBadGuess uTrajBadGuess
+              ddp = prepareDdp cost dode (4,1) n (uLbs, uUbs)
+
+              (xTraj, uTraj) = head $ drop 50 $ ddp xTrajBadGuess uTrajBadGuess
 
               simController x (xTrajPrev, uTrajPrev) = do
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
                     uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
-                    (xTraj', uTraj', _) = head $ ddp xTraj0 uTraj0
+                    (xTraj', uTraj') = head $ ddp xTraj0 uTraj0
                     u = head uTrajPrev
                 return (u, (xTraj', uTraj'))
 

@@ -69,22 +69,24 @@ dode x u = rk4Step doubleCartpoleDxdt x u dt
 -- run ddp
 main :: IO ()
 main = do let n = 50
+              
               x0 = fromList [-0.2, 0.9*pi, 0.9*pi, 0, 0, 0]
               u0 = fromList [0]
 
               xTrajBadGuess = replicate n x0
               uTrajBadGuess = replicate n u0
 
-              ddp = prepareDdp cost dode (6::Int) (1::Int) [(-2,2)]
+              uLbs = fromList [-2]
+              uUbs = fromList [2]
+              ddp = prepareDdp cost dode (6,1) n (uLbs,uUbs)
 
-              (xTraj, uTraj, _) = head $ drop 50 $ ddp xTrajBadGuess uTrajBadGuess
+              (xTraj, uTraj) = head $ drop 50 $ ddp xTrajBadGuess uTrajBadGuess
 
               simController x (xTrajPrev, uTrajPrev) = do
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
                     uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
-                    (xTraj', uTraj', _) = head $ ddp xTraj0 uTraj0
+                    (xTraj', uTraj') = head $ ddp xTraj0 uTraj0
                     u = head uTrajPrev
                 return (u, (xTraj', uTraj'))
 
-          doubleCartpoleVis simController drawFun (x0, (xTraj, uTraj)) dt
           print "hi"

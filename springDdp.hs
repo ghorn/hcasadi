@@ -40,16 +40,20 @@ sDode x u = rk4Step sDxdt x u sDt
 -- run ddp
 main :: IO ()
 main = do let n = 100
-              x0 = fromList [10,0 :: Double]
-              u0 = fromList [0 :: Double]
+              x0 = fromList [10,0]
+              u0 = fromList [0]
               time :: [Double]
               time = take n [0,sDt..]
-              
+
               xTraj0 = replicate n x0
               uTraj0 = replicate n u0
-              cddp = prepareDdp sCost sDode (2::Int) (1::Int) [(-20,20)]
 
-              (xTraj, uTraj, _) = head $ cddp xTraj0 uTraj0
+              uLbs = fromList [-20]
+              uUbs = fromList [20]
+
+              cddp = prepareDdp sCost sDode (2,1) n (uLbs, uUbs)
+
+              (xTraj, uTraj) = head $ cddp xTraj0 uTraj0
               pos = map (\x -> (toList x) !! 0) xTraj
               vel = map (\x -> (toList x) !! 1) xTraj
               force = map (\x -> (toList x) !! 0) uTraj
