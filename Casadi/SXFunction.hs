@@ -2,12 +2,11 @@
 
 {-# OPTIONS_GHC -Wall #-}
 --{-# OPTIONS_GHC -Wall -fno-cse -fno-full-laziness #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
 
 module Casadi.SXFunction
        (
          SXFunction(..)
-       , SXFunctionRaw(..)
        , sxFunctionCreate
        , sxFunctionEvaluate
        , sxFunctionEvaluateLists
@@ -21,8 +20,9 @@ module Casadi.SXFunction
        , sxFunctionHessianAt
        ) where
 
-import Casadi.DMatrix
+import Casadi.SXFunctionRaw(SXFunctionRaw(..))
 import Casadi.SXMatrix
+import Casadi.DMatrix
 import Casadi.Matrix
 import Casadi.CasadiInterfaceUtils
 
@@ -36,7 +36,6 @@ import Text.Printf
 import Control.DeepSeq
 
 -- the SXFunction data type
-data SXFunctionRaw = SXFunctionRaw
 newtype SXFunction = SXFunction (ForeignPtr SXFunctionRaw)
 
 instance NFData SXFunction where
@@ -69,8 +68,6 @@ foreign import ccall unsafe "sxFunctionJacobian" c_sxFunctionJacobian
   :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
 foreign import ccall unsafe "sxFunctionHessian" c_sxFunctionHessian
   :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
-foreign import ccall unsafe "sxFunctionEvaluate" c_sxFunctionEvaluate
-  :: CInt -> Ptr (Ptr DMatrixRaw) -> CInt -> Ptr (Ptr DMatrixRaw) -> Ptr SXFunctionRaw -> IO ()
 
 
 sxFunctionCreate :: [SXMatrix] -> [SXMatrix] -> SXFunction
@@ -215,27 +212,34 @@ sxFunctionHessianAt (SXFunction fun) (idx0, idx1) = unsafePerformIO $ do
 
 
 --------------------- evaluate -----------------------------
-sxFunctionEvaluate :: SXFunction -> [DMatrix] -> [DMatrix]
+sxFunctionEvaluate :: forall a b c. Matrix a b c => SXFunction -> [a] -> [a]
 {-# NOINLINE sxFunctionEvaluate #-}
 sxFunctionEvaluate fun@(SXFunction funRaw) inputs = unsafePerformIO $ do
-  let unsafeInputPtrs :: [Ptr DMatrixRaw]
-      unsafeInputPtrs = map (\(DMatrix d) -> unsafeForeignPtrToPtr d) inputs
+  let unsafeInputPtrs :: [Ptr c]
+      unsafeInputPtrs = map (\m -> unsafeForeignPtrToPtr (getForeignPtr m)) inputs
       numOutputs = sxFunctionNumOutputs fun
-  outputs <- mapM (\idx -> dMatrixNewZeros (sxFunctionGetOutputDim fun idx)) [0..numOutputs - 1]
-  let unsafeOutputPtrs :: [Ptr DMatrixRaw]
-      unsafeOutputPtrs = map (\(DMatrix d) -> unsafeForeignPtrToPtr d) outputs
+  outputs <- mapM (\idx -> newZeros (sxFunctionGetOutputDim fun idx)) [0..numOutputs - 1]
+  let unsafeOutputPtrs :: [Ptr c]
+      unsafeOutputPtrs = map (\m -> unsafeForeignPtrToPtr (getForeignPtr m)) outputs
   
   inputPtrArray <- newArray unsafeInputPtrs
   outputPtrArray <- newArray unsafeOutputPtrs
   
-  withForeignPtr funRaw (c_sxFunctionEvaluate (fromIntegral (length inputs)) inputPtrArray (fromIntegral (length outputs)) outputPtrArray)
-  mapM_ (\(DMatrix d) -> touchForeignPtr d) inputs
-  mapM_ (\(DMatrix d) -> touchForeignPtr d) outputs
+  let nIn = fromIntegral $ length inputs
+      nOut = fromIntegral$ length outputs
+
+  let eval :: CInt -> Ptr (Ptr c) -> CInt -> Ptr (Ptr c) -> Ptr SXFunctionRaw -> IO ()
+      eval = c_sxFunctionEvaluate (head inputs)
+  withForeignPtr funRaw (eval nIn inputPtrArray nOut outputPtrArray)
+  
+  mapM_ (\d -> touchForeignPtr (getForeignPtr d)) inputs
+  mapM_ (\d -> touchForeignPtr (getForeignPtr d)) outputs
+  
   return outputs
 
 
 sxFunctionEvaluateLists :: SXFunction -> [[[Double]]] -> [[[Double]]]
 {-# NOINLINE sxFunctionEvaluateLists #-}
 sxFunctionEvaluateLists fun inputs = unsafePerformIO $ do
-  let outNew = map toLists $ sxFunctionEvaluate fun $ map fromLists inputs
+  let outNew = map toLists $ sxFunctionEvaluate fun $ (map fromLists inputs :: [DMatrix])
   return outNew

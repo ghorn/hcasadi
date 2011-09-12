@@ -16,7 +16,7 @@ import Ddp(prepareDdp)
 type ControllerState = ([DMatrix], [DMatrix])
 
 -- cost fcn
-cost :: Matrix a b => a -> a -> b
+cost :: Matrix a b c => a -> a -> b
 cost state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u + barrier
   where
     [x, x', theta, theta'] = toList state
@@ -42,7 +42,7 @@ drawFun (state, (xTraj, uTraj)) = do
 dt :: Floating a => a
 dt = 0.025
 
-dode :: Matrix a b => a -> a -> a
+dode :: Matrix a b c => a -> a -> a
 dode x u = rk4Step cartpoleDxdt x u dt
 
 -- run ddp

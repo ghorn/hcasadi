@@ -16,6 +16,7 @@ module Casadi.SXMatrix
        ) where
 
 import Casadi.SX
+import Casadi.SXFunctionRaw
 import Casadi.CasadiInterfaceUtils
 import Casadi.Matrix
 
@@ -75,6 +76,9 @@ foreign import ccall unsafe "myHessian" c_myHessian
   :: (Ptr SXRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
 foreign import ccall unsafe "myJacobian" c_myJacobian
   :: (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> (Ptr SXMatrixRaw) -> IO ()
+
+foreign import ccall unsafe "sxFunctionEvaluateSXMatrix" c_sxFunctionEvaluateSXMatrix
+  :: CInt -> Ptr (Ptr SXMatrixRaw) -> CInt -> Ptr (Ptr SXMatrixRaw) -> Ptr SXFunctionRaw -> IO ()
 
 ----------------- create -------------------------
 sxMatrixCreateSymbolic :: String -> (Int, Int) -> IO SXMatrix
@@ -217,7 +221,7 @@ sxMM :: SXMatrix -> SXMatrix -> SXMatrix
 sxMM (SXMatrix m0) (SXMatrix m1) = unsafePerformIO $ do
   let size'
         | colsM0 == rowsM1 = (rowsM0, colsM1)
-        | otherwise        = error "sxMM sees incompatible dimensions"
+        | otherwise        = error $ "sxMM can't multiply " ++ (show (size (SXMatrix m0))) ++ " matrix by " ++ (show (size (SXMatrix m1))) ++ " matrix"
         where
           (rowsM0, colsM0) = sxMatrixSize (SXMatrix m0)
           (rowsM1, colsM1) = sxMatrixSize (SXMatrix m1)
@@ -332,7 +336,7 @@ instance Fractional SXMatrix where
   fromRational x = sxMatrixFromList [fromRational x :: SX]
 
 
-instance Matrix SXMatrix SX where
+instance Matrix SXMatrix SX SXMatrixRaw where
   trans = sxMatrixTranspose
   size = sxMatrixSize
   rows = fst . sxMatrixSize
@@ -345,3 +349,7 @@ instance Matrix SXMatrix SX where
   inv = sxMatrixInv
   scale = sxMatrixScale
   zeros = sxMatrixZeros
+  
+  c_sxFunctionEvaluate _ = c_sxFunctionEvaluateSXMatrix
+  getForeignPtr (SXMatrix r) = r
+  newZeros = sxMatrixNewZeros

@@ -29,7 +29,7 @@ poleVisRadius = 0.03*cartpoleLength
 cartVisRadius :: Floating a => a
 cartVisRadius = 0.05*cartpoleLength
 
-cartpoleDxdt :: Matrix a b => a -> a -> a
+cartpoleDxdt :: Matrix a b c => a -> a -> a
 cartpoleDxdt state action = state'
   where
     [_, x', theta, theta'] = toList state

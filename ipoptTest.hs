@@ -10,7 +10,7 @@ import NLP.NLP
 import NLP.Snopt
 import Casadi
 
-rosenbrock :: Matrix a b => a -> b
+rosenbrock :: Matrix a b c => a -> b
 rosenbrock inputs = (1-x0)*(1-x0) + 100*(x1-x0*x0)*(x1-x0*x0)
   where
     [x0,x1] = toList inputs

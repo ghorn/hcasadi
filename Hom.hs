@@ -8,6 +8,7 @@ module Hom (Ode, Cost,
             Quad(..), evalQuad) where
 
 import Casadi
+import Control.DeepSeq
 
 type Ode a = a -> a -> a
 type Cost a b = a -> a -> b
@@ -30,7 +31,11 @@ type Cost a b = a -> a -> b
 --                   hess    grad   const    x0
 data Quad a = Quad a a a a deriving (Show)
 
-evalQuad :: (Matrix a b) => (Quad a) -> a -> b
+instance NFData (Quad a) where
+  rnf (Quad h g a x0) = h `seq` g `seq` a `seq` x0 `seq` ()
+
+
+evalQuad :: (Matrix a b c) => (Quad a) -> a -> b
 evalQuad (Quad h g a x0) x = toSingleton $ a + dx'*g + (0.5)*(dx'*h*dx)
    where
      dx = x - x0

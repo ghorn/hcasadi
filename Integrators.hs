@@ -6,10 +6,10 @@ module Integrators( eulerStep
 
 import Casadi
 
-eulerStep :: Matrix a b => (a -> a -> a) -> a -> a -> b -> a
+eulerStep :: Matrix a b c => (a -> a -> a) -> a -> a -> b -> a
 eulerStep dxdt x u dt = x + (scale dt (dxdt x u))
 
-rk4Step :: Matrix a b => (a -> a -> a) -> a -> a -> b -> a
+rk4Step :: Matrix a b c => (a -> a -> a) -> a -> a -> b -> a
 rk4Step dxdt x u dt = x + (1/6)*(k1 + 2*k2 + 2*k3 + k4)
   where
     k1 = scale dt ( dxdt x            u )

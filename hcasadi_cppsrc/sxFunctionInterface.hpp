@@ -28,9 +28,12 @@ extern "C"{
   int sxFunctionGetOutputSize2( int idx, const SXFunction & fun );
 
   // evaluate
-  void sxFunctionEvaluate(int numInputs, const DMatrix * inputs[],
-			  int numOutputs, DMatrix * outputs[],
-			  FX & fun);
+  void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
+				 int numOutputs, DMatrix * outputs[],
+				 FX & fun);
+  void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],
+				  int numOutputs, SXMatrix * outputs[],
+				  SXFunction & fun);
 
 #ifdef __cplusplus
 }

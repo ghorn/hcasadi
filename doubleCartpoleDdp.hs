@@ -16,8 +16,7 @@ import Casadi
 type ControllerState = ([DMatrix], [DMatrix])
 
 -- cost fcn
-cost :: Matrix a b => a -> a -> b
---cost state action = 10*x*x + x'*x' - 100*cos(q1) - 100*cos(q2) + q1'*q1' + q2'*q2' + 0.001*u*u + barrier
+cost :: Matrix a b c => a -> a -> b
 cost state action = 100*x*x
                     + 0.01*x'*x'
                     - 10*cos(q1)
@@ -59,7 +58,7 @@ drawFun (state, (xTraj, uTraj)) = do
 dt :: Floating a => a
 dt = 0.01
 
-dode :: Matrix a b => a -> a -> a
+dode :: Matrix a b c => a -> a -> a
 dode x u = rk4Step doubleCartpoleDxdt x u dt
 
 

@@ -12,7 +12,7 @@ import Ddp(prepareDdp)
 import Graphics.Gnuplot.Simple
 
 -- ode
-sDxdt :: Matrix a b => Ode a
+sDxdt :: Matrix a b c => Ode a
 sDxdt state action = fromList [v, (-k*x - b*v + u)/mass]
   where
     x    = toList state  !! 0
@@ -23,7 +23,7 @@ sDxdt state action = fromList [v, (-k*x - b*v + u)/mass]
     mass = 1
 
 -- cost fcn
-sCost :: Matrix a b => a -> a -> b
+sCost :: Matrix a b c => a -> a -> b
 sCost x u = (7*position*position + 2*velocity*velocity + 0.2*force*force)
   where
     position = toList x !! 0
@@ -34,7 +34,7 @@ sCost x u = (7*position*position + 2*velocity*velocity + 0.2*force*force)
 sDt :: Floating a => a
 sDt = 0.025
 
-sDode :: Matrix a b => a -> a -> a
+sDode :: Matrix a b c => a -> a -> a
 sDode x u = rk4Step sDxdt x u sDt
 
 -- run ddp

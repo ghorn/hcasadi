@@ -83,12 +83,30 @@ int sxFunctionGetOutputSize2( int idx, const SXFunction & fun ){
 
 
 /************ evaluate *************/
-void sxFunctionEvaluate(int numInputs, const DMatrix * inputs[],
-			int numOutputs, DMatrix * outputs[],
-			FX & fun){
+void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
+			       int numOutputs, DMatrix * outputs[],
+			       FX & fun){
   for (int k=0; k<numInputs; k++)
     fun.setInput( *(inputs[k]), k );
+
   fun.evaluate();
+
   for (int k=0; k<numOutputs; k++)
     fun.getOutput( *(outputs[k]), k );
+}
+
+void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],
+				int numOutputs, SXMatrix * outputs[],
+				SXFunction & fun){
+  vector<SXMatrix> inputVec;
+  for (int k=0; k<numInputs; k++)
+    inputVec.push_back( *(inputs[k]) );
+
+  for (int k=0; k<numInputs; k++)
+    makeDense( inputVec.at(k) );
+
+  vector<SXMatrix> outputVec( fun.eval(inputVec) );
+
+  for (int k=0; k<numOutputs; k++)
+    *(outputs[k]) = outputVec.at(k);
 }

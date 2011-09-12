@@ -34,7 +34,7 @@ l2 :: (Floating a, Fractional a) => a
 l2 = 0.1
 
 
-doubleCartpoleDxdt :: Matrix a b => a -> a -> a
+doubleCartpoleDxdt :: Matrix a b c => a -> a -> a
 doubleCartpoleDxdt state action = fromList [x0d, x1d, x2d, x0dd, x1dd, x2dd] where
 
 --    g  = 9.8;
@@ -89,34 +89,34 @@ doubleCartpoleCart state = VisBox (d,d,d) (xyzRealToFrac $ cartXyz state) (Quat 
   where
     d = 2*cartVisRadius
 
-cartXyz :: Matrix a b => a -> Xyz b
+cartXyz :: Matrix a b c => a -> Xyz b
 cartXyz state = Xyz x y z
   where
     (x:_) = toList state
     y = -poleVisRadius - cartVisRadius
     z = 0
 
-rod0Xyz :: Matrix a b => a -> Xyz b
+rod0Xyz :: Matrix a b c => a -> Xyz b
 rod0Xyz state = (Xyz cartX 0 cartZ) + r_c2r0_n
   where
     Xyz cartX _ cartZ = cartXyz state
     (_:q1:_) = toList state
     r_c2r0_n = Xyz (-0.5*l1*sin(q1)) 0 (-0.5*l1*cos(q1))
     
-bob0Xyz :: Matrix a b => a -> Xyz b
+bob0Xyz :: Matrix a b c => a -> Xyz b
 bob0Xyz state = (Xyz cartX 0 cartZ) + r_c2b0_n
   where
     Xyz cartX _ cartZ = cartXyz state
     (_:q1:_) = toList state
     r_c2b0_n = Xyz (-l1*sin(q1)) 0 (-l1*cos(q1))
 
-rod1Xyz :: Matrix a b => a -> Xyz b
+rod1Xyz :: Matrix a b c => a -> Xyz b
 rod1Xyz state = (bob0Xyz state) + r_b02r1_n
   where
     (_:_:q2:_) = toList state
     r_b02r1_n = Xyz (-0.5*l2*sin(q2)) 0 (-0.5*l2*cos(q2))
 
-bob1Xyz :: Matrix a b => a -> Xyz b
+bob1Xyz :: Matrix a b c => a -> Xyz b
 bob1Xyz state = (bob0Xyz state) + r_b02b1_n
   where
     (_:_:q2:_) = toList state

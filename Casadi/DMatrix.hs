@@ -13,6 +13,7 @@ module Casadi.DMatrix
 
 import Casadi.CasadiInterfaceUtils
 import Casadi.Matrix
+import Casadi.SXFunctionRaw
 
 import Foreign.C
 import Foreign.Marshal(newArray)
@@ -65,6 +66,8 @@ foreign import ccall unsafe "dMatrixInv" c_dMatrixInv
   :: (Ptr DMatrixRaw) -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixVertcat" c_dMatrixVertcat
   :: Ptr (Ptr DMatrixRaw) -> CInt -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "sxFunctionEvaluateDMatrix" c_sxFunctionEvaluateDMatrix
+  :: CInt -> Ptr (Ptr DMatrixRaw) -> CInt -> Ptr (Ptr DMatrixRaw) -> Ptr SXFunctionRaw -> IO ()
 
 
 ----------------- create -------------------------
@@ -292,7 +295,7 @@ instance Fractional DMatrix where
   fromRational x = dMatrixFromList [fromRational x :: Double]
 
 
-instance Matrix DMatrix Double where
+instance Matrix DMatrix Double DMatrixRaw where
   trans = dMatrixTranspose
   size = dMatrixSize
   rows = fst . dMatrixSize
@@ -305,3 +308,7 @@ instance Matrix DMatrix Double where
   inv = dMatrixInv
   scale = dMatrixScale
   zeros = dMatrixZeros
+
+  c_sxFunctionEvaluate _ = c_sxFunctionEvaluateDMatrix
+  getForeignPtr (DMatrix r) = r
+  newZeros = dMatrixNewZeros
