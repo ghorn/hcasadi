@@ -16,15 +16,15 @@ import Casadi
 type ControllerState = ([DMatrix], [DMatrix])
 
 -- cost fcn
-cost :: Matrix a b c => a -> a -> b
-cost state action = 100*x*x
-                    + 0.01*x'*x'
-                    - 10*cos(q1)
-                    - 10*cos(q2)
-                    + 0.01*q1'*q1'
-                    + 0.01*q2'*q2'
-                    + 0.001*u*u
-                    + barrier
+cost :: Matrix a b c => a -> a -> a
+cost state action = fromList [100*x*x
+                              + 0.01*x'*x'
+                              - 10*cos(q1)
+                              - 10*cos(q2)
+                              + 0.01*q1'*q1'
+                              + 0.01*q2'*q2'
+                              + 0.001*u*u
+                              + barrier]
   where
     [x,q1,q2,x',q1',q2'] = toList state
     [u] = toList action

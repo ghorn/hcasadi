@@ -16,7 +16,7 @@ import Casadi
 import Control.DeepSeq
 
 type Ode a = a -> a -> a
-type Cost a b = a -> a -> b
+type Cost a = a -> a -> a
 
 ---------- linearize dynamics f ~= f0 + dA*(x-x0) + dB*(u - u0) ---------
 dA :: Ode SXMatrix -> SXMatrix -> SXMatrix -> SXMatrix
@@ -33,8 +33,8 @@ instance NFData (Quad a) where
   rnf (Quad h g a x0) = h `seq` g `seq` a `seq` x0 `seq` ()
 
 
-evalQuad :: (Matrix a b c) => (Quad a) -> a -> b
-evalQuad (Quad h g a x0) x = toSingleton $ a + dx'*g + (0.5)*(dx'*h*dx)
+evalQuad :: (Matrix a b c) => (Quad a) -> a -> a
+evalQuad (Quad h g a x0) x = a + dx'*g + (0.5)*(dx'*h*dx)
    where
      dx = x - x0
      dx' = trans(dx)
@@ -51,7 +51,7 @@ checkQuad (Quad h g a x0) = ret
     
     ret
       | and [h', g', a', x0'] = "quad OK, bro"
-      | otherwise                 = error errMsg
+      | otherwise             = error errMsg
     
     errMsg = "quad dimensions error\n" ++ 
              "size h:  " ++ show (size h)  ++ "\n" ++

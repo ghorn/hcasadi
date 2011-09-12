@@ -16,8 +16,8 @@ import Ddp(prepareDdp)
 type ControllerState = ([DMatrix], [DMatrix])
 
 -- cost fcn
-cost :: Matrix a b c => a -> a -> b
-cost state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u + barrier
+cost :: Matrix a b c => a -> a -> a
+cost state action = fromList [10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u + barrier]
   where
     [x, x', theta, theta'] = toList state
     [u] = toList action

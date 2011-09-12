@@ -274,19 +274,25 @@ sxMatrixFromIntegral i = unsafePerformIO $ do
 
 
 ----------------- ad -----------------------
-gradient :: SX -> SXMatrix -> SXMatrix
+gradient :: SXMatrix -> SXMatrix -> SXMatrix
 {-# NOINLINE gradient #-}
-gradient (SX expRaw) (SXMatrix argsRaw) = unsafePerformIO $ do
-  SXMatrix mOut <- sxMatrixNewZeros (1,1)
-  withForeignPtrs3 c_myGradient expRaw argsRaw mOut
-  return $ (SXMatrix mOut)
+gradient expr (SXMatrix argsRaw) = unsafePerformIO $ do
+  if (1,1) /= size expr
+    then do error $ "error: can't take gradient of non-scalar, dimensions: " ++ show (size expr)
+    else do let [(SX expRaw)] = toList expr
+            SXMatrix mOut <- sxMatrixNewZeros (1,1)
+            withForeignPtrs3 c_myGradient expRaw argsRaw mOut
+            return $ (SXMatrix mOut)
 
-hessian :: SX -> SXMatrix -> SXMatrix
+hessian :: SXMatrix -> SXMatrix -> SXMatrix
 {-# NOINLINE hessian #-}
-hessian (SX expRaw) (SXMatrix argsRaw) = unsafePerformIO $ do
-  SXMatrix mOut <- sxMatrixNewZeros (1,1)
-  withForeignPtrs3 c_myHessian expRaw argsRaw mOut
-  return $ (SXMatrix mOut)
+hessian expr (SXMatrix argsRaw) = unsafePerformIO $ do
+  if (1,1) /= size expr
+    then do error $ "error: can't take hessian of non-scalar, dimensions: " ++ show (size expr)
+    else do let [(SX expRaw)] = toList expr
+            SXMatrix mOut <- sxMatrixNewZeros (1,1)
+            withForeignPtrs3 c_myHessian expRaw argsRaw mOut
+            return $ (SXMatrix mOut)
 
 jacobian :: SXMatrix -> SXMatrix -> SXMatrix
 {-# NOINLINE jacobian #-}

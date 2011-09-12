@@ -22,7 +22,7 @@ data BacksweepOutput a = BacksweepOutput { valueQuad'    :: Quad a
 data DdpTrajectory a = DdpTrajectory [a] [a] [BacksweepOutput a] deriving Show
 type QFunction a = (a,a,Quad a) -> (a,a,a,a,a,a)
 
-prepareQFunction :: Matrix a b c => (Int, Int) -> Cost SXMatrix SX -> Ode SXMatrix -> QFunction a
+prepareQFunction :: Matrix a b c => (Int, Int) -> Cost SXMatrix -> Ode SXMatrix -> QFunction a
 prepareQFunction (nx, nu) costFunction dode = qFunctionRet
   where
     x   = sxMatrixSymbolic "qFun_x"   (nx,1)
@@ -42,11 +42,11 @@ prepareQFunction (nx, nu) costFunction dode = qFunctionRet
     quu = hessian q u
     qxu = jacobian qx u
     
-    qFunctionRet :: Matrix a b c => (a, a, Quad a) -> (a,a,a,a,a,a)
+    qSXFunction = sxFunction [x,u,vxx,vx,v0,x0] [fromList[q],qx,qu,qxx,qxu,quu]
+    
     qFunctionRet (x', u', Quad vxx' vx' v0' x0') = (q', qx', qu', qxx', qxu', quu')
       where
-        [q',qx',qu',qxx',qxu',quu'] = qSXFunction [x',u', vxx', vx', v0', x0']
-        qSXFunction = sxFunction [x,u,vxx,vx,v0,x0] [fromList[q],qx,qu,qxx,qxu,quu]
+        [q',qx',qu',qxx',qxu',quu'] = qSXFunction [x',u',vxx',vx',v0',x0']
 
 ----------------------- convenience function -----------------------
 -- prepare ddp  

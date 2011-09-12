@@ -23,8 +23,8 @@ sDxdt state action = fromList [v, (-k*x - b*v + u)/mass]
     mass = 1
 
 -- cost fcn
-sCost :: Matrix a b c => a -> a -> b
-sCost x u = (7*position*position + 2*velocity*velocity + 0.2*force*force)
+sCost :: Matrix a b c => a -> a -> a
+sCost x u = fromList [7*position*position + 2*velocity*velocity + 0.2*force*force]
   where
     position = toList x !! 0
     velocity = toList x !! 1
