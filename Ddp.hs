@@ -139,10 +139,10 @@ backPropagate qFun alpha x u nextValue = BacksweepOutput { valueQuad'    = Quad 
     (q0, qx, qu, qxx, qxu, quu) = qFun (alpha,x,u,nextValue)
 
     -- value function update
-    vxx' =  qxx - qxu*(inv quu)*(trans qxu)
-    vxx = scale 0.5 (vxx' + (trans vxx'))
-    vx  = trans $ (trans qx) - ((trans qu) * (inv quu) * (trans qxu))
-    --vx'  = qx - qxu*(trans(inv(quu)))*qu
+    vxx =  balanceSymm $ qxx - qxu*(inv quu)*(trans qxu)
+      where
+        balanceSymm m = scale (0.5) (m + (trans m))
+    vx  = qx - qxu*(inv(quu))*qu
     v0  = q0 - (trans qu)*(inv quu)*qu
     
     -- feedback gain
