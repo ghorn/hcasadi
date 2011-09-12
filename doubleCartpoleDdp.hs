@@ -23,7 +23,7 @@ cost state action = fromList [100*x*x
                               - 10*cos(q2)
                               + 0.01*q1'*q1'
                               + 0.01*q2'*q2'
-                              + 0.001*u*u
+                              + 0.0004*u*u
                               + barrier]
   where
     [x,q1,q2,x',q1',q2'] = toList state
@@ -71,7 +71,7 @@ dode x u = rk4Step doubleCartpoleDxdt x u dt
 
 -- run ddp
 main :: IO ()
-main = do let n = 50
+main = do let n = 45
               alpha0 = 0.0
               alpha1 = 0.0
 

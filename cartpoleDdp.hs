@@ -17,7 +17,12 @@ type ControllerState = ([DMatrix], [DMatrix])
 
 -- cost fcn
 cost :: Matrix a b c => a -> a -> a
-cost state action = fromList [10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u*u + barrier]
+cost state action = fromList [x*x
+                              + 0.01*x'*x'
+                              + 100*cos(theta)
+                              + 0.01*theta'*theta'
+                              + 0.0001*u*u
+                              + barrier]
   where
     [x, x', theta, theta'] = toList state
     [u] = toList action
@@ -40,16 +45,16 @@ drawFun (state, (xTraj, uTraj)) = do
 
 -- discrete ode
 dt :: Floating a => a
-dt = 0.025
+dt = 0.05
 
 dode :: Matrix a b c => a -> a -> a
 dode x u = rk4Step cartpoleDxdt x u dt
 
 -- run ddp
 main :: IO ()
-main = do let n = 70
-              alpha = 0.0
-              x0 = fromList [-10,0,0.01,0]
+main = do let n = 100
+              alpha = 0.01
+              x0 = fromList [-4,0,0.01,0]
               u0 = fromList [0]
 
               xTrajBadGuess = replicate n x0
@@ -65,7 +70,7 @@ main = do let n = 70
               simController x (xTrajPrev, uTrajPrev) = do
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
                     uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
-                    (xTraj', uTraj') = head $ ddp alpha xTraj0 uTraj0
+                    (xTraj', uTraj') = ddp alpha xTraj0 uTraj0 !! 1
                     u = head uTrajPrev
                 return (u, (xTraj', uTraj'))
 
