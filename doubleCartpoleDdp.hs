@@ -59,7 +59,7 @@ dt :: Floating a => a
 dt = 0.01
 
 timeDialationFactor :: Double
-timeDialationFactor = 0.25
+timeDialationFactor = 0.3
 
 dode :: Matrix a b c => a -> a -> a
 dode x u = rk4Step doubleCartpoleDxdt x u dt
@@ -90,7 +90,7 @@ main = do let n = 50
               simController x (xTrajPrev, uTrajPrev) = do
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
                     uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
-                    (xTraj', uTraj') = head $ ddp alpha1 xTraj0 uTraj0
+                    (xTraj', uTraj') = ddp alpha1 xTraj0 uTraj0 !! 1
                     u = head uTrajPrev
                 return (u, (xTraj', uTraj'))
 
