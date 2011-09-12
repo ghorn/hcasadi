@@ -53,7 +53,7 @@ main = do let n = 100
 
               cddp = prepareDdp sCost sDode (2,1) n (uLbs, uUbs)
 
-              (xTraj, uTraj) = head $ cddp xTraj0 uTraj0
+              (xTraj, uTraj) = head $ cddp 0.0 xTraj0 uTraj0
               pos = map (\x -> (toList x) !! 0) xTraj
               vel = map (\x -> (toList x) !! 1) xTraj
               force = map (\x -> (toList x) !! 0) uTraj
