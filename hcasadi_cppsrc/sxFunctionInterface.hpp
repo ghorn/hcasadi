@@ -30,7 +30,7 @@ extern "C"{
   // evaluate
   void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
 				 int numOutputs, DMatrix * outputs[],
-				 FX & fun);
+				 SXFunction & fun);
   void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],
 				  int numOutputs, SXMatrix * outputs[],
 				  SXFunction & fun);

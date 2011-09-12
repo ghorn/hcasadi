@@ -3,9 +3,14 @@
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Hom (Ode, Cost,
-            dA, dB,
-            Quad(..), evalQuad) where
+module Hom ( Ode
+           , Cost
+           , dA
+           , dB
+           , Quad(..)
+           , evalQuad
+           , checkQuad
+           ) where
 
 import Casadi
 import Control.DeepSeq
@@ -33,3 +38,23 @@ evalQuad (Quad h g a x0) x = toSingleton $ a + dx'*g + (0.5)*(dx'*h*dx)
    where
      dx = x - x0
      dx' = trans(dx)
+
+checkQuad :: (Matrix a b c) => (Quad a) -> String
+checkQuad (Quad h g a x0) = ret
+  where
+    n = rows x0
+    
+    h' = ((n,n) == size h)
+    g' = ((n,1) == size g)
+    a' = ((1,1) == size a)
+    x0' = ((n,1) == size x0)
+    
+    ret
+      | and [h', g', a', x0'] = "quad OK, bro"
+      | otherwise                 = error errMsg
+    
+    errMsg = "quad dimensions error\n" ++ 
+             "size h:  " ++ show (size h)  ++ "\n" ++
+             "size g:  " ++ show (size g)  ++ "\n" ++
+             "size a:  " ++ show (size a)  ++ "\n" ++
+             "size x0: " ++ show (size x0)

@@ -83,9 +83,40 @@ int sxFunctionGetOutputSize2( int idx, const SXFunction & fun ){
 
 
 /************ evaluate *************/
+static void sxFunctionAssertGoodDimensions(int numInputs, const SXMatrix * inputs[],
+					   int numOutputs,
+					   SXFunction & fun){
+  int badDims = 0;
+
+  if (numInputs != fun.getNumInputs()){
+    cerr << "(cpp) error: fun.numInputs() = " << fun.getNumInputs() << " but got " << numInputs << endl;
+    badDims = 1;
+  }
+
+  if (numOutputs != fun.getNumOutputs()){
+    cerr << "(cpp) error: fun.numOutputs() = " << fun.getNumOutputs() << " but got " << numOutputs << endl;
+    badDims = 1;
+  }
+
+  for (int k=0; k<numInputs; k++)
+    if ((*(inputs[k])).size1() != fun.inputSX(k).size1()){
+      cerr << "(cpp) error: fun.inputSX(k).size1(): " << fun.inputSX(k).size1() << " but got " << (*(inputs[k])).size1() << endl;
+      badDims = 1;
+    }
+  for (int k=0; k<numInputs; k++)
+    if ((*(inputs[k])).size2() != fun.inputSX(k).size2()){
+      cerr << "(cpp) error: fun.inputSX(k).size2(): " << fun.inputSX(k).size2() << " but got " << (*(inputs[k])).size2() << endl;
+      badDims = 1;
+    }
+
+  if (badDims)
+    throw 1;
+}
+
+
 void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
 			       int numOutputs, DMatrix * outputs[],
-			       FX & fun){
+			       SXFunction & fun){
   for (int k=0; k<numInputs; k++)
     fun.setInput( *(inputs[k]), k );
 
@@ -98,6 +129,8 @@ void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
 void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],
 				int numOutputs, SXMatrix * outputs[],
 				SXFunction & fun){
+  sxFunctionAssertGoodDimensions( numInputs, inputs, numOutputs, fun );
+
   vector<SXMatrix> inputVec;
   for (int k=0; k<numInputs; k++)
     inputVec.push_back( *(inputs[k]) );
