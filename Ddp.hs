@@ -45,7 +45,7 @@ prepareQFunction (nx, nu) costFunction dode = qFunctionRet
     qFunctionRet :: Matrix a b c => (a, a, Quad a) -> (a,a,a,a,a,a)
     qFunctionRet (x', u', Quad vxx' vx' v0' x0') = (q', qx', qu', qxx', qxu', quu')
       where
-        [q',qx',qu',qxx',qxu',quu'] = sxFunctionEvaluate qSXFunction [x',u', vxx', vx', v0', x0']
+        [q',qx',qu',qxx',qxu',quu'] = qSXFunction [x',u', vxx', vx', v0', x0']
         qSXFunction = sxFunction [x,u,vxx,vx,v0,x0] [fromList[q],qx,qu,qxx,qxu,quu]
 
 ----------------------- convenience function -----------------------
@@ -61,13 +61,13 @@ prepareDdp cost dode (nx,nu) nSteps uBounds = iterateDdp
 
     DdpTrajectory xTrajNew uTrajNew bsOutput = ddp (prepareQFunction (nx,nu) cost dode) dode uBounds xTraj0 uTraj0
     
-    ddpSx :: SXFunction
+    ddpSx :: Matrix a b c => [a] -> [a]
     ddpSx = sxFunction (xTraj0 ++ uTraj0) (xTrajNew++uTrajNew)
 
     oneDdp :: [DMatrix] -> [DMatrix] -> ([DMatrix], [DMatrix])
     oneDdp xTraj uTraj = (xOut,uOut)
       where
-        xuOut = sxFunctionEvaluate ddpSx (xTraj ++ uTraj)
+        xuOut = ddpSx (xTraj ++ uTraj)
         (xOut,uOut) = splitAt nSteps xuOut
 
     iterateDdp xTraj0' uTraj0' = iterate (\(xTraj, uTraj) -> oneDdp xTraj uTraj) (oneDdp xTraj0' uTraj0')

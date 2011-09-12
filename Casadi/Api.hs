@@ -48,8 +48,8 @@ sxMatrixSymbolic prefix dim' = unsafePerformIO $ do
   mat <- sxMatrixCreateSymbolic prefix dim'
   return mat
 
-sxFunction :: [SXMatrix] -> [SXMatrix] -> SXFunction
-sxFunction = sxFunctionCreate
+sxFunction :: Matrix a b c => [SXMatrix] -> [SXMatrix] -> [a] -> [a]
+sxFunction ins outs = sxFunctionEvaluate $ sxFunctionCreate ins outs
 
 sxInt :: Int -> SX
 sxInt = sxFromInt
