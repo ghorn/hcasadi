@@ -133,13 +133,14 @@ backPropagate qFun x u nextValue = BacksweepOutput { valueQuad'    = Quad vxx vx
     (q0, qx, qu, qxx, qxu, quu) = qFun (x,u,nextValue)
 
     -- value function update
-    vxx' =  qxx - (qxu * (inv quu) * (trans qxu))
+    vxx' =  qxx - qxu*(inv quu)*(trans qxu)
     vxx = scale 0.5 (vxx' + (trans vxx'))
-    vx  = (trans qx) - ((trans qu) * (inv quu) * (trans qxu))
-    v0  = q0- ((trans qu)*((inv quu) * qu))
+    vx  = trans $ (trans qx) - ((trans qu) * (inv quu) * (trans qxu))
+    --vx'  = qx - qxu*(trans(inv(quu)))*qu
+    v0  = q0 - (trans qu)*(inv quu)*qu
     
     -- feedback gain
-    feedbackGains =  -(inv quu) * (trans qxu)
+    feedbackGains =  -(inv quu)*(trans qxu)
     
     -- open loop control
-    openLoopControl = u - ((inv quu) * qu)
+    openLoopControl = u - (inv quu)*qu
