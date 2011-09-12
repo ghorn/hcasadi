@@ -19,8 +19,9 @@ extern "C"{
   // getters/setters
   double dMatrixAt(const DMatrix & mat, int n, int m);
   void dMatrixSet(const double scalar, int n, int m, DMatrix & mat);
-  void dMatrixSetList(int length, double * list, DMatrix & mat);
-  void dMatrixSetLists(int rows, int cols, double * list, DMatrix & mat);
+  void dMatrixSetToList(int length, double * list, const DMatrix & mat);
+  void dMatrixSetFromList(int length, double * list, DMatrix & mat);
+  void dMatrixSetFromLists(int rows, int cols, double * list, DMatrix & mat);
 
   // dimensions
   int dMatrixSize1(const DMatrix & mat);

@@ -39,12 +39,17 @@ double dMatrixAt(const DMatrix & mat, int n, int m){
   return (mat.indexed(n,m)).at(0);
 }
 
-void dMatrixSetList(int length, double * list, DMatrix & mat){
+void dMatrixSetToList(int length, double * list, const DMatrix & mat){
+  for (int k=0; k<length; k++)
+    list[k] = (mat.indexed(k,0)).at(0);
+}
+
+void dMatrixSetFromList(int length, double * list, DMatrix & mat){
   for (int k=0; k<length; k++)
     mat.indexed_assignment(k, 0, list[k]);
 }
 
-void dMatrixSetLists(int rows, int cols, double * list, DMatrix & mat){
+void dMatrixSetFromLists(int rows, int cols, double * list, DMatrix & mat){
   int k=0;
   for (int row=0; row<rows; row++){
     for (int col=0; col<cols; col++){

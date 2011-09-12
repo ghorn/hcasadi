@@ -16,7 +16,7 @@ import Casadi.Matrix
 import Casadi.SXFunctionRaw
 
 import Foreign.C
-import Foreign.Marshal(newArray)
+import Foreign.Marshal
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Control.Exception(mask_)
@@ -40,9 +40,11 @@ foreign import ccall unsafe "dMatrixZeros" c_dMatrixZeros
   :: CInt -> CInt -> IO (Ptr DMatrixRaw)
 foreign import ccall unsafe "dMatrixAt" c_dMatrixAt
   :: (Ptr DMatrixRaw) -> CInt -> CInt -> IO CDouble
-foreign import ccall unsafe "dMatrixSetList" c_dMatrixSetList
+foreign import ccall unsafe "dMatrixSetToList" c_dMatrixSetToList
   :: CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
-foreign import ccall unsafe "dMatrixSetLists" c_dMatrixSetLists
+foreign import ccall unsafe "dMatrixSetFromList" c_dMatrixSetFromList
+  :: CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
+foreign import ccall unsafe "dMatrixSetFromLists" c_dMatrixSetFromLists
   :: CInt -> CInt -> Ptr CDouble -> (Ptr DMatrixRaw) -> IO ()
 foreign import ccall unsafe "dMatrixSize1" c_dMatrixSize1
   :: (Ptr DMatrixRaw) -> IO CInt
@@ -95,12 +97,25 @@ dMatrixZeros dimensions = unsafePerformIO $ do
   return mOut
 
 
+dMatrixToList :: DMatrix -> [Double]
+{-# NOINLINE dMatrixToList #-}
+dMatrixToList (DMatrix dMatRaw) = unsafePerformIO $ do
+  let (n,m) = size (DMatrix dMatRaw)
+  if (m /= 1)
+    then error "dMatrixToList can only be used on an n by 1 matrix"
+    else do dListPtr <- mallocArray n
+            withForeignPtr dMatRaw $ c_dMatrixSetToList (fromIntegral n) dListPtr
+            listOut <- peekArray n dListPtr
+
+            return $ map realToFrac listOut
+
+
 dMatrixFromList :: [Double] -> DMatrix
 {-# NOINLINE dMatrixFromList #-}
 dMatrixFromList dList = unsafePerformIO $ do
   dListPtr <- newArray (map realToFrac dList)
   DMatrix m0 <- dMatrixNewZeros (length dList, 1)
-  withForeignPtr m0 $ c_dMatrixSetList (fromIntegral $ length dList) dListPtr
+  withForeignPtr m0 $ c_dMatrixSetFromList (fromIntegral $ length dList) dListPtr
   return $ DMatrix m0
 
 
@@ -111,7 +126,7 @@ dMatrixFromLists dLists = unsafePerformIO $ do
       cols' = length (head dLists)
   dListPtr <- newArray $ map realToFrac (concat dLists)
   DMatrix m0 <- dMatrixNewZeros (rows', cols')
-  withForeignPtr m0 $ c_dMatrixSetLists (fromIntegral rows') (fromIntegral cols') dListPtr
+  withForeignPtr m0 $ c_dMatrixSetFromLists (fromIntegral rows') (fromIntegral cols') dListPtr
   return  $ DMatrix m0
 
 
@@ -137,16 +152,6 @@ dMatrixToLists mat = unsafePerformIO $ do
   let f row = mapM (\col -> dMatrixAt mat (row, col)) [0..m-1]
       (n,m) = dMatrixSize mat
   mapM f [0..n-1]
-
-
--- turns n by 1 matrix into a list of D, returns error if matrix is not n by 1
-dMatrixToList :: DMatrix -> [Double]
-{-# NOINLINE dMatrixToList #-}
-dMatrixToList mat = unsafePerformIO $ do
-  let (n,m) = dMatrixSize mat
-  if m == 1
-    then mapM (\row -> dMatrixAt mat (row, 0)) [0..n-1]
-    else error "dMatrixToList can only be used on an n by 1 matrix"
 
 
 ------------------------- math ---------------------------------
