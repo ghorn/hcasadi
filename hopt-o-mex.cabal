@@ -29,7 +29,7 @@ Library
   Other-modules:
     Casadi.CasadiInterfaceUtils
 
-  Build-depends: base, time, hmatrix
+  Build-depends: base, time, hmatrix, deepseq, process
   
   -- Modules not exported by this package.
   -- Other-modules:       

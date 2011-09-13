@@ -15,6 +15,7 @@ module Casadi.SXFunction
        , sxFunctionGradients
        , sxFunctionJacobianAt
        , sxFunctionHessianAt
+       , sxFunctionCompile
        ) where
 
 import Casadi.SXFunctionRaw(SXFunctionRaw(..))
@@ -29,9 +30,13 @@ import Foreign.Ptr
 import Foreign.Marshal(newArray)
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
+import System.IO
 import Text.Printf
 import Control.DeepSeq
+import System.Process
+import System.Exit(ExitCode(..))
 import Debug.Trace
+import Data.Time.Clock
 
 -- the SXFunction data type
 data SXFunction = SXFunction { sxFunRaw :: ForeignPtr SXFunctionRaw
@@ -71,6 +76,11 @@ foreign import ccall unsafe "sxFunctionJacobian" c_sxFunctionJacobian
   :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
 foreign import ccall unsafe "sxFunctionHessian" c_sxFunctionHessian
   :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMatrixRaw -> IO ()
+
+foreign import ccall unsafe "generateCCode" c_generateCCode
+  :: Ptr CChar -> Ptr SXFunctionRaw -> IO CDouble
+foreign import ccall unsafe "createExternalFunction" c_createExternalFunction
+  :: Ptr CChar -> IO (Ptr SXFunctionRaw)
 
 
 sxFunctionCreate :: [SXMatrix] -> [SXMatrix] -> SXFunction
@@ -269,3 +279,69 @@ sxFunctionEvaluateLists :: SXFunction -> [[[Double]]] -> [[[Double]]]
 sxFunctionEvaluateLists fun inputs = unsafePerformIO $ do
   let outNew = map toLists $ sxFunctionEvaluate fun $ (map fromLists inputs :: [DMatrix])
   return outNew
+
+
+getMd5 :: String -> IO String
+getMd5 filename = do
+  (_, hStdout, _, p) <- runInteractiveCommand $ "md5sum " ++ filename
+  exitCode <- waitForProcess p
+  md5Out <- hGetContents hStdout
+  if exitCode == ExitSuccess
+    then do return $ head (lines md5Out)
+    else do error $ "getMd5 couldn't read \"" ++ filename ++ "\""
+
+---------------------- code gen ---------------------
+sxFunctionCompile :: SXFunction -> String -> ([DMatrix] -> [DMatrix])
+sxFunctionCompile fun name = unsafePerformIO $ do
+  
+  let srcname = name ++ ".c"
+      objname  = name ++ ".so"
+      hashname  = name ++ ".so.md5"
+
+  cSrcname <- newCString srcname
+  cObjname  <- newCString objname
+
+  let funPtr = unsafeForeignPtrToPtr (sxFunRaw fun)
+
+  -- generate code
+  genTime <- c_generateCCode cSrcname funPtr
+  touchForeignPtr (sxFunRaw fun)
+  putStrLn $ "Generated " ++ srcname ++ " in " ++ show (realToFrac genTime::Double) ++ " seconds"
+
+  -- check md5
+  let getOldMd5 = do catch (readFile ("./" ++ hashname)) $ \_ -> do return $ hashname ++ " does not exist"
+  
+  oldMd5 <- getOldMd5
+  newMd5 <- getMd5 srcname
+  putStrLn $ "oldMd5: \"" ++ oldMd5 ++ "\""
+  putStrLn $ "newMd5: \"" ++ newMd5 ++ "\""
+  
+  if oldMd5 /= newMd5
+    -- compile new object
+    then do let compileString = "gcc -fPIC -shared " ++ srcname ++ " -o " ++ objname
+            putStrLn compileString
+            p <- runCommand compileString
+            exitCode <- timeComputation "compiled in " $ waitForProcess p
+            if exitCode /= ExitSuccess
+              then do error "compilation failure"
+              else do writeFile ("./" ++ hashname) newMd5
+                      return ()
+    -- use old object
+    else do putStrLn $ "md5 of " ++ srcname ++ " matches " ++ hashname ++ " - reusing " ++ objname
+
+  extFun <- c_createExternalFunction cObjname >>= newForeignPtr c_sxFunctionDelete
+              
+  return $ sxFunctionEvaluate $ SXFunction { sxFunRaw = extFun
+                                           , sxFunNumInputs  = sxFunNumInputs fun
+                                           , sxFunNumOutputs = sxFunNumOutputs fun
+                                           , sxFunInputDims  = sxFunInputDims  fun
+                                           , sxFunOutputDims = sxFunOutputDims fun}
+
+timeComputation :: String -> IO t -> IO t
+timeComputation msg a = do
+    start <- getCurrentTime
+    v <- a
+    end   <- getCurrentTime
+    let diffTime = (realToFrac $ diffUTCTime end start)::Double
+    putStrLn $ msg ++ show diffTime ++ " seconds"
+    return v

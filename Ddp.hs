@@ -9,6 +9,7 @@ module Ddp
        ) where
 
 import Casadi
+import Casadi.SXFunction
 import Hom(Cost, Ode, Quad(..), evalQuad)
 import Data.List(mapAccumL)
 
@@ -66,13 +67,17 @@ prepareDdp cost dode (nx,nu) nSteps uBounds = iterateDdp
 
     DdpTrajectory xTrajNew uTrajNew bsOutput = ddp (prepareQFunction (nx,nu) cost dode) alpha dode uBounds xTraj0 uTraj0
     
-    ddpSx :: Matrix a b c => [a] -> [a]
-    ddpSx = sxFunction (alpha:xTraj0 ++ uTraj0) (xTrajNew++uTrajNew)
-
+    ddpSXFun :: SXFunction
+    ddpSXFun = sxFunctionCreate (alpha:xTraj0 ++ uTraj0) (xTrajNew++uTrajNew)
+    
+    ddpFun :: [DMatrix] -> [DMatrix]
+    ddpFun = sxFunctionEvaluate ddpSXFun
+    --ddpFun = sxFunctionCompile ddpSXFun "ddpSxFunction"
+    
     oneDdp :: DMatrix -> [DMatrix] -> [DMatrix] -> ([DMatrix], [DMatrix])
     oneDdp alpha' xTraj uTraj = (xOut,uOut)
       where
-        xuOut = ddpSx (alpha':xTraj ++ uTraj)
+        xuOut = ddpFun (alpha':xTraj ++ uTraj)
         (xOut,uOut) = splitAt nSteps xuOut
 
     iterateDdp alpha' xTraj0' uTraj0' = iterate (\(xTraj, uTraj) -> oneDdp alpha' xTraj uTraj) (oneDdp alpha' xTraj0' uTraj0')

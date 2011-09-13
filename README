@@ -13,6 +13,7 @@ To build the CasADi bindings you need to install CasADi yourself, make a CASADI 
     cd hopt-o-mex/hcasadi_cppsrc
     make
 
+You will need to go into casadi/CMakeLists.txt and set "WITH_JIT" to ON in order to use the SXFunction code-generation capabilities
 
 #### IPOPT
 Install ipopt on your own - their website has good instructions. Then you may have to append /usr/local/lib/coin and /usr/local/lib/coin/ThirdParty to your LD_LIBRARY_PATH env var.
