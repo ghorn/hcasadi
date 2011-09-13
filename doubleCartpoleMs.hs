@@ -41,8 +41,8 @@ cpCostFinal' :: SXMatrix -> SXMatrix -> SX
 cpCostFinal' x u = 10*(cpCost' x u)
 
 
-drawFun :: (DMatrix, DMatrix, ControllerState) -> IO ()
-drawFun (state, action, (xTraj, _, _)) = do
+drawFun :: (Maybe SpecialKey) -> (DMatrix, DMatrix, ControllerState) -> IO ()
+drawFun key (state, action, (xTraj, _, _)) = do
   let xyzToGLdouble (Xyz a b c) = Xyz (realToFrac a) (realToFrac b) (realToFrac c)
       bob0Path = VisLine (map (xyzToGLdouble . bob0Xyz) xTraj) (Rgb 1.0 0.1 0.1)
       bob1Path = VisLine (map (xyzToGLdouble . bob1Xyz) xTraj) (Rgb 1.0 0.1 0.1)

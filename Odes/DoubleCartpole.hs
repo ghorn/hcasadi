@@ -177,7 +177,7 @@ simFun dode controller key (xOld, uOld, controllerStateOld) = do
 
 doubleCartpoleVis :: (NFData a, Show a) => 
                      ((Maybe SpecialKey) -> DMatrix -> a -> IO (DMatrix, a))
-                     -> ((DMatrix, DMatrix, a) -> IO ())
+                     -> ((Maybe SpecialKey) -> (DMatrix, DMatrix, a) -> IO ())
                      -> (DMatrix, DMatrix, a)
                      -> Double
                      -> Double

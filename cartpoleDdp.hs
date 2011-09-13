@@ -36,12 +36,14 @@ cost state action = fromList [x*x
     uBarrierLb = -mu*log( -uLb + u )
     barrier = uBarrierUb + uBarrierLb
 
-drawFun :: (DMatrix, DMatrix, ControllerState) -> IO ()
-drawFun (state, action, (xTraj, _)) = do
-  let bobPath = VisLine (map cartpoleBob xTraj) (Rgb 1.0 0.1 0.1)
-      axes = VisAxes (0.5, 5) (Xyz 0 0 0.5) (Quat 1 0 0 0)
+drawFun :: (Maybe SpecialKey) -> (DMatrix, DMatrix, ControllerState) -> IO ()
+drawFun key (state, action, (xTraj, _)) = do
+  let axes = VisAxes (0.5, 5) (Xyz 0 0 0.5) (Quat 1 0 0 0)
       forceCylinder = cartpoleForceCylinder state action
-  drawObjects $ [bobPath, cartpoleCart state, cartpoleCylinder state, cartpoleTrack, axes, forceCylinder]
+      bobPath = case key of Just KeyDown -> []
+                            _ -> [VisLine (map cartpoleBob xTraj) (Rgb 1.0 0.1 0.1)]
+  drawObjects $ [cartpoleCart state, cartpoleCylinder state, cartpoleTrack, axes, forceCylinder]++bobPath
+
 
 
 -- discrete ode

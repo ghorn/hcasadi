@@ -164,8 +164,8 @@ drawObjects objects = do
             zAxis = VisArrow (size, aspectRatio) (Xyz 0 0 0) (Xyz 0 0 1) (Rgb 0 0 1)
         drawObjects [xAxis, yAxis, zAxis]
 
-display :: MVar a -> MVar Bool -> Camera -> (a -> IO ()) -> DisplayCallback
-display stateMVar visReadyMVar camera userDrawFun = do
+display :: MVar a -> MVar (Maybe SpecialKey) -> MVar Bool -> Camera -> ((Maybe SpecialKey) -> a -> IO ()) -> DisplayCallback
+display stateMVar keyRef visReadyMVar camera userDrawFun = do
    clear [ ColorBuffer, DepthBuffer ]
    
    -- draw the scene
@@ -185,7 +185,8 @@ display stateMVar visReadyMVar camera userDrawFun = do
      
      -- call user function
      state <- readMVar stateMVar
-     userDrawFun state
+     latestKey <- readMVar keyRef
+     userDrawFun latestKey state
 
      ---- draw the torus
      --color (Color3 0 1 1 :: Color3 GLfloat)
@@ -287,7 +288,7 @@ motion camera (Position x y) = do
    postRedisplay Nothing
 
 
-vis :: (NFData a, Show a) => Camera0 -> ((Maybe SpecialKey) -> a -> IO a) -> (a -> IO ()) -> a -> Double -> IO ()
+vis :: (NFData a, Show a) => Camera0 -> ((Maybe SpecialKey) -> a -> IO a) -> ((Maybe SpecialKey) -> a -> IO ()) -> a -> Double -> IO ()
 vis camera0 userSimFun userDrawFun x0 ts = do
   -- init glut/scene
   (progName, _args) <- getArgsAndInitialize
@@ -303,7 +304,7 @@ vis camera0 userSimFun userDrawFun x0 ts = do
   _ <- forkIO $ simThread stateMVar visReadyMVar userSimFun ts latestKey
   
   -- setup callbacks
-  displayCallback $= display stateMVar visReadyMVar camera userDrawFun
+  displayCallback $= display stateMVar latestKey visReadyMVar camera userDrawFun
   reshapeCallback $= Just reshape
   keyboardMouseCallback $= Just (keyboardMouse camera  latestKey)
   motionCallback $= Just (motion camera)

@@ -29,8 +29,8 @@ cpCost' state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u
     [u] = toList action
 
 
-drawFun :: (DMatrix, DMatrix, ControllerState) -> IO ()
-drawFun (state, action, (xTraj, _, _)) = do
+drawFun :: (Maybe SpecialKey) -> (DMatrix, DMatrix, ControllerState) -> IO ()
+drawFun key (state, action, (xTraj, _, _)) = do
   let bobPath = VisLine (map cartpoleBob xTraj) (Rgb 1.0 0.1 0.1)
       axes = VisAxes (0.5, 5) (Xyz 0 0 0.5) (Quat 1 0 0 0)
       forceCylinder = cartpoleForceCylinder state action
