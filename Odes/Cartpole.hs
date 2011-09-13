@@ -117,6 +117,9 @@ cartpoleVis :: (NFData a, Show a) =>
                -> (DMatrix, a)
                -> Double
                -> IO ()
-cartpoleVis controller drawFun x0 dt = vis (simFun dode controller) drawFun x0 dt
+cartpoleVis controller drawFun x0 dt = vis camera0 (simFun dode controller) drawFun x0 dt
   where
     dode x u = rk4Step cartpoleDxdt x u dt
+    camera0 = Camera0 { phi0 = 60
+                      , theta0 = 20
+                      , rho0 = 5}

@@ -183,5 +183,8 @@ doubleCartpoleVis :: (NFData a, Show a) =>
                      -> IO ()
 doubleCartpoleVis controller drawFun x0 simDt timeDialationFactor = visOut
   where
-    visOut = vis (simFun dode controller) drawFun x0 (simDt/timeDialationFactor)
+    visOut = vis camera0 (simFun dode controller) drawFun x0 (simDt/timeDialationFactor)
     dode x u = rk4Step doubleCartpoleDxdt x u simDt
+    camera0 = Camera0 { phi0 = 60
+                      , theta0 = 20
+                      , rho0 = 0.9}
