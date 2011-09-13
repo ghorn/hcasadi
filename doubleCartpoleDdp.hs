@@ -83,7 +83,7 @@ main = do let n = 45
 
               uLbs = fromList [-2]
               uUbs = fromList [2]
-              ddp = prepareDdp cost dode (6,1) n (uLbs,uUbs)
+              ddp = prepareDdp ("doubleCartpoleDdp_n"++show n) cost dode (6,1) n (uLbs,uUbs)
 
               (xTraj, uTraj) = head $ drop 50 $ ddp alpha0 xTrajBadGuess uTrajBadGuess
 

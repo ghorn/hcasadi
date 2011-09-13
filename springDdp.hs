@@ -50,7 +50,7 @@ main = do let n = 100
               uLbs = fromList [-20]
               uUbs = fromList [20]
 
-              cddp = prepareDdp sCost sDode (2,1) n (uLbs, uUbs)
+              cddp = prepareDdp "springDdp" sCost sDode (2,1) n (uLbs, uUbs)
 
               (xTraj, uTraj) = head $ cddp 0.0 xTraj0 uTraj0
               pos = map (\x -> (toList x) !! 0) xTraj

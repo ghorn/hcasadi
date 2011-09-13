@@ -55,11 +55,11 @@ prepareQFunction (nx, nu) costFunction dode = qFunctionRet
 
 ----------------------- convenience function -----------------------
 -- prepare ddp  
-prepareDdp :: Cost SXMatrix -> Ode SXMatrix -> (Int, Int) -> Int -> (SXMatrix, SXMatrix)
+prepareDdp :: String -> Cost SXMatrix -> Ode SXMatrix -> (Int, Int) -> Int -> (SXMatrix, SXMatrix)
               -> ( DMatrix -> [DMatrix] -> [DMatrix] -> [([DMatrix], [DMatrix])] )
 --              -> (  [DMatrix] -> [DMatrix] -> [DdpTrajectory DMatrix] )
 --              -> ([DMatrix] -> [DMatrix] -> [([DMatrix], [DMatrix], [BacksweepOutput a])])
-prepareDdp cost dode (nx,nu) nSteps uBounds = iterateDdp
+prepareDdp name cost dode (nx,nu) nSteps uBounds = iterateDdp
   where
     xTraj0  = map (\k -> sxMatrixSymbolic ("xTraj_"++show k) (nx,1)) [0..nSteps-1]
     uTraj0  = map (\k -> sxMatrixSymbolic ("uTraj_"++show k) (nu,1)) [0..nSteps-1]
@@ -71,8 +71,8 @@ prepareDdp cost dode (nx,nu) nSteps uBounds = iterateDdp
     ddpSXFun = sxFunctionCreate (alpha:xTraj0 ++ uTraj0) (xTrajNew++uTrajNew)
     
     ddpFun :: [DMatrix] -> [DMatrix]
-    ddpFun = sxFunctionEvaluate ddpSXFun
-    --ddpFun = sxFunctionCompile ddpSXFun "ddpSxFunction"
+    --ddpFun = sxFunctionEvaluate ddpSXFun
+    ddpFun = sxFunctionCompile ddpSXFun name
     
     oneDdp :: DMatrix -> [DMatrix] -> [DMatrix] -> ([DMatrix], [DMatrix])
     oneDdp alpha' xTraj uTraj = (xOut,uOut)

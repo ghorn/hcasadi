@@ -318,7 +318,7 @@ sxFunctionCompile fun name = unsafePerformIO $ do
   
   if oldMd5 /= newMd5
     -- compile new object
-    then do let compileString = "gcc -fPIC -shared " ++ srcname ++ " -o " ++ objname
+    then do let compileString = "gcc -O1 -fPIC -shared " ++ srcname ++ " -o " ++ objname
             putStrLn compileString
             p <- runCommand compileString
             exitCode <- timeComputation "compiled in " $ waitForProcess p
