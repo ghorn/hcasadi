@@ -71,8 +71,15 @@ makeCamera camera0 = do
 myGlInit :: String -> IO ()
 myGlInit progName = do
   initialDisplayMode $= [ DoubleBuffered, RGBMode, WithDepthBuffer ]
-  initialWindowSize $= Size 500 500
-  initialWindowPosition $= Position 100 600
+  Size x y <- get screenSize
+  putStrLn $ "screen resolution " ++ show x ++ "x" ++ show y
+  let intScale d i = round $ d*(realToFrac i :: Double)
+      x0 = intScale 0.3 x
+      xf = intScale 0.95 x
+      y0 = intScale 0.05 y
+      yf = intScale 0.95 y
+  initialWindowSize $= Size (xf - x0) (yf - y0)
+  initialWindowPosition $= Position (fromIntegral x0) (fromIntegral y0)
   _ <- createWindow progName
 
   clearColor $= Color4 0 0 0 0
