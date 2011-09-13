@@ -116,7 +116,7 @@ static void sxFunctionAssertGoodDimensions(int numInputs, const SXMatrix * input
 
 void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
 			       int numOutputs, DMatrix * outputs[],
-			       SXFunction & fun){
+			       FX & fun){
   for (int k=0; k<numInputs; k++)
     fun.setInput( *(inputs[k]), k );
 
