@@ -104,22 +104,25 @@ cartpoleTrack = VisBox (dx,dy,dz) (Xyz x y z) (Quat 1 0 0 0) (Rgb 0.6 0 0)
     y = -poleVisRadius - cartVisRadius
     z = cartVisRadius + (0.5*dz)
 
+
 simFun :: (DMatrix -> DMatrix -> DMatrix)
           -> ((Maybe SpecialKey) -> DMatrix -> a -> IO (DMatrix, a))
-          -> (Maybe SpecialKey) -> (DMatrix, a) -> IO (DMatrix, a)
-simFun dode controller key (x, controllerState) = do
-  (u, newControllerState) <- controller key x controllerState
-  return (dode x u, newControllerState)
+          -> (Maybe SpecialKey) -> (DMatrix, DMatrix, a) -> IO (DMatrix, DMatrix, a)
+simFun dode controller key (xOld, uOld, controllerStateOld) = do
+  let xNew = dode xOld uOld
+  (uNew, controllerStateNew) <- controller key xNew controllerStateOld
+  return (xNew, uNew, controllerStateNew)
+
 
 cartpoleVis :: (NFData a, Show a) => 
                ((Maybe SpecialKey) -> DMatrix -> a -> IO (DMatrix, a))
-               -> ((DMatrix, a) -> IO ())
-               -> (DMatrix, a)
+               -> ((DMatrix, DMatrix, a) -> IO ())
+               -> (DMatrix, DMatrix, a)
                -> Double
                -> IO ()
-cartpoleVis controller drawFun x0 dt = vis camera0 (simFun dode controller) drawFun x0 dt
+cartpoleVis controller drawFun xuc0 dt = vis camera0 (simFun dode controller) drawFun xuc0 dt
   where
     dode x u = rk4Step cartpoleDxdt x u dt
     camera0 = Camera0 { phi0 = 60
                       , theta0 = 20
-                      , rho0 = 5}
+                      , rho0 = 7}

@@ -38,13 +38,13 @@ cost state action = fromList [100*x*x
     uBarrierLb = -mu*log( -uLb + u )
     barrier = sum[ uBarrierUb, uBarrierLb ]
 
-drawFun :: (DMatrix, ControllerState) -> IO ()
-drawFun (state, (xTraj, uTraj)) = do
+drawFun :: (DMatrix, DMatrix, ControllerState) -> IO ()
+drawFun (state, action, (xTraj, _)) = do
   let xyzToGLdouble (Xyz a b c) = Xyz (realToFrac a) (realToFrac b) (realToFrac c)
       bob0Path = VisLine (map (xyzToGLdouble . bob0Xyz) xTraj) (Rgb 1.0 0.1 0.1)
       bob1Path = VisLine (map (xyzToGLdouble . bob1Xyz) xTraj) (Rgb 1.0 0.1 0.1)
       axes = VisAxes (0.1, 5) (Xyz 0 0 0.1) (Quat 1 0 0 0)
-      forceCylinder = doubleCartpoleForceCylinder state (head uTraj)
+      forceCylinder = doubleCartpoleForceCylinder state action
   drawObjects $ [ bob0Path
                 , bob1Path
                 , doubleCartpoleCart state
@@ -99,5 +99,5 @@ main = do let n = 45
                 
                 return (u, (xTraj', uTraj'))
 
-          doubleCartpoleVis simController drawFun (x0, (xTraj, uTraj)) dt timeDialationFactor
+          doubleCartpoleVis simController drawFun (x0, head uTraj, (xTraj, uTraj)) dt timeDialationFactor
           print "hi"

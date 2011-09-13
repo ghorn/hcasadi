@@ -308,7 +308,6 @@ vis camera0 userSimFun userDrawFun x0 ts = do
   keyboardMouseCallback $= Just (keyboardMouse camera  latestKey)
   motionCallback $= Just (motion camera)
 
-
   -- start main loop
   mainLoop
 

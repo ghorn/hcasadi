@@ -41,13 +41,13 @@ cpCostFinal' :: SXMatrix -> SXMatrix -> SX
 cpCostFinal' x u = 10*(cpCost' x u)
 
 
-drawFun :: (DMatrix, ControllerState) -> IO ()
-drawFun (state, (xTraj, uTraj, _)) = do
+drawFun :: (DMatrix, DMatrix, ControllerState) -> IO ()
+drawFun (state, action, (xTraj, _, _)) = do
   let xyzToGLdouble (Xyz a b c) = Xyz (realToFrac a) (realToFrac b) (realToFrac c)
       bob0Path = VisLine (map (xyzToGLdouble . bob0Xyz) xTraj) (Rgb 1.0 0.1 0.1)
       bob1Path = VisLine (map (xyzToGLdouble . bob1Xyz) xTraj) (Rgb 1.0 0.1 0.1)
       axes = VisAxes (0.1, 5) (Xyz 0 0 0.1) (Quat 1 0 0 0)
-      forceCylinder = doubleCartpoleForceCylinder state (head uTraj)
+      forceCylinder = doubleCartpoleForceCylinder state action
   drawObjects $ [ bob0Path
                 , bob1Path
                 , doubleCartpoleCart state
@@ -96,6 +96,7 @@ main = do
   msSolve <- multipleShootingSolver ms []
   (sol0,_) <- msSolve bounds badGuess
   print $ rows sol0
+  let u0 = head $ (\(_,ut,_) -> ut) $ devectorize sol0 ms
 
   let simController key x (xTrajPrev, uTrajPrev, paramsPrev) = do
         let bounds' = concat [ boundEqs ms x0Sx x
@@ -112,12 +113,12 @@ main = do
         (sol, _) <- msSolve bounds' guess
         
         let ctrlState@(_, uTraj, _) = devectorize sol ms
-            u0 = head uTraj
-            u = case key of Just KeyRight -> u0 + fromList [2]
-                            Just KeyLeft  -> u0 - fromList [2]
-                            Just KeyDown  -> fromList [2]
-                            _             -> u0
+            u' = head uTraj
+            u = case key of Just KeyRight -> u' + fromList [2]
+                            Just KeyLeft  -> u' - fromList [2]
+                            Just KeyDown  -> fromList [0]
+                            _             -> u'
 
         return (u, ctrlState)
   
-  doubleCartpoleVis simController drawFun (x0, devectorize sol0 ms) simDt timeDialationFactor
+  doubleCartpoleVis simController drawFun (x0, u0, devectorize sol0 ms) simDt timeDialationFactor

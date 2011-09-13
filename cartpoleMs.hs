@@ -29,11 +29,11 @@ cpCost' state action = 10*x*x + x'*x' + 100*cos(theta) + theta'*theta' + 0.001*u
     [u] = toList action
 
 
-drawFun :: (DMatrix, ControllerState) -> IO ()
-drawFun (state, (xTraj, uTraj, _)) = do
+drawFun :: (DMatrix, DMatrix, ControllerState) -> IO ()
+drawFun (state, action, (xTraj, _, _)) = do
   let bobPath = VisLine (map cartpoleBob xTraj) (Rgb 1.0 0.1 0.1)
       axes = VisAxes (0.5, 5) (Xyz 0 0 0.5) (Quat 1 0 0 0)
-      forceCylinder = cartpoleForceCylinder state (head uTraj)
+      forceCylinder = cartpoleForceCylinder state action
   drawObjects $ [bobPath, cartpoleCart state, cartpoleCylinder state, cartpoleTrack, axes, forceCylinder]
   
 
@@ -74,7 +74,8 @@ main = do
   msSolve <- multipleShootingSolver ms []
   (sol0,_) <- msSolve bounds xBadGuess
   print $ rows sol0
-
+  
+  let u0 = head $ (\(_,ut,_) -> ut) $ devectorize sol0 ms
   let simController key x (xTrajPrev, uTrajPrev, paramsPrev) = do
         let bounds' = concat [ boundEqs ms x0Sx x
 --                             , boundEqs ms xfSx xf
@@ -91,11 +92,12 @@ main = do
         (sol, _) <- msSolve bounds' guess
         
         let ctrlState@(_, uTraj, _) = devectorize sol ms
-            u0 = head uTraj
-            u = case key of Just KeyRight -> u0 + fromList [10]
-                            Just KeyLeft  -> u0 - fromList [10]
-                            _             -> u0
+            u' = head uTraj
+            u = case key of Just KeyRight -> u' + fromList [10]
+                            Just KeyLeft  -> u' - fromList [10]
+                            Just KeyDown  -> fromList [0]
+                            _             -> u'
 
         return (u, ctrlState)
   
-  cartpoleVis simController drawFun (x0, devectorize sol0 ms) simDt
+  cartpoleVis simController drawFun (x0, u0, devectorize sol0 ms) simDt
