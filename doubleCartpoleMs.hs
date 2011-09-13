@@ -112,10 +112,11 @@ main = do
         (sol, _) <- msSolve bounds' guess
         
         let ctrlState@(_, uTraj, _) = devectorize sol ms
-            u = case key of Just KeyRight -> head uTrajPrev + fromList [2]
-                            Just KeyLeft  -> head uTrajPrev - fromList [2]
+            u0 = head uTraj
+            u = case key of Just KeyRight -> u0 + fromList [2]
+                            Just KeyLeft  -> u0 - fromList [2]
                             Just KeyDown  -> fromList [2]
-                            _             -> head uTrajPrev
+                            _             -> u0
 
         return (u, ctrlState)
   

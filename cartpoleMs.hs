@@ -91,11 +91,11 @@ main = do
         (sol, _) <- msSolve bounds' guess
         
         let ctrlState@(_, uTraj, _) = devectorize sol ms
-            u = head uTrajPrev
-            uKey = case key of Just KeyRight -> 10
-                               Just KeyLeft  -> -10
-                               _             -> 0
+            u0 = head uTraj
+            u = case key of Just KeyRight -> u0 + fromList [10]
+                            Just KeyLeft  -> u0 - fromList [10]
+                            _             -> u0
 
-        return (u + (fromList [uKey]), ctrlState)
+        return (u, ctrlState)
   
   cartpoleVis simController drawFun (x0, devectorize sol0 ms) simDt

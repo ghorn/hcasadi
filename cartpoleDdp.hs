@@ -56,10 +56,9 @@ main :: IO ()
 main = do let n = 100
               alpha = 0.01
               x0 = fromList [-4,0,0.01,0]
-              u0 = fromList [0]
 
               xTrajBadGuess = replicate n x0
-              uTrajBadGuess = replicate n u0
+              uTrajBadGuess = replicate n (fromList [0])
 
               uLbs = fromList [-10]
               uUbs = fromList [10]
@@ -72,11 +71,12 @@ main = do let n = 100
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
                     uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
                     (xTraj', uTraj') = ddp alpha xTraj0 uTraj0 !! 1
-                    u = head uTrajPrev
-                    uKey = case key of Just KeyRight -> 10
-                                       Just KeyLeft  -> -10
-                                       _             -> 0
-                return (u + fromList [uKey], (xTraj', uTraj'))
+                    u0 = head uTraj'
+                    u = case key of Just KeyRight -> u0 + fromList [10]
+                                    Just KeyLeft  -> u0 - fromList [10]
+                                    Just KeyDown  -> fromList [0]
+                                    _             -> u0
+                return (u, (xTraj', uTraj'))
 
           cartpoleVis simController drawFun (x0, (xTraj, uTraj)) dt
           print "hi"

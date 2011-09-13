@@ -77,10 +77,9 @@ main = do let n = 45
               alpha1 = 0.0
 
               x0 = fromList [-0.2, 0.9*pi, 0.9*pi, 0, 0, 0]
-              u0 = fromList [0]
 
               xTrajBadGuess = replicate n x0
-              uTrajBadGuess = replicate n u0
+              uTrajBadGuess = replicate n (fromList [0])
 
               uLbs = fromList [-2]
               uUbs = fromList [2]
@@ -92,10 +91,11 @@ main = do let n = 45
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
                     uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
                     (xTraj', uTraj') = ddp alpha1 xTraj0 uTraj0 !! 3
-                    u = case key of Just KeyRight -> head uTrajPrev + fromList [1]
-                                    Just KeyLeft  -> head uTrajPrev - fromList [1]
+                    u0 = head uTraj'
+                    u = case key of Just KeyRight -> u0 + fromList [1]
+                                    Just KeyLeft  -> u0 - fromList [1]
                                     Just KeyDown  -> fromList [0]
-                                    _             -> head uTrajPrev
+                                    _             -> u0
                 
                 return (u, (xTraj', uTraj'))
 
