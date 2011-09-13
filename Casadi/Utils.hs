@@ -53,6 +53,6 @@ timeComputation msg a = do
     start <- getCurrentTime
     v <- a
     end   <- getCurrentTime
-    let diffUs = round $ 1e6*((realToFrac $ diffUTCTime end start)::Double) :: Integer
-    putStrLn $ '"':msg ++ "\" computation time: " ++ (show diffUs) ++ " microseconds"
+    let diffTime = (realToFrac $ diffUTCTime end start)::Double
+    putStrLn $ msg ++ show diffTime ++ " seconds"
     return v
