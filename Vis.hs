@@ -20,6 +20,7 @@ import Control.Concurrent
 import Control.Monad
 import Control.DeepSeq
 
+
 data Rgb a = Rgb a a a
 data VisObject a b = VisCylinder (a,a) (Xyz a) (Quat a) (Rgb b)
                    | VisBox (a,a,a) (Xyz a) (Quat a) (Rgb b)
@@ -196,18 +197,22 @@ reshape size@(Size w h) = do
    postRedisplay Nothing
 
 
-keyboardMouse :: Camera -> KeyboardMouseCallback
-keyboardMouse camera key keyState _ _ = do
+keyboardMouse :: Camera -> MVar (Maybe SpecialKey) -> KeyboardMouseCallback
+keyboardMouse camera keyRef key keyState _ _ = do
   case (key, keyState) of
+    -- kill sim thread when main loop finishes
     (Char '\27', Down) -> do
-      -- kill sim thread when main loop finishes
       exitWith ExitSuccess
 
-    (SpecialKey KeyLeft, Down)  -> print "left"
-    (SpecialKey KeyRight, Down) -> print "right"
-    (SpecialKey KeyUp, Down)    -> print "up"
-    (SpecialKey KeyDown, Down)  -> print "down"
-    
+    -- set keyRef
+    (SpecialKey k, Down)   -> do
+      _ <- swapMVar keyRef (Just k)
+      return ()
+    (SpecialKey _, Up)   -> do
+      _ <- swapMVar keyRef (Nothing)
+      return ()
+
+    -- adjust camera
     (MouseButton LeftButton, Down) -> do 
       resetMotion
       leftButton camera $= 1
@@ -271,7 +276,7 @@ motion camera (Position x y) = do
    postRedisplay Nothing
 
 
-vis :: (NFData a, Show a) => (a -> IO a) -> (a -> IO ()) -> a -> Double -> IO ()
+vis :: (NFData a, Show a) => ((Maybe SpecialKey) -> a -> IO a) -> (a -> IO ()) -> a -> Double -> IO ()
 vis userSimFun userDrawFun x0 ts = do
   -- init glut/scene
   (progName, _args) <- getArgsAndInitialize
@@ -281,14 +286,15 @@ vis userSimFun userDrawFun x0 ts = do
   stateMVar <- newMVar x0
   camera <- makeCamera
   visReadyMVar <- newMVar False
+  latestKey <- newMVar Nothing
 
   -- start sim thread
-  _ <- forkIO $ simThread stateMVar visReadyMVar userSimFun ts
+  _ <- forkIO $ simThread stateMVar visReadyMVar userSimFun ts latestKey
   
   -- setup callbacks
   displayCallback $= display stateMVar visReadyMVar camera userDrawFun
   reshapeCallback $= Just reshape
-  keyboardMouseCallback $= Just (keyboardMouse camera)
+  keyboardMouseCallback $= Just (keyboardMouse camera  latestKey)
   motionCallback $= Just (motion camera)
 
 
@@ -296,8 +302,8 @@ vis userSimFun userDrawFun x0 ts = do
   mainLoop
 
 
-simThread :: NFData a => MVar a -> MVar Bool -> (a -> IO a) -> Double -> IO ()
-simThread stateMVar visReadyMVar userSimFun ts = do
+simThread :: NFData a => MVar a -> MVar Bool -> ((Maybe SpecialKey) -> a -> IO a) -> Double -> MVar (Maybe SpecialKey) -> IO ()
+simThread stateMVar visReadyMVar userSimFun ts keyRef = do
   let waitUntilDisplayIsReady :: IO ()
       waitUntilDisplayIsReady = do 
         visReady <- readMVar visReadyMVar
@@ -325,7 +331,8 @@ simThread stateMVar visReadyMVar userSimFun ts = do
 
         let getNextState = do
               state <- readMVar stateMVar
-              userSimFun state
+              latestKey <- readMVar keyRef
+              userSimFun latestKey state
 
         let putState state = do
               swapMVar stateMVar state

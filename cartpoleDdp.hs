@@ -12,6 +12,7 @@ import Vis
 import Odes.Cartpole
 import Casadi
 import Ddp(prepareDdp)
+import Graphics.UI.GLUT(SpecialKey(..))
 
 type ControllerState = ([DMatrix], [DMatrix])
 
@@ -67,12 +68,15 @@ main = do let n = 100
 
               (xTraj, uTraj) = head $ drop 50 $ ddp alpha xTrajBadGuess uTrajBadGuess
 
-              simController x (xTrajPrev, uTrajPrev) = do
+              simController key x (xTrajPrev, uTrajPrev) = do
                 let xTraj0 = x:(drop 2 xTrajPrev) ++ [last xTrajPrev]
                     uTraj0 = (tail uTrajPrev) ++ [last uTrajPrev]
                     (xTraj', uTraj') = ddp alpha xTraj0 uTraj0 !! 1
                     u = head uTrajPrev
-                return (u, (xTraj', uTraj'))
+                    uKey = case key of Just KeyRight -> 10
+                                       Just KeyLeft  -> -10
+                                       _             -> 0
+                return (u + fromList [uKey], (xTraj', uTraj'))
 
           cartpoleVis simController drawFun (x0, (xTraj, uTraj)) dt
           print "hi"

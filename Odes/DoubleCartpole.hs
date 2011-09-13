@@ -167,15 +167,15 @@ doubleCartpoleForceCylinder state action = VisCylinder (len, 0.01) (Xyz x0 y0 z0
 
 
 simFun :: (DMatrix -> DMatrix -> DMatrix)
-          -> (DMatrix -> a -> IO (DMatrix, a))
-          -> (DMatrix, a) -> IO (DMatrix, a)
-simFun dode controller (x, controllerState) = do
-  (u, newControllerState) <- controller x controllerState
+          -> ((Maybe SpecialKey) -> DMatrix -> a -> IO (DMatrix, a))
+          -> (Maybe SpecialKey) -> (DMatrix, a) -> IO (DMatrix, a)
+simFun dode controller key (x, controllerState) = do
+  (u, newControllerState) <- controller key x controllerState
   return (dode x u, newControllerState)
 
 
 doubleCartpoleVis :: (NFData a, Show a) => 
-                     (DMatrix -> a -> IO (DMatrix, a))
+                     ((Maybe SpecialKey) -> DMatrix -> a -> IO (DMatrix, a))
                      -> ((DMatrix, a) -> IO ())
                      -> (DMatrix, a)
                      -> Double

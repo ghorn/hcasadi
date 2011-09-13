@@ -1,5 +1,7 @@
 -- cartpoleMs.hs
 
+--{-# OPTIONS_GHC -Wall #-}
+
 module Main where
 
 import Vis
@@ -8,10 +10,7 @@ import Casadi
 import Odes.Cartpole
 import Xyz
 import Quat
-
-import qualified Data.Map as DM
-import Data.Maybe (fromJust)
-import Graphics.UI.GLUT
+import Graphics.UI.GLUT(SpecialKey(..))
 
 type ControllerState = ([DMatrix], [DMatrix], DMatrix)
 
@@ -76,7 +75,7 @@ main = do
   (sol0,_) <- msSolve bounds xBadGuess
   print $ rows sol0
 
-  let simController x (xTrajPrev, uTrajPrev, paramsPrev) = do
+  let simController key x (xTrajPrev, uTrajPrev, paramsPrev) = do
         let bounds' = concat [ boundEqs ms x0Sx x
 --                             , boundEqs ms xfSx xf
                              , stateBounds
@@ -93,7 +92,10 @@ main = do
         
         let ctrlState@(_, uTraj, _) = devectorize sol ms
             u = head uTrajPrev
+            uKey = case key of Just KeyRight -> 10
+                               Just KeyLeft  -> -10
+                               _             -> 0
 
-        return (u, ctrlState)
+        return (u + (fromList [uKey]), ctrlState)
   
   cartpoleVis simController drawFun (x0, devectorize sol0 ms) simDt

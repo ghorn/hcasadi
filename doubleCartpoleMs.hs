@@ -10,6 +10,7 @@ import Casadi
 import Odes.DoubleCartpole
 import Xyz
 import Quat
+import Graphics.UI.GLUT(SpecialKey(..))
 
 type ControllerState = ([DMatrix], [DMatrix], DMatrix)
 
@@ -96,7 +97,7 @@ main = do
   (sol0,_) <- msSolve bounds badGuess
   print $ rows sol0
 
-  let simController x (xTrajPrev, uTrajPrev, paramsPrev) = do
+  let simController key x (xTrajPrev, uTrajPrev, paramsPrev) = do
         let bounds' = concat [ boundEqs ms x0Sx x
 --                             , boundEqs ms xfSx xf
                              , stateBounds
@@ -111,7 +112,10 @@ main = do
         (sol, _) <- msSolve bounds' guess
         
         let ctrlState@(_, uTraj, _) = devectorize sol ms
-            u = head uTrajPrev
+            u = case key of Just KeyRight -> head uTrajPrev + fromList [2]
+                            Just KeyLeft  -> head uTrajPrev - fromList [2]
+                            Just KeyDown  -> fromList [2]
+                            _             -> head uTrajPrev
 
         return (u, ctrlState)
   
