@@ -1,6 +1,5 @@
 -- springDdp.hs
 
-{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wall #-}
 
 module Main where
@@ -59,4 +58,4 @@ main = do let n = 100
               force = map (\x -> (toList x) !! 0) uTraj
 
           plotLists [] [zip time pos, zip time vel, zip time force]
-          print $ "total cost:  " ++ (show (sum (map (\(x,u) -> sCost x u) (zip xTraj uTraj))))
+          putStrLn $ "total cost:  " ++ (show (sum (map (\(x,u) -> sCost x u) (zip xTraj uTraj))))
