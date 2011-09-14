@@ -31,10 +31,14 @@ cost state action = fromList [x*x
     -- barrier
     uUb =  10.1
     uLb = -10.1
+    xUb =  2.0
+    xLb = -2.0
     mu = 1.0
     uBarrierUb = -mu*log(  uUb - u )
     uBarrierLb = -mu*log( -uLb + u )
-    barrier = uBarrierUb + uBarrierLb
+    xBarrierUb = -0.1*mu*log(  xUb - x )
+    xBarrierLb = -0.1*mu*log( -xLb + x )
+    barrier = uBarrierUb + uBarrierLb + xBarrierUb + xBarrierLb
 
 drawFun :: (Maybe SpecialKey) -> (DMatrix, DMatrix, ControllerState) -> IO ()
 drawFun key (state, action, (xTraj, _)) = do
@@ -55,7 +59,7 @@ dode x u = rk4Step cartpoleDxdt x u dt
 
 -- run ddp
 main :: IO ()
-main = do let n = 100
+main = do let n = 60
               alpha = 0.01
               x0 = fromList [-4,0,0.01,0]
 

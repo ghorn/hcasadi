@@ -33,10 +33,14 @@ cost state action = fromList [100*x*x
     -- barrier
     uUb =  2.1
     uLb = -2.1
+    xUb =  0.4
+    xLb = -0.4
     mu = 1.0
     uBarrierUb = -mu*log(  uUb - u )
     uBarrierLb = -mu*log( -uLb + u )
-    barrier = sum[ uBarrierUb, uBarrierLb ]
+    xBarrierUb = -0.1*mu*log(  xUb - x )
+    xBarrierLb = -0.1*mu*log( -xLb + x )
+    barrier = sum[ uBarrierUb, uBarrierLb, xBarrierUb, xBarrierLb ]
 
 drawFun :: (Maybe SpecialKey) -> (DMatrix, DMatrix, ControllerState) -> IO ()
 drawFun key (state, action, (xTraj, _)) = do
@@ -58,7 +62,7 @@ drawFun key (state, action, (xTraj, _)) = do
 
 -- discrete ode
 dt :: Floating a => a
-dt = 0.01
+dt = 0.02
 
 timeDialationFactor :: Double
 timeDialationFactor = 0.3
@@ -66,14 +70,13 @@ timeDialationFactor = 0.3
 dode :: Matrix a b c => a -> a -> a
 dode x u = rk4Step doubleCartpoleDxdt x u dt
 
-
 --"how would you derive a cost function from an end constraint xf?"
 --"look at d^2/dxdu at optimal point?"
 --"include noise?"
 
 -- run ddp
 main :: IO ()
-main = do let n = 45
+main = do let n = 25
               alpha0 = 0.0
               alpha1 = 0.0
 
