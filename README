@@ -7,6 +7,9 @@ Automatic differentiation is currently done using two packages: Edward Kmett's p
 
 ################# INSTALLATION #################
 
+THIS WILL NOT BUILD OUT OF THE BOX. My cabal build foo is weak and some things are hard-coded to my local installation paths. Also you have to figure out how to build the CasADi project. If you are interested in Hopt-o-mex ping me and I'll help you out.
+
+
 #### HASKELL BINDINGS FOR CASADI:
 To build the CasADi bindings you need to install CasADi yourself, make a CASADI environment variable, then
 
