@@ -1,45 +1,29 @@
-Hopt-o-mex is currently an incomplete Haskell port of my "opt-o-mex" c++ optimal control software.
-
-So far I've implemented euler/rk4 integrators, dynamics linearization functions, differential dynamic programming, a visualizer, and some examples.
-
-Automatic differentiation is currently done using two packages: Edward Kmett's pure Haskell "ad" package, and a C++ project called "CasADi" which I wrote haskell bindings for.
+hcasadi is a set of bindings for the C++ project CasADi
 
 
 ################# INSTALLATION #################
 
-THIS WILL NOT BUILD OUT OF THE BOX. My cabal build foo is weak and some things are hard-coded to my local installation paths. Also you have to figure out how to build the CasADi project. If you are interested in Hopt-o-mex ping me and I'll help you out.
+THIS WILL NOT BUILD OUT OF THE BOX. My cabal build foo is weak where ffi is concerned and some things are hard-coded to my local installation paths. Also you have to figure out how to build the CasADi project. Ping me if you would like help.
+
+Currently you must edit hopt-o-mex.cabal and replace "/home/greg/hcasadi" with wherever you put it. Fixing this is high on the todo list.
 
 
 #### HASKELL BINDINGS FOR CASADI:
 To build the CasADi bindings you need to install CasADi yourself, make a CASADI environment variable, then
 
-    cd hopt-o-mex/hcasadi_cppsrc
+    cd hcasadi/hcasadi_cppsrc
     make
 
 You will need to go into casadi/CMakeLists.txt and set "WITH_JIT" to ON in order to use the SXFunction code-generation capabilities
+
 
 #### IPOPT
 Install ipopt on your own - their website has good instructions. Then you may have to append /usr/local/lib/coin and /usr/local/lib/coin/ThirdParty to your LD_LIBRARY_PATH env var.
 
 When you cabal configure it will warn you about missing ipopt/coinmumps/coinmetis libraries - you can ignore this.
 
-You might just want to comment out the whole ipoptTest executable in hopt-o-mex.cabal if you are having problems.
+You might just want to comment out the whole ipoptTest executable in hcasadi.cabal if you are having problems.
 
 
 ### SNOPT
 add the SNOPT environment variable
-
-
-#### HOPT-O-MEX
-Currently you must edit hopt-o-mex.cabal and replace "/home/greg/hopt-o-mex" with wherever you put it. Fixing this is high on my todo list.
-
-    cd hopt-o-mex
-    cabal configure
-    cabal build
-
-You will probably be prompted to install required dependencies.
-
-#### RUNNING
-After the build is complete:
-For a quick demo of ddp run 'hopt-o-mex/dist/build/springDdp/springDdp'
-For a quick and awesome demo of ddp/visualizer run 'hopt-o-mex/dist/build/cartpoleDdp/cartpoleDdp'
