@@ -23,6 +23,8 @@ Library
     Casadi.Api
 
   Other-modules:
+    Casadi.Matrix
+    Casadi.SXFunctionRaw
     Casadi.CasadiInterfaceUtils
 
   Build-depends: base, time, hmatrix, deepseq, process
