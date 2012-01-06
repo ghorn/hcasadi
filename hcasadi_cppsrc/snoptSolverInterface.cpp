@@ -21,21 +21,21 @@ using namespace CasADi;
 
 /******************** memory management *******************/
 SnoptSolver * snoptSolverCreate(const SXMatrix & inputs, const SX & objFun, const SXMatrix & constraints){
-  SnoptSolver * solver = new SnoptSolver(inputs, objFun, constraints);
+    SnoptSolver * solver = new SnoptSolver(inputs, objFun, constraints);
 
 #ifdef COUT_MEMORY_MANAGEMENT
-  cout << "(cpp) snoptSolverCreate {address: " << si << "}\n";
+    cout << "(cpp) snoptSolverCreate {address: " << si << "}\n";
 #endif
 
-  return solver;
+    return solver;
 }
 
 
 void snoptSolverDelete(SnoptSolver * const solver){
 #ifdef COUT_MEMORY_MANAGEMENT
-  cout << "(cpp) snoptSolverDelete {address: " << si << "}\n";
+    cout << "(cpp) snoptSolverDelete {address: " << si << "}\n";
 #endif
-  delete solver;
+    delete solver;
 }
 
 double snoptSolverSolve(SnoptSolver & solver,
@@ -46,11 +46,11 @@ double snoptSolverSolve(SnoptSolver & solver,
                         const DMatrix & fub,
                         DMatrix & xOpt)
 {
-  solver.setGuess(xguess);
-  solver.setXBounds(xlb, xub);
-  solver.setFBounds(flb, fub);
+    solver.setGuess(xguess);
+    solver.setXBounds(xlb, xub);
+    solver.setFBounds(flb, fub);
 
-  solver.solve();
+    solver.solve();
 
-  return solver.getSolution(xOpt);
+    return solver.getSolution(xOpt);
 }

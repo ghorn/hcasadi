@@ -24,29 +24,29 @@ using namespace CasADi;
 static uint64_t
 us_since_epoch()
 {
-  struct timeval tv;
+    struct timeval tv;
  
-  gettimeofday(&tv, NULL);  
-  uint64_t micros = ((uint64_t)tv.tv_sec) * 1000000 + tv.tv_usec;
+    gettimeofday(&tv, NULL);  
+    uint64_t micros = ((uint64_t)tv.tv_sec) * 1000000 + tv.tv_usec;
 
-  return micros;
+    return micros;
 }
 
 
 /************** codegen *************/
 double generateCCode( const char * const filename, SXFunction & fun ){
 
-  uint64_t t0 = us_since_epoch();
-  fun.generateCode(filename);
-  uint64_t t1 = us_since_epoch();
+    uint64_t t0 = us_since_epoch();
+    fun.generateCode(filename);
+    uint64_t t1 = us_since_epoch();
 
-  return double(t1 - t0)*1e-6;
+    return double(t1 - t0)*1e-6;
 }
 
 FX * createExternalFunction( const char * const objname ){
 
-  FX * extFun = new ExternalFunction("./" + string(objname));
-  extFun->init();
+    FX * extFun = new ExternalFunction("./" + string(objname));
+    extFun->init();
 
-  return extFun;
+    return extFun;
 }

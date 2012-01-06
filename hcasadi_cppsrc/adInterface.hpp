@@ -13,15 +13,15 @@ using namespace CasADi;
 extern "C"{
 #endif
 
-  // SXMatrix
-  void myGradient(const SX & expression, const SXMatrix & arguments, SXMatrix & output);
-  void myHessian(const SX & expression, const SXMatrix & arguments, SXMatrix & output);
-  void myJacobian(const SXMatrix & expression, const SXMatrix & arguments, SXMatrix & output);
+    // SXMatrix
+    void myGradient(const SX & expression, const SXMatrix & arguments, SXMatrix & output);
+    void myHessian(const SX & expression, const SXMatrix & arguments, SXMatrix & output);
+    void myJacobian(const SXMatrix & expression, const SXMatrix & arguments, SXMatrix & output);
 
-  // SXFunction
-  void sxFunctionGradient(SXFunction & fun, int idx, SXMatrix & output);
-  void sxFunctionJacobian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output);
-  void sxFunctionHessian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output);
+    // SXFunction
+    void sxFunctionGradient(SXFunction & fun, int idx, SXMatrix & output);
+    void sxFunctionJacobian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output);
+    void sxFunctionHessian(SXFunction & fun, int idxIn, int idxOut, SXMatrix & output);
 
 #ifdef __cplusplus
 }

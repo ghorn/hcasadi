@@ -12,8 +12,8 @@ using namespace CasADi;
 extern "C"{
 #endif
 
-  double generateCCode( const char * const filename, SXFunction & fun );
-  FX * createExternalFunction( const char * const objname );
+    double generateCCode( const char * const filename, SXFunction & fun );
+    FX * createExternalFunction( const char * const objname );
 
 #ifdef __cplusplus
 }

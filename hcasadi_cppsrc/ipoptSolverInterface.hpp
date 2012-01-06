@@ -14,15 +14,15 @@ using namespace CasADi;
 extern "C"{
 #endif
 
-  // memory management
-  IpoptSolver * ipoptSolverCreate(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
-  IpoptSolver * ipoptSolverCreateExactHessian(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
-  void ipoptSolverDelete(IpoptSolver * const solver);
-  double ipoptSolverSolve(IpoptSolver & solver,
-			  const DMatrix & guess,
-			  const DMatrix & lb, const DMatrix & ub,
-			  const DMatrix & gMin, const DMatrix & gMax,
-			  DMatrix & sol);
+    // memory management
+    IpoptSolver * ipoptSolverCreate(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
+    IpoptSolver * ipoptSolverCreateExactHessian(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
+    void ipoptSolverDelete(IpoptSolver * const solver);
+    double ipoptSolverSolve(IpoptSolver & solver,
+                            const DMatrix & guess,
+                            const DMatrix & lb, const DMatrix & ub,
+                            const DMatrix & gMin, const DMatrix & gMax,
+                            DMatrix & sol);
 
 #ifdef __cplusplus
 }

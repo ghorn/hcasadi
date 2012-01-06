@@ -12,32 +12,32 @@ using namespace CasADi;
 extern "C"{
 #endif
 
-  // memory management
-  SXMatrix * sxMatrixCreateSymbolic(const char * const prefix, int n, int m);
-  SXMatrix * sxMatrixDuplicate(const SXMatrix & old);
-  void sxMatrixDelete(SXMatrix * const sx);
-  SXMatrix * sxMatrixZeros(int n, int m);
+    // memory management
+    SXMatrix * sxMatrixCreateSymbolic(const char * const prefix, int n, int m);
+    SXMatrix * sxMatrixDuplicate(const SXMatrix & old);
+    void sxMatrixDelete(SXMatrix * const sx);
+    SXMatrix * sxMatrixZeros(int n, int m);
 
-  // show
-  void sxMatrixShow(char * stringOut, int strLen, const SXMatrix & sx);
+    // show
+    void sxMatrixShow(char * stringOut, int strLen, const SXMatrix & sx);
 
-  // getters/setters
-  void sxMatrixAt(const SXMatrix & mat, int n, int m, SX & out);
-  void sxMatrixSet(const SX & sx, int n, int m, SXMatrix & mat);
+    // getters/setters
+    void sxMatrixAt(const SXMatrix & mat, int n, int m, SX & out);
+    void sxMatrixSet(const SX & sx, int n, int m, SXMatrix & mat);
 
-  // dimensions
-  int sxMatrixSize1(const SXMatrix & mat);
-  int sxMatrixSize2(const SXMatrix & mat);
+    // dimensions
+    int sxMatrixSize1(const SXMatrix & mat);
+    int sxMatrixSize2(const SXMatrix & mat);
 
-  // math
-  void sxMatrixPlus(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
-  void sxMatrixMinus(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
-  void sxMatrixNegate(const SXMatrix & m0, SXMatrix & mOut);
-  void sxMM(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
-  void sxMatrixTranspose(const SXMatrix & mIn, SXMatrix & mOut);
-  int sxMatrixIsEqual(const SXMatrix & m0, const SXMatrix & m1);
-  void sxMatrixScale(const SX & scalar, const SXMatrix & mIn, SXMatrix & mOut);
-  void sxMatrixInv(const SXMatrix & mIn, SXMatrix & mOut);
+    // math
+    void sxMatrixPlus(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
+    void sxMatrixMinus(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
+    void sxMatrixNegate(const SXMatrix & m0, SXMatrix & mOut);
+    void sxMM(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut);
+    void sxMatrixTranspose(const SXMatrix & mIn, SXMatrix & mOut);
+    int sxMatrixIsEqual(const SXMatrix & m0, const SXMatrix & m1);
+    void sxMatrixScale(const SX & scalar, const SXMatrix & mIn, SXMatrix & mOut);
+    void sxMatrixInv(const SXMatrix & mIn, SXMatrix & mOut);
 
 #ifdef __cplusplus
 }

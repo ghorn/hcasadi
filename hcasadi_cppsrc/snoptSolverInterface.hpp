@@ -15,15 +15,15 @@ using namespace CasADi;
 extern "C"{
 #endif
 
-  SnoptSolver * snoptSolverCreate(const SXMatrix & inputs, const SX & objFun, const SXMatrix & constraints);
-  void snoptSolverDelete(SnoptSolver * const solver);
-  double snoptSolverSolve(SnoptSolver & solver,
-                          const DMatrix & xguess,
-                          const DMatrix & xlb,
-                          const DMatrix & xub,
-                          const DMatrix & flb,
-                          const DMatrix & fub,
-                          DMatrix & xOpt);
+    SnoptSolver * snoptSolverCreate(const SXMatrix & inputs, const SX & objFun, const SXMatrix & constraints);
+    void snoptSolverDelete(SnoptSolver * const solver);
+    double snoptSolverSolve(SnoptSolver & solver,
+                            const DMatrix & xguess,
+                            const DMatrix & xlb,
+                            const DMatrix & xub,
+                            const DMatrix & flb,
+                            const DMatrix & fub,
+                            DMatrix & xOpt);
 
 #ifdef __cplusplus
 }

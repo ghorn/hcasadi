@@ -13,27 +13,27 @@ using namespace CasADi;
 extern "C"{
 #endif
 
-  // memory management
-  SXFunction * sxFunctionCreate(const SXMatrix * sxIn[], int numInputs, const SXMatrix * sxOut[], int numOutputs);
-  void sxFunctionDelete(SXFunction * const fun);
+    // memory management
+    SXFunction * sxFunctionCreate(const SXMatrix * sxIn[], int numInputs, const SXMatrix * sxOut[], int numOutputs);
+    void sxFunctionDelete(SXFunction * const fun);
 
-  // getters
-  int sxFunctionGetNumInputs(const FX & fun);
-  int sxFunctionGetNumOutputs(const FX & fun);
-  void sxFunctionGetInputsSX(const SXFunction & fun, int idx, SXMatrix & mat);
-  void sxFunctionGetOutputsSX(const SXFunction & fun, int idx, SXMatrix & mat);
-  int sxFunctionGetInputSize1(  int idx, const SXFunction & fun );
-  int sxFunctionGetInputSize2(  int idx, const SXFunction & fun );
-  int sxFunctionGetOutputSize1( int idx, const SXFunction & fun );
-  int sxFunctionGetOutputSize2( int idx, const SXFunction & fun );
+    // getters
+    int sxFunctionGetNumInputs(const FX & fun);
+    int sxFunctionGetNumOutputs(const FX & fun);
+    void sxFunctionGetInputsSX(const SXFunction & fun, int idx, SXMatrix & mat);
+    void sxFunctionGetOutputsSX(const SXFunction & fun, int idx, SXMatrix & mat);
+    int sxFunctionGetInputSize1(  int idx, const SXFunction & fun );
+    int sxFunctionGetInputSize2(  int idx, const SXFunction & fun );
+    int sxFunctionGetOutputSize1( int idx, const SXFunction & fun );
+    int sxFunctionGetOutputSize2( int idx, const SXFunction & fun );
 
-  // evaluate
-  void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
-				 int numOutputs, DMatrix * outputs[],
-				 FX & fun);
-  void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],
-				  int numOutputs, SXMatrix * outputs[],
-				  SXFunction & fun);
+    // evaluate
+    void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
+                                   int numOutputs, DMatrix * outputs[],
+                                   FX & fun);
+    void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],
+                                    int numOutputs, SXMatrix * outputs[],
+                                    SXFunction & fun);
 
 #ifdef __cplusplus
 }
