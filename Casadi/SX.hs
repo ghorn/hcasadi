@@ -23,7 +23,8 @@ import Casadi.Matrix
 
 import Foreign.C
 import Foreign.Ptr
-import Foreign.ForeignPtr
+import Foreign.ForeignPtr hiding (unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr.Unsafe
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
 import Control.DeepSeq

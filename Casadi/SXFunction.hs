@@ -24,8 +24,10 @@ import Casadi.DMatrix
 import Casadi.Matrix
 import Casadi.CasadiInterfaceUtils
 
+import qualified Control.Exception(catch)
 import Foreign.C
-import Foreign.ForeignPtr
+import Foreign.ForeignPtr hiding (unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr.Unsafe
 import Foreign.Ptr
 import Foreign.Marshal(newArray)
 import Control.Exception(mask_)
@@ -309,7 +311,7 @@ sxFunctionCompile fun name = unsafePerformIO $ do
   putStrLn $ "Generated " ++ srcname ++ " in " ++ show (realToFrac genTime::Double) ++ " seconds"
 
   -- check md5
-  let getOldMd5 = do catch (readFile ("./" ++ hashname)) $ \_ -> do return $ hashname ++ " does not exist"
+  let getOldMd5 = do Control.Exception.catch (readFile ("./" ++ hashname)) $ \(_::IOError) -> do return $ hashname ++ " does not exist"
   
   oldMd5 <- getOldMd5
   newMd5 <- getMd5 srcname

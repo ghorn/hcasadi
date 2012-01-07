@@ -17,7 +17,8 @@ import Casadi.SXFunctionRaw
 
 import Foreign.C
 import Foreign.Marshal
-import Foreign.ForeignPtr
+import Foreign.ForeignPtr hiding (unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr.Unsafe
 import Foreign.Ptr
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
