@@ -10,21 +10,25 @@ SRC = \
 	codegen.cpp \
 	adInterface.cpp \
 	dMatrixInterface.cpp \
-	sxInterface.cpp \
+	sxMatMath.cpp \
+	sxmUnary.cpp \
+	sxmBinary.cpp \
+	sxMatMisc.cpp \
 	sxMatrixInterface.cpp \
 	sxFunctionInterface.cpp \
 	ipoptSolverInterface.cpp
 
-ifdef SNOPT
-	SRC += \
-		snoptSolverInterface.cpp \
-		SnoptSolver.cpp
-endif
+#ifdef SNOPT
+#	SRC += \
+#		snoptSolverInterface.cpp \
+#		SnoptSolver.cpp
+#endif
 
 OBJ = $(SRC:%.cpp=%.o)
 INCLUDES = -I$(CASADI) -I$(SNOPT) -I$(SNOPT)/include
 LDFLAGS =
 FLAGS = -O2 #-Wall -Wextra -Wshadow #-Werror #-g
+FLAGS += -DCOUT_MEMORY_MANAGEMENT
 
 .PHONY: clean
 
