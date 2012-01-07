@@ -7,7 +7,10 @@
 
 #include <casadi/sx/sx.hpp>
 #include <casadi/sx/sx_tools.hpp>
-#include <casadi/matrix/matrix_tools.hpp>
+//#include <casadi/matrix/matrix_tools.hpp>
+//#include <casadi/matrix/matrix.hpp>
+#include <casadi/mx/mx.hpp>
+//#include <casadi/expression_tools.hpp>
 
 #include "sxMatrixInterface.hpp"
 
@@ -21,13 +24,13 @@ using namespace CasADi;
 SXMatrix * sxMatrixCreateSymbolic(const char * const prefix, int n, int m){
     SXMatrix * out;
     if (n == 1 && m == 1)
-        out = new SXMatrix(create_symbolic(prefix));
+        out = new SXMatrix(ssym(prefix));
     else if (m == 1)
-        out = new SXMatrix(create_symbolic(prefix, n));
+        out = new SXMatrix(ssym(prefix, n));
     else if (n == 1)
-        out = new SXMatrix(create_symbolic(prefix, 1, m));
+        out = new SXMatrix(ssym(prefix, 1, m));
     else
-        out = new SXMatrix(create_symbolic(prefix, n, m));
+        out = new SXMatrix(ssym(prefix, n, m));
 
 #ifdef COUT_MEMORY_MANAGEMENT
     cout << "(cpp) new sx matrix at " << out << ", val: " << *out << endl;
@@ -52,7 +55,7 @@ void sxMatrixDelete(SXMatrix * const sx){
 }
 
 SXMatrix * sxMatrixZeros(int n, int m){
-    SXMatrix * out = new SXMatrix( zerosSX(n,m) );
+    SXMatrix * out = new SXMatrix( SXMatrix::zeros(n,m) );
 #ifdef COUT_MEMORY_MANAGEMENT
     cout << "(cpp) new sx zeros at " << out << ", val: " << *out << endl;
 #endif
@@ -72,12 +75,12 @@ void sxMatrixShow(char * stringOut, int strLen, const SXMatrix & sx){
 
 
 /******************** accessors *******************/
-void sxMatrixAt(const SXMatrix & mat, int n, int m, SX & out){
-    out = SX(mat.indexed(n,m));
+void sxMatrixAt(const SXMatrix & mat, int n, int m, SXMatrix & out){
+    out = mat[n,m];
 }
 
 void sxMatrixSet(const SX & sx, int n, int m, SXMatrix & mat){
-    mat.indexed_assignment(n, m, sx);
+    mat[n,m] = sx;
 }
 
 int sxMatrixSize1(const SXMatrix & mat){
@@ -103,7 +106,7 @@ void sxMatrixNegate(const SXMatrix & m0, SXMatrix & mOut){
 }
 
 void sxMM(const SXMatrix & m0, const SXMatrix & m1, SXMatrix & mOut){
-    mOut = prod(m0, m1);
+    mOut = mul(m0, m1);
 }
 
 void sxMatrixTranspose(const SXMatrix & mIn, SXMatrix & mOut){

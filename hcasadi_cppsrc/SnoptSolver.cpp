@@ -40,14 +40,14 @@ SnoptSolver::~SnoptSolver()
 void
 SnoptSolver::setGuess(const DMatrix & _xGuess){
     for (int k=0; k<n; k++)
-        x[k] = _xGuess.indexed(k,0).at(0);
+        x[k] = _xGuess[k,0].at(0);
 }
 
 void
 SnoptSolver::setXBounds(const DMatrix & _xlb, const DMatrix & _xub){
     for (int k=0; k<n; k++){
-        xlow[k] = _xlb.indexed(k,0).at(0);
-        xupp[k] = _xub.indexed(k,0).at(0);
+        xlow[k] = _xlb[k,0].at(0);
+        xupp[k] = _xub[k,0].at(0);
     }
 }
 
@@ -59,8 +59,8 @@ SnoptSolver::setFBounds(const DMatrix & _Flb, const DMatrix & _Fub){
 
     // set bound on nonlinear constraints
     for (int k=0; k<neF-1; k++){
-        Flow[k+1] = _Flb.indexed(k,0).at(0);
-        Fupp[k+1] = _Fub.indexed(k,0).at(0);
+        Flow[k+1] = _Flb[k,0].at(0);
+        Fupp[k+1] = _Fub[k,0].at(0);
     }
 
     // correct for constant offset in F
@@ -77,7 +77,7 @@ SnoptSolver::setFBounds(const DMatrix & _Flb, const DMatrix & _Fub){
 double
 SnoptSolver::getSolution(DMatrix & _xOpt){
     for (int k=0; k<n; k++)
-        _xOpt.indexed_assignment(k, 0, x[k]);
+        _xOpt[k, 0] = x[k];
     return F[objRow - FIRST_FORTRAN_INDEX] + objAdd;
 }
 

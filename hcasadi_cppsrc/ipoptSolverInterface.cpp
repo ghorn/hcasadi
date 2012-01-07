@@ -49,8 +49,8 @@ IpoptSolver * ipoptSolverCreate(const SXMatrix & designVariables, const SX & obj
 IpoptSolver * ipoptSolverCreateExactHessian(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints){
 
     // hessian
-    SXMatrix sigma = create_symbolic("sigma", 1);
-    SXMatrix lambda = create_symbolic("lambda", constraints.size1());
+    SXMatrix sigma = ssym("sigma", 1);
+    SXMatrix lambda = ssym("lambda", constraints.size1());
     SX lagrangian = sigma.at(0)*objFun;
     for (int k=0; k<constraints.size1(); k++)
         lagrangian += lambda.at(k)*constraints.at(k);

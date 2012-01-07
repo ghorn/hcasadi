@@ -22,7 +22,7 @@ extern "C"{
     void sxMatrixShow(char * stringOut, int strLen, const SXMatrix & sx);
 
     // getters/setters
-    void sxMatrixAt(const SXMatrix & mat, int n, int m, SX & out);
+    void sxMatrixAt(const SXMatrix & mat, int n, int m, SXMatrix & out);
     void sxMatrixSet(const SX & sx, int n, int m, SXMatrix & mat);
 
     // dimensions
