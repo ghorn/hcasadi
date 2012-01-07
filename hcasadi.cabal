@@ -21,6 +21,9 @@ Library
     Casadi.SXFunction
     Casadi.Utils
     Casadi.Api
+    Casadi.NLP
+    Casadi.NLP.Ipopt
+    Casadi.NLP.Snopt
 
   Other-modules:
     Casadi.Matrix

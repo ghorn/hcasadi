@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface, MultiParamTypeClasses #-}
 
-module NLP.NLP
+module Casadi.NLP
        (
          NLPSolver(..)
        , NLPRaw(..)
@@ -11,7 +11,7 @@ module NLP.NLP
        , solveNlp
        ) where
 
-import Casadi
+import Casadi.Api
 import Casadi.SX
 import Casadi.SXMatrix
 import Casadi.DMatrix
@@ -19,7 +19,8 @@ import Casadi.CasadiInterfaceUtils
 
 import Foreign.C
 import Foreign.Ptr
-import Foreign.ForeignPtr
+import Foreign.ForeignPtr hiding (unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr.Unsafe
 import Control.Exception(mask_)
 import Text.Printf
 

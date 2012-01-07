@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module NLP.Ipopt
+module Casadi.NLP.Ipopt
        (
          Ipopt(..)
        , IpoptExactHessian(..)
@@ -12,7 +12,7 @@ module NLP.Ipopt
 import Casadi.SX
 import Casadi.SXMatrix
 import Casadi.DMatrix
-import NLP.NLP
+import Casadi.NLP
 
 import Foreign.C
 import Foreign.Ptr

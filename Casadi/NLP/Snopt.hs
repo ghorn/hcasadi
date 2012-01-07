@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module NLP.Snopt
+module Casadi.NLP.Snopt
        (
          Snopt(..)
        ) where
@@ -11,7 +11,7 @@ module NLP.Snopt
 import Casadi.SX
 import Casadi.SXMatrix
 import Casadi.DMatrix
-import NLP.NLP
+import Casadi.NLP
 
 import Foreign.C
 import Foreign.Ptr
