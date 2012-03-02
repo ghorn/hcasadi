@@ -16,28 +16,14 @@ Extra-source-files: cbits
 
 Library
   Exposed-modules:
-    Casadi.Symbolic.Symbolic
-    Casadi.Symbolic.Eval
---    Casadi
---    Casadi.DMatrix
---    Casadi.SX
---    Casadi.SXMatrix
---    Casadi.SXFunction
---    Casadi.Utils
---    Casadi.Api
---    Casadi.NLP
---    Casadi.NLP.Ipopt
-----    Casadi.NLP.Snopt
+--    Casadi.Symbolic.Symbolic
+--    Casadi.Symbolic.Eval
 
   Other-modules:
---    Casadi.Matrix
---    Casadi.SXFunctionRaw
---    Casadi.CasadiInterfaceUtils
+    Casadi.Bindings
 
   Build-depends: base >= 4 && < 5,
-                 repa,
-                 deepseq,
-                 hcasadi-bindings
+                 MissingPy >= 0.10.5 && < 0.11
 -- time, hmatrix, deepseq, process
   
 --  pkgconfig-depends:   casadi
