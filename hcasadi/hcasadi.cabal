@@ -16,8 +16,8 @@ Extra-source-files: cbits
 
 Library
   Exposed-modules:
---    Casadi.Symbolic.Symbolic
---    Casadi.Symbolic.Eval
+    Casadi.Symbolic.Symbolic
+    Casadi.Symbolic.Eval
 
   Other-modules:
     Casadi.Bindings
@@ -26,132 +26,9 @@ Library
                  MissingPy >= 0.10.5 && < 0.11
 -- time, hmatrix, deepseq, process
   
---  pkgconfig-depends:   casadi
 --  Extra-libraries: casadi
 --  Extra-lib-dirs:  /usr/local/lib
---  Include-dirs: /usr/local/include/casadi
 
-  Ghc-options: -pgml g++ -O2
-  --HS_PROFILE_FLAGS = -prof -auto-all -caf-all -fforce-recomp -rtsopts
+--  Ghc-options: -O2
+--  Prof-options = -prof -auto-all -caf-all -fforce-recomp -rtsopts
 
---  C-sources:
-----                     cbits/adInterface.cpp
-----                     cbits/dMatrixInterface.cpp
-------                     cbits/SnoptSolver.cpp
-----                     cbits/sxFunctionInterface.cpp
---                     cbits/sxMatMisc.cpp
---                     cbits/sxmBinary.cpp
-----                     cbits/codegen.cpp
-------                     cbits/ipoptSolverInterface.cpp
-------                     cbits/snoptSolverInterface.cpp
-----                     cbits/sxMatMath.cpp
-----                     cbits/sxMatrixInterface.cpp
---                     cbits/sxmUnary.cpp
---
---  Install-includes:
-----                     cbits/adInterface.hpp
-----                     cbits/dMatrixInterface.hpp
-------                     cbits/SnoptSolver.hpp
-----                     cbits/sxFunctionInterface.hpp
---                     cbits/sxMatMisc.hpp
---                     cbits/sxmBinary.hpp
-----                     cbits/codegen.hpp
-------                     cbits/ipoptSolverInterface.hpp
-------                     cbits/snoptSolverInterface.hpp
-----                     cbits/sxMatMath.hpp
-----                     cbits/sxMatrixInterface.hpp
---                     cbits/sxmUnary.hpp
---
---  Includes:
-----                     cbits/adInterface.hpp
-----                     cbits/dMatrixInterface.hpp
-------                     cbits/SnoptSolver.hpp
-----                     cbits/sxFunctionInterface.hpp
---                     cbits/sxMatMisc.hpp
---                     cbits/sxmBinary.hpp
-----                     cbits/codegen.hpp
-------                     cbits/ipoptSolverInterface.hpp
-------                     cbits/snoptSolverInterface.hpp
-----                     cbits/sxMatMath.hpp
-----                     cbits/sxMatrixInterface.hpp
---                     cbits/sxmUnary.hpp
-
---  Include-dirs:        cbits
---                     /home/greg/casadi
-
---  Cc-options:        -Wall -Werror
---  Cc-options:        -Wall
-
-
---  Extra-lib-dirs:
---        /home/greg/hcasadi/cbits
---        /usr/local/lib/coin
---        /usr/local/lib/coin/ThirdParty
---        /home/greg/snopt7/lib
---
---  Extra-libraries:
---        casadi_interface
---        coinhsl
---        coinmumps
---        coinmetis
---        ipopt
---        ipopt_interface
---        csparse_interface
---        optimal_control
---        superlu_interface
---        casadi
---        csparse
---        gsl_interface
---        lapack_interface
---        superlu
---        tinyxml
---        snopt
---        snopt_c
---        snopt_cpp
---        snprint
---        snprint_c
---        snoptblas
---        snoptblas_c
---        HSrtsmain
---        f2c
-
-
---Executable ipoptTest
---  Main-Is:         ipoptTest.hs
---  Hs-Source-Dirs:  .
---  Other-Modules:
---  Build-depends:
---  Ghc-options:     -pgml g++ -dno-debug-output -O2
---
---  Extra-lib-dirs:
---        /home/greg/hcasadi/cbits
---        /usr/local/lib/coin
---        /usr/local/lib/coin/ThirdParty
---        /home/greg/snopt7/lib
---
---  Extra-libraries:
---        casadi_interface
---        coinhsl
---        coinmumps
---        coinmetis
---        ipopt
---        ipopt_interface
---        csparse_interface
---        optimal_control
---        superlu_interface
---        casadi
---        csparse
---        gsl_interface
---        lapack_interface
---        superlu
---        tinyxml
---        snopt
---        snopt_c
---        snopt_cpp
---        snprint
---        snprint_c
---        snoptblas
---        snoptblas_c
---        HSrtsmain
---        f2c
---
