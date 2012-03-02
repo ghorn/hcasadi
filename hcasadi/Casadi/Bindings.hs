@@ -15,6 +15,7 @@ module Casadi.Bindings( SX
                       , hessian
                       , matrixMultiply
                       , transpose
+                      , generateCode
                         -- * binary
                       , Casadi.Bindings.mul
                       , Casadi.Bindings.div
@@ -115,6 +116,9 @@ sxFunction casadi xs zs = do
   (SXFunction fun) <- callMethodHs casadi "SXFunction" [xs, zs] noKwParms
   callMethodHs fun "init" noParms noKwParms
 
+generateCode :: SXFunction -> String -> IO String
+generateCode (SXFunction fun) filename = do
+  callMethodHs fun "generateCode" [filename] noKwParms
 
 -------------------------------------------------------------
 gradient :: CasadiModule -> SX -> SX -> IO SX
