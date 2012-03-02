@@ -2,7 +2,7 @@ Name:          hcasadi
 Version:       0.1
 license:       BSD3
 license-file:  LICENSE
-Copyright:     (c) Greg Horn 2011,
+Copyright:     (c) Greg Horn 2011-2012
 Author:        Greg Horn
 Maintainer:    gregmainland@gmail.com
 Stability:     Experimental
