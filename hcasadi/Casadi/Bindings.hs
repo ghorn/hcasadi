@@ -2,21 +2,27 @@
 
 module Casadi.Bindings( SX
                       , SXFunction
+                      , CasadiModule
                       , casadiInit
                       , sym
                       , vsym
                       , msym
+                      , sxInt
+                      , sxDouble
                       , sxFunction
                       , gradient
                       , jacobian
                       , hessian
                       , matrixMultiply
                       , transpose
-                      , Casadi.Bindings.signum
+                        -- * binary
                       , Casadi.Bindings.mul
                       , Casadi.Bindings.div
                       , Casadi.Bindings.add
                       , Casadi.Bindings.sub
+                      , Casadi.Bindings.pow
+                        -- * unary
+                      , Casadi.Bindings.signum
                       , Casadi.Bindings.neg
                       , Casadi.Bindings.exp
                       , Casadi.Bindings.abs
@@ -31,12 +37,12 @@ module Casadi.Bindings( SX
                       , Casadi.Bindings.tan
                       , Casadi.Bindings.tanh
                       , Casadi.Bindings.sqrt
-                      , Casadi.Bindings.pow
                       ) where
 
 import Python.Interpreter
 import Python.Objects 
 import System.IO.Unsafe(unsafePerformIO)
+import Foreign.C.Types(CDouble, CInt)
 
 data SX = SX PyObject
 
@@ -91,6 +97,18 @@ msym casadi name (r,c) = do
   mat <- pyObject_Call ssym [name', r', c'] []
   return (SX mat)
   
+sxInt :: CasadiModule -> Int -> IO SX
+sxInt casadi k 
+  | withinCIntBounds k = callMethodHs casadi "ssym" [(fromIntegral k)::CInt] noKwParms
+  | otherwise = error $ "sxInt got out of range value: "++show k++", range: "++show (minCInt,maxCInt)
+        where
+            withinCIntBounds x = and [fromIntegral x <= maxCInt, fromIntegral x >= minCInt]
+            maxCInt = toInteger (maxBound :: CInt)
+            minCInt = toInteger (minBound :: CInt)
+
+sxDouble :: CasadiModule -> Double -> IO SX
+sxDouble casadi x = callMethodHs casadi "ssym" [(realToFrac x)::CDouble] noKwParms
+
 --------------------------------------------------------------
 sxFunction :: CasadiModule -> [SX] -> [SX] -> IO SXFunction
 sxFunction casadi xs zs = callMethodHs casadi "SXFunction" [xs, zs] noKwParms
@@ -123,9 +141,6 @@ unarySXMatrix method casadi x = callSXMatrix method casadi [x]
 matrixMultiply :: CasadiModule -> SX -> SX -> IO SX
 matrixMultiply = binarySXMatrix "mul"
 
-signum :: CasadiModule -> SX -> SX -> IO SX
-signum = binarySXMatrix "__sign__"
-
 mul :: CasadiModule -> SX -> SX -> IO SX
 mul = binarySXMatrix "__mul__"
 
@@ -144,6 +159,9 @@ pow = binarySXMatrix "__pow__"
 
 transpose :: CasadiModule -> SX -> IO SX
 transpose = unarySXMatrix "T"
+
+signum :: CasadiModule -> SX -> IO SX
+signum = unarySXMatrix "__sign__"
 
 neg :: CasadiModule -> SX -> IO SX
 neg = unarySXMatrix "__neg__"

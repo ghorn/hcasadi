@@ -8,16 +8,16 @@
 --{-# Language FlexibleInstances #-}
 -- {-# MultiParamTypeClasses, FlexibleInstances #-}
 
-module Casadi.Symbolic.Symbolic( Expr(..)
-                               , sym
-                               , vsym
-                               , msym
-                               , dot
-                               ) where
+module Casadi.Symbolic( Expr(..)
+                      , sym
+                      , vsym
+                      , msym
+                      , dot
+                      ) where
 
 import Data.Array.Repa hiding ((++))
 
-import Casadi.Symbolic.BinUn
+import Casadi.BinUn
 
 instance Num (Expr a) where
   (*) = EBinary Mul  
@@ -43,9 +43,9 @@ instance Floating (Expr a) where
   acos  = EUnary ACos
   sinh  = EUnary Sinh
   cosh  = EUnary Cosh
-  asinh = EUnary ASinh
-  atanh = EUnary ATanh
-  acosh = EUnary ACosh
+  asinh = error "no instance for asinh"
+  atanh = error "no instance for atanh"
+  acosh = error "no instance for acosh"
 
 type family Dot a b
 type instance Dot DIM2 DIM2 = DIM2 -- matrix-matrix

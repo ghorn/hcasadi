@@ -12,15 +12,14 @@ Cabal-version: >=1.8
 synopsis:      Wrapper for CasADi C++ Automatic Differentiation libraries
 --description:   TODO
 
-Extra-source-files: cbits
-
 Library
   Exposed-modules:
-    Casadi.Symbolic.Symbolic
-    Casadi.Symbolic.Eval
+    Casadi
+    Casadi.Symbolic
+    Casadi.Eval
+    Casadi.Bindings
 
   Other-modules:
-    Casadi.Bindings
 
   Build-depends: base >= 4 && < 5,
                  MissingPy >= 0.10.5 && < 0.11
