@@ -16,7 +16,6 @@ module Casadi.Symbolic( Expr(..)
                       ) where
 
 import Data.Array.Repa hiding ((++))
-
 import Casadi.BinUn
 
 instance Num (Expr a) where

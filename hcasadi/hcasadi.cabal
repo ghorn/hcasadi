@@ -22,7 +22,8 @@ Library
   Other-modules:
 
   Build-depends: base >= 4 && < 5,
-                 MissingPy >= 0.10.5 && < 0.11
+                 MissingPy >= 0.10.5 && < 0.11,
+                 repa
 -- time, hmatrix, deepseq, process
   
 --  Extra-libraries: casadi
