@@ -6,12 +6,6 @@
 
 module Casadi.SXM( SXM(..)
                  , SXMRaw(..)
---                 , sxNewDouble
---                 , sxNewInt
---                 , sxNewIntegral
---                 , sxFromInt
---                 , sxFromIntegral
---                 , sxFromDouble
                  , sym
                  , symVec
                  , symMat
@@ -28,7 +22,6 @@ import Foreign.ForeignPtr.Unsafe
 import Control.Exception(mask_)
 import System.IO.Unsafe(unsafePerformIO)
 import Control.DeepSeq
-  --import Data.Ratio(numerator, denominator)
 
 -- the SX data type
 data SXMRaw = SXMRaw

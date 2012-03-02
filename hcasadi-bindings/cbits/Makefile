@@ -3,20 +3,21 @@
 
 Q = @
 CXX = g++
+#CXX = gcc
 
 LIB = libcasadi_interface.a
 
 SRC = \
-	codegen.cpp \
-	adInterface.cpp \
-	dMatrixInterface.cpp \
 	sxMatMath.cpp \
 	sxmUnary.cpp \
-	sxmBinary.cpp \
-	sxMatMisc.cpp \
-	sxMatrixInterface.cpp \
-	sxFunctionInterface.cpp \
-	ipoptSolverInterface.cpp
+	sxmBinary.cpp
+#	codegen.cpp \
+#	adInterface.cpp \
+#	dMatrixInterface.cpp \
+#	sxMatMisc.cpp \
+#	sxMatrixInterface.cpp \
+#	sxFunctionInterface.cpp \
+#	ipoptSolverInterface.cpp
 
 #ifdef SNOPT
 #	SRC += \

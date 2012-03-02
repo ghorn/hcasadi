@@ -3,16 +3,14 @@
 #ifndef __SX_MAT_MISC_H__
 #define __SX_MAT_MISC_H__
 
-#include <casadi/sx/sx.hpp>
+//#include <casadi/sx/sx.hpp>
+#include <casadi/sx/sx_tools.hpp>
 
-using namespace std;
 using namespace CasADi;
 
 #ifdef __cplusplus
 extern "C"{
 #endif
-
-
 
     // memory management
     void sxmDelete(SXMatrix * const sxm);

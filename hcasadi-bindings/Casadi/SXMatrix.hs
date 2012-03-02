@@ -15,7 +15,7 @@ module Casadi.SXMatrix
        , jacobian
        ) where
 
-import Casadi.SX
+--import Casadi.SX
 import Casadi.SXFunctionRaw
 import Casadi.CasadiInterfaceUtils
 import Casadi.Matrix

@@ -5,9 +5,9 @@
 
 module Main where
 
-import NLP.NLP
---import NLP.Ipopt
-import NLP.Snopt
+import Casadi.NLP
+import Casadi.NLP.Ipopt
+--import Casadi.NLP.Snopt
 import Casadi
 
 rosenbrock :: Matrix a b c => a -> b
@@ -30,7 +30,7 @@ solveRosenbrock = do
       gUb = fromList []
 
 --  solver <- createSolver IpoptExactHessian x objFun constraints
-  solver <- createSolver Snopt x objFun constraints
+  solver <- createSolver Ipopt x objFun constraints
   sol <- solveNlp solver xGuess (xLb, xUb) (gLb, gUb)
   return sol
   
@@ -51,7 +51,7 @@ solveQuadratic = do
       gUb = fromList [0]
 
 --  solver <- createSolver IpoptExactHessian x objFun constraints
-  solver <- createSolver Snopt x objFun constraints
+  solver <- createSolver Ipopt x objFun constraints
   sol <- solveNlp solver xGuess (xLb, xUb) (gLb, gUb)
   return sol
 
