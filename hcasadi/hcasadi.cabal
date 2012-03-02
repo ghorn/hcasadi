@@ -1,7 +1,7 @@
 Name:          hcasadi
 Version:       0.1
-License:       AllRightsReserved
---License-file:
+license:       BSD3
+license-file:  LICENSE
 Copyright:     (c) Greg Horn 2011,
 Author:        Greg Horn
 Maintainer:    gregmainland@gmail.com
