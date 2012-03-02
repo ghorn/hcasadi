@@ -111,7 +111,9 @@ sxDouble casadi x = callMethodHs casadi "ssym" [(realToFrac x)::CDouble] noKwPar
 
 --------------------------------------------------------------
 sxFunction :: CasadiModule -> [SX] -> [SX] -> IO SXFunction
-sxFunction casadi xs zs = callMethodHs casadi "SXFunction" [xs, zs] noKwParms
+sxFunction casadi xs zs = do
+  (SXFunction fun) <- callMethodHs casadi "SXFunction" [xs, zs] noKwParms
+  callMethodHs fun "init" noParms noKwParms
 
 
 -------------------------------------------------------------
