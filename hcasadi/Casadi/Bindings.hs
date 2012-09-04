@@ -1,105 +1,100 @@
 {-# OPTIONS_GHC -Wall #-}
 
-module Casadi.Bindings( SX
-                      , SXFunction
-                      , CasadiModule
+module Casadi.Bindings( SXM(..)
+                      , SXFunction(..)
+                      , CasadiModule(..)
                       , casadiInit
                       , sym
                       , vsym
                       , msym
                       , sxInt
                       , sxDouble
-                      , sxFunction
                       , gradient
                       , jacobian
                       , hessian
                       , matrixMultiply
                       , transpose
+                      , veccat
+                      , horzcat
+                      , vertcat
+                      , sxFunction
                       , generateCode
                         -- * binary
-                      , Casadi.Bindings.mul
-                      , Casadi.Bindings.div
-                      , Casadi.Bindings.add
-                      , Casadi.Bindings.sub
-                      , Casadi.Bindings.pow
+                      , sxmMul
+                      , sxmDiv
+                      , sxmAdd
+                      , sxmSub
+                      , sxmPow
                         -- * unary
-                      , Casadi.Bindings.signum
-                      , Casadi.Bindings.neg
-                      , Casadi.Bindings.exp
-                      , Casadi.Bindings.abs
-                      , Casadi.Bindings.log
-                      , Casadi.Bindings.acos
-                      , Casadi.Bindings.asin
-                      , Casadi.Bindings.atan
-                      , Casadi.Bindings.cos
-                      , Casadi.Bindings.cosh
-                      , Casadi.Bindings.sin
-                      , Casadi.Bindings.sinh
-                      , Casadi.Bindings.tan
-                      , Casadi.Bindings.tanh
-                      , Casadi.Bindings.sqrt
+                      , sxmSignum
+                      , sxmNeg
+                      , sxmExp
+                      , sxmAbs
+                      , sxmLog
+                      , sxmAcos
+                      , sxmAsin
+                      , sxmAtan
+                      , sxmCos
+                      , sxmCosh
+                      , sxmSin
+                      , sxmSinh
+                      , sxmTan
+                      , sxmTanh
+                      , sxmSqrt
+                      , pyShow
                       ) where
 
+import Control.Applicative ( (<$>) )
+import Foreign.C.Types ( CDouble, CInt )
+import Python.Exceptions
 import Python.Interpreter
 import Python.Objects 
-import System.IO.Unsafe(unsafePerformIO)
-import Foreign.C.Types(CDouble, CInt)
+import System.IO.Unsafe ( unsafePerformIO )
 
-data SX = SX PyObject
+newtype SXM = SXM PyObject
+newtype SXFunction = SXFunction PyObject
 
-data SXFunction = SXFunction PyObject
+newtype CasadiModule = CasadiModule PyObject
 
-type CasadiModule = PyObject
-
-instance Show SX where
---  show (SX x) = show x
+instance Show SXM where
+--  show (SXM x) = show x
   show = unsafePerformIO . pyShow
   
 instance Show SXFunction where
 --  show (SXFunction x) = show x
   show = unsafePerformIO . pyShow
 
-instance FromPyObject SX where
-  fromPyObject = return . SX
+instance FromPyObject SXM where fromPyObject = return . SXM
+instance ToPyObject SXM where toPyObject (SXM x) = return x
 
-instance ToPyObject SX where
-  toPyObject (SX x) = return x
+instance FromPyObject CasadiModule where fromPyObject = return . CasadiModule
+instance ToPyObject CasadiModule where toPyObject (CasadiModule x) = return x
 
-instance FromPyObject SXFunction where
-  fromPyObject = return . SXFunction
-
-instance ToPyObject SXFunction where
-  toPyObject (SXFunction x) = return x
-
---sxShowPyObject :: SX -> IO String
---sxShowPyObject (SX x) = showPyObject x
---
---sxReprOf :: SX -> IO String
---sxReprOf (SX x) = reprOf x
+instance ToPyObject SXFunction where toPyObject (SXFunction p) = return p
+instance FromPyObject SXFunction where fromPyObject = return . SXFunction
 
 pyShow :: ToPyObject a => a -> IO String
 pyShow x = callByNameHs "str" [x] noKwParms
 
 -------------------------------------------------------------
-
-sym :: CasadiModule -> String -> IO SX
+sym :: CasadiModule -> String -> IO SXM
 sym casadi name = msym casadi name (1,1)
   
-vsym :: CasadiModule -> String -> Int -> IO SX
+vsym :: CasadiModule -> String -> Int -> IO SXM
 vsym casadi name n = msym casadi name (n,1)
   
-msym :: CasadiModule -> String -> (Int,Int) -> IO SX
+msym :: CasadiModule -> String -> (Int,Int) -> IO SXM
 --msym casadi name (r,c) = callMethodHs casadi "ssym" [toPyObject name, toPyObject r, toPyObject c] noKwParms
-msym casadi name (r,c) = do
+msym (CasadiModule casadi) name (r,c) = do
   ssym <- getattr casadi "ssym"
   name' <- toPyObject name
   r' <- toPyObject (toInteger r)
   c' <- toPyObject (toInteger c)
   mat <- pyObject_Call ssym [name', r', c'] []
-  return (SX mat)
+  return (SXM mat)
   
-sxInt :: CasadiModule -> Int -> IO SX
-sxInt casadi k 
+sxInt :: CasadiModule -> Int -> IO SXM
+sxInt (CasadiModule casadi) k 
   | withinCIntBounds k = callMethodHs casadi "ssym" [(fromIntegral k)::CInt] noKwParms
   | otherwise = error $ "sxInt got out of range value: "++show k++", range: "++show (minCInt,maxCInt)
         where
@@ -107,116 +102,137 @@ sxInt casadi k
             maxCInt = toInteger (maxBound :: CInt)
             minCInt = toInteger (minBound :: CInt)
 
-sxDouble :: CasadiModule -> Double -> IO SX
-sxDouble casadi x = callMethodHs casadi "ssym" [(realToFrac x)::CDouble] noKwParms
+sxDouble :: CasadiModule -> Double -> IO SXM
+sxDouble (CasadiModule casadi) x = callMethodHs casadi "ssym" [(realToFrac x)::CDouble] noKwParms
 
 --------------------------------------------------------------
-sxFunction :: CasadiModule -> [SX] -> [SX] -> IO SXFunction
-sxFunction casadi xs zs = do
-  (SXFunction fun) <- callMethodHs casadi "SXFunction" [xs, zs] noKwParms
-  callMethodHs fun "init" noParms noKwParms
+gradient :: CasadiModule -> SXM -> SXM -> IO SXM
+gradient (CasadiModule casadi) ex args = callMethodHs casadi "gradient" [ex, args] noKwParms
+  
+jacobian :: CasadiModule -> SXM -> SXM -> IO SXM
+jacobian (CasadiModule casadi) ex args = callMethodHs casadi "jacobian" [ex, args] noKwParms
+
+hessian :: CasadiModule -> SXM -> SXM -> IO SXM
+hessian (CasadiModule casadi) ex args = callMethodHs casadi "hessian" [ex, args] noKwParms
+
+---------------------------------------------------------------
+
+sxFunction :: CasadiModule -> [SXM] -> [SXM] -> IO SXFunction
+sxFunction (CasadiModule casadi) xs zs =
+  handlePy (\x -> ("sxFunction: " ++) . show <$> formatException x >>= error) $ do
+    f@(SXFunction fun) <- callMethodHs casadi "SXFunction" [xs, zs] noKwParms
+    runMethodHs fun "init" noParms noKwParms
+    return f
 
 generateCode :: SXFunction -> String -> IO String
 generateCode (SXFunction fun) filename = do
   callMethodHs fun "generateCode" [filename] noKwParms
 
 -------------------------------------------------------------
-gradient :: CasadiModule -> SX -> SX -> IO SX
-gradient casadi ex args = callMethodHs casadi "gradient" [ex, args] noKwParms
   
-jacobian :: CasadiModule -> SX -> SX -> IO SX
-jacobian casadi ex args = callMethodHs casadi "jacobian" [ex, args] noKwParms
-
-hessian :: CasadiModule -> SX -> SX -> IO SX
-hessian casadi ex args = callMethodHs casadi "hessian" [ex, args] noKwParms
-
--------------------------------------------------------------
-  
-callSXMatrix :: String -> CasadiModule -> [SX] -> IO SX
-callSXMatrix method casadi xs = do
-  sxmatrix <- getattr casadi "SXMatrix"
-  callMethodHs sxmatrix method xs noKwParms
+callSXMatrix :: String -> CasadiModule -> [SXM] -> IO SXM
+callSXMatrix method (CasadiModule casadi) xs =
+  handlePy (\x -> ("callSXMatrix: " ++) . show <$> formatException x >>= error) $ do
+    sxmatrix <- getattr casadi "SXMatrix"
+    callMethodHs sxmatrix method xs noKwParms
 
 
-binarySXMatrix :: String -> CasadiModule -> SX -> SX -> IO SX
+binarySXMatrix :: String -> CasadiModule -> SXM -> SXM -> IO SXM
 binarySXMatrix method casadi x y = callSXMatrix method casadi [x,y]
 
-unarySXMatrix :: String -> CasadiModule -> SX -> IO SX
+unarySXMatrix :: String -> CasadiModule -> SXM -> IO SXM
 unarySXMatrix method casadi x = callSXMatrix method casadi [x]
 
-matrixMultiply :: CasadiModule -> SX -> SX -> IO SX
+matrixMultiply :: CasadiModule -> SXM -> SXM -> IO SXM
 matrixMultiply = binarySXMatrix "mul"
 
-mul :: CasadiModule -> SX -> SX -> IO SX
-mul = binarySXMatrix "__mul__"
+sxmMul :: CasadiModule -> SXM -> SXM -> IO SXM
+sxmMul = binarySXMatrix "__mul__"
 
-div :: CasadiModule -> SX -> SX -> IO SX
-div = binarySXMatrix "__div__"
+sxmDiv :: CasadiModule -> SXM -> SXM -> IO SXM
+sxmDiv = binarySXMatrix "__div__"
 
-add :: CasadiModule -> SX -> SX -> IO SX
-add = binarySXMatrix "__add__"
+sxmAdd :: CasadiModule -> SXM -> SXM -> IO SXM
+sxmAdd = binarySXMatrix "__add__"
 
-sub :: CasadiModule -> SX -> SX -> IO SX
-sub = binarySXMatrix "__sub__"
+sxmSub :: CasadiModule -> SXM -> SXM -> IO SXM
+sxmSub = binarySXMatrix "__sub__"
 
-pow :: CasadiModule -> SX -> SX -> IO SX
-pow = binarySXMatrix "__pow__"
+sxmPow :: CasadiModule -> SXM -> SXM -> IO SXM
+sxmPow = binarySXMatrix "__pow__"
 -----------------------------------
 
-transpose :: CasadiModule -> SX -> IO SX
+transpose :: CasadiModule -> SXM -> IO SXM
 transpose = unarySXMatrix "T"
 
-signum :: CasadiModule -> SX -> IO SX
-signum = unarySXMatrix "__sign__"
+sxmSignum :: CasadiModule -> SXM -> IO SXM
+sxmSignum = unarySXMatrix "__sign__"
 
-neg :: CasadiModule -> SX -> IO SX
-neg = unarySXMatrix "__neg__"
+sxmNeg :: CasadiModule -> SXM -> IO SXM
+sxmNeg = unarySXMatrix "__neg__"
 
-exp :: CasadiModule -> SX -> IO SX
-exp = unarySXMatrix "exp"
+sxmExp :: CasadiModule -> SXM -> IO SXM
+sxmExp = unarySXMatrix "exp"
 
-abs :: CasadiModule -> SX -> IO SX
-abs = unarySXMatrix "fabs"
+sxmAbs :: CasadiModule -> SXM -> IO SXM
+sxmAbs = unarySXMatrix "fabs"
 
-log :: CasadiModule -> SX -> IO SX
-log = unarySXMatrix "log"
+sxmLog :: CasadiModule -> SXM -> IO SXM
+sxmLog = unarySXMatrix "log"
 
-acos :: CasadiModule -> SX -> IO SX
-acos = unarySXMatrix "arccos"
+sxmAcos :: CasadiModule -> SXM -> IO SXM
+sxmAcos = unarySXMatrix "arccos"
 
-asin :: CasadiModule -> SX -> IO SX
-asin = unarySXMatrix "arcsin"
+sxmAsin :: CasadiModule -> SXM -> IO SXM
+sxmAsin = unarySXMatrix "arcsin"
 
-atan :: CasadiModule -> SX -> IO SX
-atan = unarySXMatrix "arctan"
+sxmAtan :: CasadiModule -> SXM -> IO SXM
+sxmAtan = unarySXMatrix "arctan"
 
-cos :: CasadiModule -> SX -> IO SX
-cos = unarySXMatrix "cos"
+sxmCos :: CasadiModule -> SXM -> IO SXM
+sxmCos = unarySXMatrix "cos"
 
-cosh :: CasadiModule -> SX -> IO SX
-cosh = unarySXMatrix "cosh"
+sxmCosh :: CasadiModule -> SXM -> IO SXM
+sxmCosh = unarySXMatrix "cosh"
 
-sin :: CasadiModule -> SX -> IO SX
-sin = unarySXMatrix "sin"
+sxmSin :: CasadiModule -> SXM -> IO SXM
+sxmSin = unarySXMatrix "sin"
 
-sinh :: CasadiModule -> SX -> IO SX
-sinh = unarySXMatrix "sinh"
+sxmSinh :: CasadiModule -> SXM -> IO SXM
+sxmSinh = unarySXMatrix "sinh"
 
-tan :: CasadiModule -> SX -> IO SX
-tan = unarySXMatrix "tan"
+sxmTan :: CasadiModule -> SXM -> IO SXM
+sxmTan = unarySXMatrix "tan"
 
-tanh :: CasadiModule -> SX -> IO SX
-tanh = unarySXMatrix "tanh"
+sxmTanh :: CasadiModule -> SXM -> IO SXM
+sxmTanh = unarySXMatrix "tanh"
 
-sqrt :: CasadiModule -> SX -> IO SX
-sqrt = unarySXMatrix "sqrt"
+sxmSqrt :: CasadiModule -> SXM -> IO SXM
+sxmSqrt = unarySXMatrix "sqrt"
 
 ----------------------------------
+
+veccat :: CasadiModule -> [SXM] -> IO SXM
+veccat (CasadiModule cm) ins =
+  handlePy (\x -> ("veccat: " ++) . show <$> formatException x >>= error) $
+  callMethodHs cm "veccat" [ins] noKwParms
+
+horzcat :: CasadiModule -> [SXM] -> IO SXM
+horzcat (CasadiModule cm) ins =
+  handlePy (\x -> ("horzcat: " ++) . show <$> formatException x >>= error) $
+  callMethodHs cm "horzcat" [ins] noKwParms
+
+vertcat :: CasadiModule -> [SXM] -> IO SXM
+vertcat (CasadiModule cm) ins =
+  handlePy (\x -> ("vertcat: " ++) . show <$> formatException x >>= error) $
+  callMethodHs cm "vertcat" [ins] noKwParms
+
+---------------------------------
 
 casadiInit :: IO CasadiModule
 casadiInit = do
   py_initialize
-  pyImport_ImportModule "casadi"
+  fmap CasadiModule (pyImport_ImportModule "casadi")
 
 --main :: IO ()
 --main = do

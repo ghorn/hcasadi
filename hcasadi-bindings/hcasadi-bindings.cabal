@@ -39,66 +39,52 @@ Library
 -- time, hmatrix, deepseq, process
   
 --  pkgconfig-depends:   casadi
-  Extra-libraries: casadi
-                   casadi_interface
-  Extra-lib-dirs:  /usr/local/lib
-                   /home/greg/hcasadi/hcasadi-bindings/cbits
-  Include-dirs: /usr/local/include/casadi
---                /home/greg/hcasadi/hcasadi-bindings/cbits
---                /usr/include/c++/4.6
---                /usr/include/c++/4.6/x86_64-linux-gnu
-  Ghc-options: -pgml g++ -O2
---  Ghc-options:
-  --HS_PROFILE_FLAGS = -prof -auto-all -caf-all -fforce-recomp -rtsopts
+  Extra-libraries: 
+                   casadi
+                   stdc++
+--                   casadi_interface
+  Extra-lib-dirs:  
+                   /home/ghorn/casadi/distribute-static/lib
+--                   /home/ghorn/casadi/distribute-shared/lib
+--                   /usr/local/lib
+  Include-dirs: 
+--                cbits
+                /home/ghorn/casadi/distribute-static/include/casadi
+--                /home/ghorn/casadi/distribute-shared/include/casadi
+--                /usr/local/include/casadi
+--  Ghc-options: -pgml g++
 
   C-sources:
 --                     cbits/adInterface.cpp
 --                     cbits/dMatrixInterface.cpp
 ----                     cbits/SnoptSolver.cpp
 --                     cbits/sxFunctionInterface.cpp
---                     cbits/sxMatMisc.cpp
---                     cbits/sxmBinary.cpp
+                     cbits/sxmMisc.cpp
+                     cbits/sxmBinary.cpp
+                     cbits/sxmUnary.cpp
 --                     cbits/codegen.cpp
 ----                     cbits/ipoptSolverInterface.cpp
 ----                     cbits/snoptSolverInterface.cpp
 --                     cbits/sxMatMath.cpp
 --                     cbits/sxMatrixInterface.cpp
---                     cbits/sxmUnary.cpp
 
   Install-includes:
 --                     cbits/adInterface.hpp
 --                     cbits/dMatrixInterface.hpp
 ----                     cbits/SnoptSolver.hpp
 --                     cbits/sxFunctionInterface.hpp
---                     cbits/sxMatMisc.hpp
---                     cbits/sxmBinary.hpp
+                     cbits/sxmMisc.hpp
+                     cbits/sxmBinary.hpp
+                     cbits/sxmUnary.hpp
 --                     cbits/codegen.hpp
 ----                     cbits/ipoptSolverInterface.hpp
 ----                     cbits/snoptSolverInterface.hpp
 --                     cbits/sxMatMath.hpp
 --                     cbits/sxMatrixInterface.hpp
---                     cbits/sxmUnary.hpp
-
-  Includes:
---                     cbits/adInterface.hpp
---                     cbits/dMatrixInterface.hpp
-----                     cbits/SnoptSolver.hpp
---                     cbits/sxFunctionInterface.hpp
---                     cbits/sxMatMisc.hpp
---                     cbits/sxmBinary.hpp
---                     cbits/codegen.hpp
-----                     cbits/ipoptSolverInterface.hpp
-----                     cbits/snoptSolverInterface.hpp
---                     cbits/sxMatMath.hpp
---                     cbits/sxMatrixInterface.hpp
---                     cbits/sxmUnary.hpp
-
-  Include-dirs:        cbits
---                     /home/greg/casadi
 
 --  Cc-options:        -Wall -Werror
 --  Cc-options:        -Wall
-
+--  Cc-options:        -fPIC
 
 --  Extra-lib-dirs:
 --        /home/greg/hcasadi/cbits

@@ -1,10 +1,8 @@
-// sxMatMisc.hpp
+#ifndef __SXM_MISC_H__
+#define __SXM_MISC_H__
 
-#ifndef __SX_MAT_MISC_H__
-#define __SX_MAT_MISC_H__
-
-//#include <casadi/sx/sx.hpp>
-#include <casadi/sx/sx_tools.hpp>
+#include <casadi/sx/sx.hpp>
+//#include <casadi/sx/sx_tools.hpp>
 
 using namespace CasADi;
 
@@ -18,16 +16,16 @@ extern "C"{
     //SXMatrix * sxMatrixDuplicate(const SXMatrix & old);
     SXMatrix * newDouble(double in);
     SXMatrix * newInt(int in);
-    SXMatrix * newZeros(int n, int m);
+//    SXMatrix * newZeros(int n, int m);
 
     // show
-    void show(char * stringOut, int strLen, const SXMatrix & sxm);
+    void sxShow(char * stringOut, int strLen, const SXMatrix & sxm);
 
     // conditional
-    void sxBound(const SXMatrix & lb, const SXMatrix & ub, const SXMatrix & sxIn, SXMatrix & sxOut);
+//    void sxBound(const SXMatrix & lb, const SXMatrix & ub, const SXMatrix & sxIn, SXMatrix & sxOut);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //__SX_MAT_MISC_H__
+#endif //__SXM_MISC_H__

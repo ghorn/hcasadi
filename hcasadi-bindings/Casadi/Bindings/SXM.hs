@@ -1,14 +1,13 @@
--- SXM.hs
-
 {-# OPTIONS_GHC -Wall #-}
---{-# OPTIONS_GHC -Wall -fno-cse -fno-full-laziness #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE EmptyDataDecls #-}
 
 module Casadi.Bindings.SXM( SXM(..)
                           -- * create stuff
                           , sxNewDouble
                           , sxNewIntegral
                           , sym
+                          , sxShow
                           , symVec
                           , symMat
 --                          , sxBound
@@ -23,7 +22,7 @@ module Casadi.Bindings.SXM( SXM(..)
                           , sxArcsin
                           , sxArccos
                           , sxArctan
-                            -- * binary
+                          -- * binary
                           , sxPlus
                           , sxMinus
                           , sxTimes
@@ -31,38 +30,38 @@ module Casadi.Bindings.SXM( SXM(..)
                           , sxPow
                           ) where
 
-import Casadi.CasadiInterfaceUtils
+import Casadi.CasadiInterfaceUtils ( withForeignPtrs2 )
 
 import Foreign.C
 import Foreign.Ptr
 import Foreign.ForeignPtr hiding (unsafeForeignPtrToPtr)
-import Foreign.ForeignPtr.Unsafe
+--import Foreign.ForeignPtr.Unsafe
 import Control.Exception(mask_)
-import System.IO.Unsafe(unsafePerformIO)
+--import System.IO.Unsafe(unsafePerformIO)
 
 -- the SX data type
-data SXMRaw = SXMRaw
+data SXMRaw
 newtype SXM = SXM (ForeignPtr SXMRaw)
 
 -- foreign imports
-foreign import ccall unsafe "sxMatMisc.hpp createSymbolic" c_sxCreateSymbolic :: CInt -> CInt -> Ptr CChar -> IO (Ptr SXMRaw)
-foreign import ccall unsafe "sxMatMisc.hpp newDouble" c_sxNewDouble :: CDouble -> IO (Ptr SXMRaw)
-foreign import ccall unsafe "sxMatMisc.hpp newInt"    c_sxNewInt :: CInt -> IO (Ptr SXMRaw)
-foreign import ccall unsafe "sxMatMisc.hpp &sxDelete" c_sxDelete :: FunPtr (Ptr SXMRaw -> IO ())
-foreign import ccall unsafe "sxMatMisc.hpp sxShow"    c_sxShow :: Ptr CChar -> CInt -> (Ptr SXMRaw) -> IO ()
+foreign import ccall unsafe "sxmMisc.hpp createSymbolic" c_sxCreateSymbolic :: CInt -> CInt -> Ptr CChar -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMisc.hpp newDouble" c_sxNewDouble :: CDouble -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMisc.hpp newInt"    c_sxNewInt :: CInt -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMisc.hpp &sxmDelete" c_sxDelete :: FunPtr (Ptr SXMRaw -> IO ())
+foreign import ccall unsafe "sxmMisc.hpp sxShow"    c_sxShow :: Ptr CChar -> CInt -> (Ptr SXMRaw) -> IO ()
 
-foreign import ccall unsafe "sxMatMath.hpp sxEqual"  c_sxEqual :: Ptr SXMRaw -> Ptr SXMRaw -> IO CInt
-foreign import ccall unsafe "sxMatMath.hpp sxSignum" c_sxSignum :: Ptr SXMRaw -> IO CInt
-foreign import ccall unsafe "sxMatMisc.hpp sxBound"  c_sxBound :: Ptr SXMRaw -> Ptr SXMRaw -> Ptr SXMRaw -> Ptr SXMRaw -> IO ()
-
--- binary
+--foreign import ccall unsafe "sxmMath.hpp sxEqual"  c_sxEqual :: Ptr SXMRaw -> Ptr SXMRaw -> IO CInt
+--foreign import ccall unsafe "sxmMath.hpp sxSignum" c_sxSignum :: Ptr SXMRaw -> IO CInt
+--foreign import ccall unsafe "sxmMisc.hpp sxBound"  c_sxBound :: Ptr SXMRaw -> Ptr SXMRaw -> Ptr SXMRaw -> Ptr SXMRaw -> IO ()
+--
+---- binary
 foreign import ccall unsafe "sxmBinary.hpp sxPlus"   c_sxPlus :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmBinary.hpp sxMinus"  c_sxMinus :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmBinary.hpp sxTimes"  c_sxTimes :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmBinary.hpp sxDivide" c_sxDivide :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmBinary.hpp sxPow"    c_sxPow    :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
 
--- unary
+---- unary
 foreign import ccall unsafe "sxmUnary.hpp sxNegate" c_sxNegate :: Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmUnary.hpp sxAbs"    c_sxAbs    :: Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmUnary.hpp sxExp"    c_sxExp    :: Ptr SXMRaw -> IO (Ptr SXMRaw)
@@ -81,14 +80,17 @@ foreign import ccall unsafe "sxmUnary.hpp sxArctan" c_sxArctan :: Ptr SXMRaw -> 
 --  (==) = sxEqual
 --  (/=) sx0 sx1 = not $ sx0 == sx1
 
-instance Show SXM where
-  {-# NOINLINE show #-}
-  show (SXM s) = unsafePerformIO $ do
+sxShow :: SXM -> IO String
+sxShow (SXM s) = do
   (stringRef, stringLength) <- newCStringLen $ replicate 512 ' '
   withForeignPtr s $ c_sxShow stringRef (fromIntegral stringLength)
   peekCString stringRef
 
-------------------- binary -------------------
+--instance Show SXM where
+--  {-# NOINLINE show #-}
+--  show s = unsafePerformIO $ sxShow s
+
+--------------------- binary -------------------
 sxWrapBinary :: (Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)) -> SXM -> SXM -> IO SXM
 {-# NOINLINE sxWrapBinary #-}
 sxWrapBinary c_fun (SXM sxm0Raw) (SXM sxm1Raw) = mask_ $ do
@@ -110,37 +112,17 @@ sxWrapUnary c_fun (SXM sxmInRaw) = mask_ $ do
   smxOutRaw <- withForeignPtr sxmInRaw c_fun >>= newForeignPtr c_sxDelete
   return $ SXM smxOutRaw
 
-sxNegate :: SXM -> IO SXM
+sxNegate, sxAbs, sxExp, sxSqrt, sxLog, sxSin, sxCos, sxTan, sxArcsin, sxArccos, sxArctan :: SXM -> IO SXM
 sxNegate = sxWrapUnary c_sxNegate
-
-sxAbs :: SXM -> IO SXM
-sxAbs = sxWrapUnary c_sxAbs
-
-sxExp :: SXM -> IO SXM
-sxExp = sxWrapUnary c_sxExp
-
-sxSqrt :: SXM -> IO SXM
-sxSqrt = sxWrapUnary c_sxSqrt
-
-sxLog :: SXM -> IO SXM
-sxLog = sxWrapUnary c_sxLog
-
-sxSin :: SXM -> IO SXM
-sxSin = sxWrapUnary c_sxSin
-
-sxCos :: SXM -> IO SXM
-sxCos = sxWrapUnary c_sxCos
-
-sxTan :: SXM -> IO SXM
-sxTan = sxWrapUnary c_sxTan
-
-sxArcsin :: SXM -> IO SXM
+sxAbs    = sxWrapUnary c_sxAbs
+sxExp    = sxWrapUnary c_sxExp
+sxSqrt   = sxWrapUnary c_sxSqrt
+sxLog    = sxWrapUnary c_sxLog
+sxSin    = sxWrapUnary c_sxSin
+sxCos    = sxWrapUnary c_sxCos
+sxTan    = sxWrapUnary c_sxTan
 sxArcsin = sxWrapUnary c_sxArcsin
-
-sxArccos :: SXM -> IO SXM
 sxArccos = sxWrapUnary c_sxArccos
-
-sxArctan :: SXM -> IO SXM
 sxArctan = sxWrapUnary c_sxArctan
 
 
@@ -164,7 +146,7 @@ symMat (n,m) name = mask_ $ do
   return $ SXM sym'
 
 
--------------------- create numeric -----------------------
+---------------------- create numeric -----------------------
 sxNewDouble :: Double -> IO SXM
 sxNewDouble val = mask_ $ do
     f <- c_sxNewDouble (realToFrac val) >>= newForeignPtr c_sxDelete
@@ -184,44 +166,44 @@ sxNewIntegral val
             maxCInt = toInteger (maxBound :: CInt)
             minCInt = toInteger (minBound :: CInt)
 
--------------------- misc -----------------
-sxEqual :: SXM -> SXM -> Bool
-{-# NOINLINE sxEqual #-}
-sxEqual (SXM sx0) (SXM sx1) = unsafePerformIO $ do
-  equalInt <- withForeignPtrs2 c_sxEqual sx0 sx1
-  let equalBool
-        | equalInt == 0 = False
-        | otherwise     = True
-  return equalBool
-
-sxSignum :: SXM -> IO SXM
-{-# NOINLINE sxSignum #-}
-sxSignum (SXM sx) = do
-  sign <- withForeignPtr sx c_sxSignum
-  if (sign == 1)
-    then sxNewInt 1
-    else sxNewInt (-1)
-
-sxBound :: SXM -> (SXM, SXM) -> SXM
-{-# NOINLINE sxBound #-}
-sxBound (SXM sxIn) (SXM sxLb, SXM sxUb) = unsafePerformIO $ do
-  (SXM sxOut) <- sxNewDouble 0
-  
-  let sxLb'  = unsafeForeignPtrToPtr sxLb
-      sxUb'  = unsafeForeignPtrToPtr sxUb
-      sxIn'  = unsafeForeignPtrToPtr sxIn
-      sxOut' = unsafeForeignPtrToPtr sxOut
-  
-  c_sxBound sxLb' sxUb' sxIn' sxOut'
-  
-  touchForeignPtr sxLb
-  touchForeignPtr sxUb
-  touchForeignPtr sxIn
-  touchForeignPtr sxOut
-  
-  return (SXM sxOut)
-
--- typeclass stuff
-instance Eq SXM where
-  (==) = sxEqual
-  (/=) sx0 sx1 = not $ sx0 == sx1
+---------------------- misc -----------------
+--sxEqual :: SXM -> SXM -> Bool
+--{-# NOINLINE sxEqual #-}
+--sxEqual (SXM sx0) (SXM sx1) = unsafePerformIO $ do
+--  equalInt <- withForeignPtrs2 c_sxEqual sx0 sx1
+--  let equalBool
+--        | equalInt == 0 = False
+--        | otherwise     = True
+--  return equalBool
+--
+--sxSignum :: SXM -> IO SXM
+--{-# NOINLINE sxSignum #-}
+--sxSignum (SXM sx) = do
+--  sign <- withForeignPtr sx c_sxSignum
+--  if (sign == 1)
+--    then sxNewInt 1
+--    else sxNewInt (-1)
+--
+--sxBound :: SXM -> (SXM, SXM) -> SXM
+--{-# NOINLINE sxBound #-}
+--sxBound (SXM sxIn) (SXM sxLb, SXM sxUb) = unsafePerformIO $ do
+--  (SXM sxOut) <- sxNewDouble 0
+--  
+--  let sxLb'  = unsafeForeignPtrToPtr sxLb
+--      sxUb'  = unsafeForeignPtrToPtr sxUb
+--      sxIn'  = unsafeForeignPtrToPtr sxIn
+--      sxOut' = unsafeForeignPtrToPtr sxOut
+--  
+--  c_sxBound sxLb' sxUb' sxIn' sxOut'
+--  
+--  touchForeignPtr sxLb
+--  touchForeignPtr sxUb
+--  touchForeignPtr sxIn
+--  touchForeignPtr sxOut
+--  
+--  return (SXM sxOut)
+--
+---- typeclass stuff
+--instance Eq SXM where
+--  (==) = sxEqual
+--  (/=) sx0 sx1 = not $ sx0 == sx1
