@@ -1,7 +1,5 @@
-// sxFunctionInterface.hpp
-
-#ifndef __SX_FUNCTION_INTERFACE_H__
-#define __SX_FUNCTION_INTERFACE_H__
+#ifndef __SX_FUNCTION_H__
+#define __SX_FUNCTION_H__
 
 #include <casadi/sx/sx.hpp>
 #include <casadi/fx/sx_function.hpp>
@@ -22,10 +20,12 @@ extern "C"{
     int sxFunctionGetNumOutputs(const FX & fun);
     void sxFunctionGetInputsSX(const SXFunction & fun, int idx, SXMatrix & mat);
     void sxFunctionGetOutputsSX(const SXFunction & fun, int idx, SXMatrix & mat);
-    int sxFunctionGetInputSize1(  int idx, const SXFunction & fun );
-    int sxFunctionGetInputSize2(  int idx, const SXFunction & fun );
-    int sxFunctionGetOutputSize1( int idx, const SXFunction & fun );
-    int sxFunctionGetOutputSize2( int idx, const SXFunction & fun );
+    int sxFunctionInputSize(  int idx, const SXFunction & fun );
+    int sxFunctionInputSize1(  int idx, const SXFunction & fun );
+    int sxFunctionInputSize2(  int idx, const SXFunction & fun );
+    int sxFunctionOutputSize( int idx, const SXFunction & fun );
+    int sxFunctionOutputSize1( int idx, const SXFunction & fun );
+    int sxFunctionOutputSize2( int idx, const SXFunction & fun );
 
     // evaluate
     void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
@@ -40,4 +40,4 @@ extern "C"{
 #endif
 
 
-#endif //__SX_FUNCTION_INTERFACE_H__
+#endif //__SX_FUNCTION_H__

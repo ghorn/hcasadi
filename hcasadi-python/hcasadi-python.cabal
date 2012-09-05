@@ -1,0 +1,40 @@
+Name:          hcasadi-python
+Version:       0.1
+license:       BSD3
+license-file:  LICENSE
+Copyright:     (c) Greg Horn 2011-2012
+Author:        Greg Horn
+Maintainer:    gregmainland@gmail.com
+Stability:     Experimental
+Category:      Math
+Build-type:    Simple
+Cabal-version: >=1.8
+synopsis:      Wrapper for CasADi C++ Automatic Differentiation libraries
+description: {
+hcasadi is a set of bindings for the C++ project CasADi.
+I had trouble binding to the C++ so I use MissingPy to bind through casadi's swig python wrappers
+
+# INSTALLATION
+Install CasADi and it's dependencies as normal and don't forget to make install_python
+
+If you didn't install parts of casadi like the Ipopt interface or Sundials integrators,
+you'll find out at runtime cause it's all interpreted :/
+
+You will need to go into casadi/CMakeLists.txt and set "WITH_JIT" to ON in order to use the SXFunction code-generation capabilities
+
+You can use Casadi.Bindings standalone, but other modules interface with my Dvda library.
+}
+
+Library
+  Exposed-modules:
+    Casadi.Bindings
+
+  Other-modules:
+
+  Build-depends: base >= 4 && < 5,
+                 MissingPy >= 0.10.5 && < 0.11,
+                 dvda >= 0.4 && < 0.5
+  
+  Ghc-options:
+--  Prof-options = -prof -auto-all -caf-all -fforce-recomp -rtsopts
+

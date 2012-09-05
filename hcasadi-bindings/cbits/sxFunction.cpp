@@ -1,5 +1,3 @@
-// sxFunctionInterface.cpp
-
 #include "math.h"
 #include <cstdio>
 #include <sstream>
@@ -11,13 +9,12 @@
 #include <casadi/matrix/matrix_tools.hpp>
 #include <casadi/fx/fx.hpp>
 
-#include "sxFunctionInterface.hpp"
+#include "sxFunction.hpp"
 
 //#define COUT_MEMORY_MANAGEMENT
 
 using namespace std;
 using namespace CasADi;
-
 
 /******************** memory management *******************/
 void sxFunctionDelete(SXFunction * const fun){
@@ -60,25 +57,28 @@ int sxFunctionGetNumOutputs(const FX & fun){
 void sxFunctionGetInputsSX(const SXFunction & fun, int idx, SXMatrix & mat){
     mat = fun.inputSX(idx);
 }
-
 void sxFunctionGetOutputsSX(const SXFunction & fun, int idx, SXMatrix & mat){
     mat = fun.outputSX(idx);
 }
 
-int sxFunctionGetInputSize1( int idx, const SXFunction & fun ){
-    return fun.inputSX(idx).size1();
+int sxFunctionInputSize( int idx, const SXFunction & fun ){
+    return fun.input(idx).size();
+}
+int sxFunctionInputSize1( int idx, const SXFunction & fun ){
+    return fun.input(idx).size1();
+}
+int sxFunctionInputSize2( int idx, const SXFunction & fun ){
+    return fun.input(idx).size2();
 }
 
-int sxFunctionGetInputSize2( int idx, const SXFunction & fun ){
-    return fun.inputSX(idx).size2();
+int sxFunctionOutputSize( int idx, const SXFunction & fun ){
+    return fun.output(idx).size();
 }
-
-int sxFunctionGetOutputSize1( int idx, const SXFunction & fun ){
-    return fun.outputSX(idx).size1();
+int sxFunctionOutputSize1( int idx, const SXFunction & fun ){
+    return fun.output(idx).size1();
 }
-
-int sxFunctionGetOutputSize2( int idx, const SXFunction & fun ){
-    return fun.outputSX(idx).size2();
+int sxFunctionOutputSize2( int idx, const SXFunction & fun ){
+    return fun.output(idx).size2();
 }
 
 
@@ -113,17 +113,41 @@ static void sxFunctionAssertGoodDimensions(int numInputs, const SXMatrix * input
         throw 1;
 }
 
+int sxFunctionEvaluateDouble( const int numInputs, const double * inputs[], const int inputDims[],
+                              const int numOutputs, double * outputs[], const int outputDims[],
+                              FX & fun ){
+    if (numInputs != fun.getNumInputs()){
+        cerr << "(cpp) sxFunctionEvaluateDouble got numInputs: " << numInputs
+             << " but fun.getNumInputs() is: " << fun.getNumInputs() << endl;
+        return 1;
+    }
+    if (numOutputs != fun.getNumOutputs()){
+        cerr << "(cpp) sxFunctionEvaluateDouble got numOutputs: " << numOutputs
+             << " but fun.getNumOutputs() is: " << fun.getNumOutputs() << endl;
+        return 2;
+    }
 
-void sxFunctionEvaluateDMatrix(int numInputs, const DMatrix * inputs[],
-			       int numOutputs, DMatrix * outputs[],
-			       FX & fun){
-    for (int k=0; k<numInputs; k++)
-        fun.setInput( *(inputs[k]), k );
+    for (int k=0; k<numInputs; k++){
+        if (fun.input(k).size() == inputDims[k])
+            fun.setInput( inputs[k], k );
+        else {
+            cerr << "(cpp) sxFunctionEvaluateDouble got fun.input(" << k << ").size(): " << fun.input(k).size()
+                 << "but inputDims[" << k << "] is: " << inputDims[k] << endl;
+            return 3;
+        }
+    }
 
     fun.evaluate();
 
-    for (int k=0; k<numOutputs; k++)
-        fun.getOutput( *(outputs[k]), k );
+    for (int k=0; k<numOutputs; k++){
+        if (fun.output(k).size() == outputDims[k])
+            fun.getOutput( outputs[k], k );
+        else {
+            cerr << "(cpp) sxFunctionEvaluateDouble got fun.output(" << k << ").size(): " << fun.output(k).size()
+                 << "but outputDims[" << k << "] is: " << outputDims[k] << endl;
+            return 4;
+        }
+    }
 }
 
 void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],

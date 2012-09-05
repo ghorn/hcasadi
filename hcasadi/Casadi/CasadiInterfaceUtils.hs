@@ -1,10 +1,8 @@
--- CasadiInterfaceUtils.hs
-
 {-# OPTIONS_GHC -Wall #-}
 
-module Casadi.Bindings.CasadiInterfaceUtils ( withForeignPtrs2
-                                            , withForeignPtrs3
-                                            ) where
+module Casadi.CasadiInterfaceUtils ( withForeignPtrs2
+                                   , withForeignPtrs3
+                                   ) where
 
 import Foreign.Ptr
 import Foreign.ForeignPtr
