@@ -1,13 +1,9 @@
-//#include "math.h"
-//#include <cstdio>
-//#include <sstream>
 #include <string.h>
 
-#include "sxmMisc.hpp"
+#include "sxm.hpp"
 
 #include <casadi/sx/sx.hpp>
 #include <casadi/sx/sx_tools.hpp>
-
 
 //#define COUT_MEMORY_MANAGEMENT
 
@@ -78,7 +74,7 @@ SXMatrix * newInt(int in){
 
 
 /******************** show *******************/
-void sxShow(char * stringOut, int strLen, const SXMatrix & sxm){
+void sxmShow(char * stringOut, int strLen, const SXMatrix & sxm){
     ostringstream sxOutStream;
     sxOutStream << sxm;
     strncpy(stringOut, sxOutStream.str().c_str(), strLen-1);
@@ -87,8 +83,43 @@ void sxShow(char * stringOut, int strLen, const SXMatrix & sxm){
         cerr << "(cpp) ERROR - sxShow trying to write " << sxOutStream.str().length() << " characters to output string with capacity of " << strLen << " characters\n";
 }
 
-
-///*************** bound ***************/
+// bound
 //void sxBound(const SXMatrix & lb, const SXMatrix & ub, const SXMatrix & sxIn, SXMatrix & sxOut){
 //    sxOut = sxIn + (ub - sxIn)*(sxIn > ub) + (lb - sxIn)*(sxIn < lb);
+//}
+
+// size
+int sxmSize1(const SXMatrix & sxm){
+    return sxm.size1();
+}
+
+int sxmSize2(const SXMatrix & sxm){
+    return sxm.size2();
+}
+
+// access
+SXMatrix * sxmAt(const SXMatrix & sxm, int n, int m){
+    return new SXMatrix(sxm[n,m]);
+}
+
+// concatenate
+SXMatrix * sxmVertCat(const SXMatrix * inputs[], int numInputs){
+    vector<SXMatrix> sxms(numInputs);
+    for (int k=0; k<numInputs; k++)
+        sxms.at(k) = *(inputs[k]);
+
+    return new SXMatrix(vertcat(sxms));
+}
+
+SXMatrix * sxmHorzCat(const SXMatrix * inputs[], int numInputs){
+    vector<SXMatrix> sxms(numInputs);
+    for (int k=0; k<numInputs; k++)
+        sxms.at(k) = *(inputs[k]);
+
+    return new SXMatrix(horzcat(sxms));
+}
+
+//// UNSAFE!!!!!!
+//void sxMatrixSet(const SX & sx, int n, int m, SXMatrix & mat){
+//    mat[n,m] = sx;
 //}

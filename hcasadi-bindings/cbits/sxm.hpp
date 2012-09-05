@@ -1,5 +1,5 @@
-#ifndef __SXM_MISC_H__
-#define __SXM_MISC_H__
+#ifndef __SXM_H__
+#define __SXM_H__
 
 #include <casadi/sx/sx.hpp>
 //#include <casadi/sx/sx_tools.hpp>
@@ -19,13 +19,24 @@ extern "C"{
 //    SXMatrix * newZeros(int n, int m);
 
     // show
-    void sxShow(char * stringOut, int strLen, const SXMatrix & sxm);
+    void sxmShow(char * stringOut, int strLen, const SXMatrix & sxm);
 
     // conditional
 //    void sxBound(const SXMatrix & lb, const SXMatrix & ub, const SXMatrix & sxIn, SXMatrix & sxOut);
+
+    // dimensions
+    int sxmSize1(const SXMatrix & sxm);
+    int sxmSize2(const SXMatrix & sxm);
+
+    // access
+    SXMatrix * sxmAt(const SXMatrix & sxm, int n, int m);
+
+    // concatenate
+    SXMatrix * sxmVertCat(const SXMatrix * inputs[], int numInputs);
+    SXMatrix * sxmHorzCat(const SXMatrix * inputs[], int numInputs);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //__SXM_MISC_H__
+#endif //__SXM_H__
