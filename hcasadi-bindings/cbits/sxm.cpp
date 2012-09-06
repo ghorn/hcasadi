@@ -103,6 +103,14 @@ SXMatrix * sxmAt(const SXMatrix & sxm, int n, int m){
 }
 
 // concatenate
+SXMatrix * sxmVecCat(const SXMatrix * inputs[], int numInputs){
+    vector<SXMatrix> sxms(numInputs);
+    for (int k=0; k<numInputs; k++)
+        sxms.at(k) = *(inputs[k]);
+
+    return new SXMatrix(veccat(sxms));
+}
+
 SXMatrix * sxmVertCat(const SXMatrix * inputs[], int numInputs){
     vector<SXMatrix> sxms(numInputs);
     for (int k=0; k<numInputs; k++)

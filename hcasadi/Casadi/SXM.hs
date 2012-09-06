@@ -9,6 +9,7 @@ module Casadi.SXM( SXM(..)
                  , symMat
                  , sxmSize
                  , sxmAt
+                 , sxmVecCat
                  , sxmVertCat
                  , sxmHorzCat
                    -- * internal
@@ -105,6 +106,7 @@ wrapSXMList c_fun inputs = mask_ $ do
   mapM_ (\(SXM d) -> touchForeignPtr d) inputs
   return (SXM out)
 
-sxmVertCat, sxmHorzCat :: [SXM] -> IO SXM
+sxmVecCat, sxmVertCat, sxmHorzCat :: [SXM] -> IO SXM
+sxmVecCat  = wrapSXMList c_sxmVecCat
 sxmVertCat = wrapSXMList c_sxmVertCat
 sxmHorzCat = wrapSXMList c_sxmHorzCat

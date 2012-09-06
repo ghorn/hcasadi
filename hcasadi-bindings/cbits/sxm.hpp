@@ -32,6 +32,7 @@ extern "C"{
     SXMatrix * sxmAt(const SXMatrix & sxm, int n, int m);
 
     // concatenate
+    SXMatrix * sxmVecCat(const SXMatrix * inputs[], int numInputs);
     SXMatrix * sxmVertCat(const SXMatrix * inputs[], int numInputs);
     SXMatrix * sxmHorzCat(const SXMatrix * inputs[], int numInputs);
 

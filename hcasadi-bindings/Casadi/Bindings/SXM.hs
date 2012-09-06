@@ -11,6 +11,7 @@ module Casadi.Bindings.SXM ( SXMRaw
                            , c_sxmSize1
                            , c_sxmSize2
                            , c_sxmAt
+                           , c_sxmVecCat
                            , c_sxmVertCat
                            , c_sxmHorzCat
                            ) where
@@ -29,5 +30,6 @@ foreign import ccall unsafe "sxm.hpp sxmShow"    c_sxmShow :: Ptr CChar -> CInt 
 foreign import ccall unsafe "sxm.hpp sxmSize1"    c_sxmSize1 :: Ptr SXMRaw -> IO CInt
 foreign import ccall unsafe "sxm.hpp sxmSize2"    c_sxmSize2 :: Ptr SXMRaw -> IO CInt
 foreign import ccall unsafe "sxm.hpp sxmAt" c_sxmAt :: Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxm.hpp sxmVecCat"  c_sxmVecCat  :: Ptr (Ptr SXMRaw) -> CInt -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxm.hpp sxmVertCat" c_sxmVertCat :: Ptr (Ptr SXMRaw) -> CInt -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxm.hpp sxmHorzCat" c_sxmHorzCat :: Ptr (Ptr SXMRaw) -> CInt -> IO (Ptr SXMRaw)
