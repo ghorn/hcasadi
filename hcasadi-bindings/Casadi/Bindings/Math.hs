@@ -49,6 +49,6 @@ foreign import ccall unsafe "sxmMath.hpp sxmArccos" c_sxmArccos :: Ptr SXMRaw ->
 foreign import ccall unsafe "sxmMath.hpp sxmArctan" c_sxmArctan :: Ptr SXMRaw -> IO (Ptr SXMRaw)
 
 --------------------- matrix -------------------
-foreign import ccall unsafe "sxmMM"        c_sxmMM :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
-foreign import ccall unsafe "sxmTranspose" c_sxmTranspose :: Ptr SXMRaw -> IO (Ptr SXMRaw)
-foreign import ccall unsafe "sxmInv"       c_sxmInv       :: Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMath.hpp sxmMM"        c_sxmMM :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMath.hpp sxmTranspose" c_sxmTranspose :: Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMath.hpp sxmInv"       c_sxmInv       :: Ptr SXMRaw -> IO (Ptr SXMRaw)

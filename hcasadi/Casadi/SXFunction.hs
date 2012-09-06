@@ -10,6 +10,8 @@ module Casadi.SXFunction ( SXFunction(..)
                          , sxFunctionOutputSize
                          , sxFunctionOutputSize1
                          , sxFunctionOutputSize2
+                         , sxFunctionUnsafeEval
+                         , sxFunctionEval
 
 --                         , sxFunctionEvaluate
 --                         , sxFunctionEvaluateLists
@@ -24,28 +26,23 @@ module Casadi.SXFunction ( SXFunction(..)
 
 import Control.Applicative ( (<$>) )
 
-import qualified Control.Exception(catch)
-import Foreign.C
-import Foreign.ForeignPtr hiding (unsafeForeignPtrToPtr)
-import Foreign.ForeignPtr.Unsafe
-import Foreign.Ptr
-import Foreign.Marshal(newArray)
-import Control.Exception(mask_)
-import System.IO.Unsafe(unsafePerformIO)
-import System.IO
-import Text.Printf
+import Foreign.C ( CDouble(..) )
+import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchForeignPtr )
+import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
+import Foreign.Ptr ( Ptr )
+import Foreign.Marshal ( newArray, mallocArray, free, finalizerFree )
+import Control.Exception ( mask_ )
+--import System.IO.Unsafe(unsafePerformIO)
+--import System.IO
+--import Text.Printf
 --import System.Process
-import System.Exit(ExitCode(..))
-import Debug.Trace
+--import System.Exit(ExitCode(..))
+--import Debug.Trace
 --import Data.Time.Clock
 
 import Casadi.Bindings.SXM
 import Casadi.Bindings.SXFunction
 import Casadi.SXM
---import Casadi.DMatrix
---import Casadi.Matrix
-import Casadi.CasadiInterfaceUtils
-
 
 newtype SXFunction = SXFunction (ForeignPtr SXFunctionRaw)
 
@@ -75,206 +72,68 @@ sxFunctionCreate inputs outputs = mask_ $ do
   
   return $ SXFunction funRaw
   
---foreign import ccall unsafe "sxFunctionGetInputsSX" c_sxFunctionGetInputsSX
---  :: Ptr SXFunctionRaw -> CInt -> Ptr SXMRaw -> IO ()
---foreign import ccall unsafe "sxFunctionGetOutputsSX" c_sxFunctionGetOutputsSX
---  :: Ptr SXFunctionRaw -> CInt -> Ptr SXMRaw -> IO ()
---foreign import ccall unsafe "sxFunctionGradient" c_sxFunctionGradient
---  :: Ptr SXFunctionRaw -> CInt -> Ptr SXMRaw -> IO ()
---foreign import ccall unsafe "sxFunctionJacobian" c_sxFunctionJacobian
---  :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMRaw -> IO ()
---foreign import ccall unsafe "sxFunctionHessian" c_sxFunctionHessian
---  :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMRaw -> IO ()
---
---foreign import ccall unsafe "generateCCode" c_generateCCode
---  :: Ptr CChar -> Ptr SXFunctionRaw -> IO CDouble
---foreign import ccall unsafe "createExternalFunction" c_createExternalFunction
---  :: Ptr CChar -> IO (Ptr SXFunctionRaw)
-
-
-
-
 --------------------- getters -----------------------
---foreign import ccall unsafe "sxFunctionNumInputs" c_sxFunctionNumInputs
---  :: Ptr SXFunctionRaw -> IO CInt
---foreign import ccall unsafe "sxFunctionNumOutputs" c_sxFunctionNumOutputs
---  :: Ptr SXFunctionRaw -> IO CInt
---foreign import ccall unsafe "sxFunctionInputSize" c_sxFunctionInputSize
---  :: CInt -> Ptr SXFunctionRaw -> IO CInt
---foreign import ccall unsafe "sxFunctionInputSize1" c_sxFunctionInputSize1
---  :: CInt -> Ptr SXFunctionRaw -> IO CInt
---foreign import ccall unsafe "sxFunctionInputSize2" c_sxFunctionInputSize2
---  :: CInt -> Ptr SXFunctionRaw -> IO CInt
---foreign import ccall unsafe "sxFunctionOutputSize" c_sxFunctionOutputSize
---  :: CInt -> Ptr SXFunctionRaw -> IO CInt
---foreign import ccall unsafe "sxFunctionOutputSize1" c_sxFunctionOutputSize1
---  :: CInt -> Ptr SXFunctionRaw -> IO CInt
---foreign import ccall unsafe "sxFunctionOutputSize2" c_sxFunctionOutputSize2
---  :: CInt -> Ptr SXFunctionRaw -> IO CInt
-
 sxFunctionNumInputs, sxFunctionNumOutputs :: SXFunction -> IO Int
 sxFunctionNumInputs  (SXFunction f) = mask_ $ fromIntegral <$> withForeignPtr f c_sxFunctionNumInputs
 sxFunctionNumOutputs (SXFunction f) = mask_ $ fromIntegral <$> withForeignPtr f c_sxFunctionNumOutputs
 
-sxFunctionInputSize, sxFunctionInputSize1, sxFunctionInputSize2 :: SXFunction -> CInt -> IO Int
-sxFunctionInputSize (SXFunction f) k = mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionInputSize k)
-sxFunctionInputSize1 (SXFunction f) k = mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionInputSize1 k)
-sxFunctionInputSize2 (SXFunction f) k = mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionInputSize2 k)
+sxFunctionInputSize, sxFunctionInputSize1, sxFunctionInputSize2 :: SXFunction -> Int -> IO Int
+sxFunctionInputSize  (SXFunction f) k =
+  mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionInputSize (fromIntegral k))
+sxFunctionInputSize1 (SXFunction f) k =
+  mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionInputSize1 (fromIntegral k))
+sxFunctionInputSize2 (SXFunction f) k =
+  mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionInputSize2 (fromIntegral k))
 
-sxFunctionOutputSize, sxFunctionOutputSize1, sxFunctionOutputSize2 :: SXFunction -> CInt -> IO Int
-sxFunctionOutputSize (SXFunction f) k = mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionOutputSize k)
-sxFunctionOutputSize1 (SXFunction f) k = mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionOutputSize1 k)
-sxFunctionOutputSize2 (SXFunction f) k = mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionOutputSize2 k)
-
-
-
---checkSXFunctionDimensions :: SXFunction -> IO ()
---checkSXFunctionDimensions fun = do
---                        
---  let sxFunctionNumInputs :: SXFunction -> IO Int
---      sxFunctionNumInputs fun' = do
---        num <- withForeignPtr (sxFunRaw fun') c_sxFunctionGetNumInputs
---        return $ fromIntegral num
---      
---      sxFunctionNumOutputs :: SXFunction -> IO Int
---      sxFunctionNumOutputs fun' = do
---        num <- withForeignPtr (sxFunRaw fun') c_sxFunctionGetNumOutputs
---        return $ fromIntegral num
---      
---      sxFunctionGetInputDim :: SXFunction -> Int -> IO (Int, Int)
---      sxFunctionGetInputDim fun' idx = do
---        size1 <- withForeignPtr (sxFunRaw fun') $ c_sxFunctionGetInputSize1 (fromIntegral idx)
---        size2 <- withForeignPtr (sxFunRaw fun') $ c_sxFunctionGetInputSize2 (fromIntegral idx)
---        return (fromIntegral size1, fromIntegral size2)
---      
---      sxFunctionGetOutputDim :: SXFunction -> Int -> IO (Int, Int)
---      sxFunctionGetOutputDim fun' idx = do
---        size1 <- withForeignPtr (sxFunRaw fun') $ c_sxFunctionGetOutputSize1 (fromIntegral idx)
---        size2 <- withForeignPtr (sxFunRaw fun') $ c_sxFunctionGetOutputSize2 (fromIntegral idx)
---        return (fromIntegral size1, fromIntegral size2)
---
---  numInputs <- sxFunctionNumInputs fun
---  numOutputs <- sxFunctionNumOutputs fun
---  inputDim <- mapM (sxFunctionGetInputDim fun) [0..numInputs - 1]
---  outputDim <- mapM (sxFunctionGetOutputDim fun) [0..numOutputs - 1]
---  
---  let ret
---        | numInputs  /= sxFunNumInputs fun  = error "checkSXFunctionDimensions got bad numInputs"
---        | numOutputs /= sxFunNumOutputs fun = error "checkSXFunctionDimensions got bad numOutputs"
---        | inputDim   /= sxFunInputDims fun  = error "checkSXFunctionDimensions got bad inputDim"
---        | outputDim  /= sxFunOutputDims fun = error "checkSXFunctionDimensions got bad outputDim"
---        | otherwise                         = ()
---  return $ ret `seq` ret
-  
-  
---sxFunctionGetInputsSX :: SXFunction -> Int -> SXM
---{-# NOINLINE sxFunctionGetInputsSX #-}
---sxFunctionGetInputsSX fun idx = trace "why are you using sxFunctionGetInputsSX?" $ unsafePerformIO $ do
---  if idx >= sxFunNumInputs fun
---    then error $ printf "Error in sxFunctionGetInputsSX - requested input index: %d >= numInputs (SXFunction fun): %d" idx (sxFunNumInputs fun)
---    else do return ()
---
---  SXM mat <- sxMatrixNewZeros (1::Int,1::Int)
---  withForeignPtrs2 (\fun' mat' -> c_sxFunctionGetInputsSX fun' (fromIntegral idx) mat') (sxFunRaw fun) mat
---  return (SXM mat)
---
---
---sxFunctionGetOutputsSX :: SXFunction -> Int -> SXM
---{-# NOINLINE sxFunctionGetOutputsSX #-}
---sxFunctionGetOutputsSX fun idx = trace "why are you using sxFunctionGetOutputsSX?" $ unsafePerformIO $ do
---  if idx >= sxFunNumOutputs fun
---    then error $ printf "Error in sxFunctionGetOutputsSX - requested output index: %d >= numOutputs (SXFunction fun): %d" idx (sxFunNumOutputs fun)
---    else do return ()
---
---  SXM mat <- sxMatrixNewZeros (1::Int,1::Int)
---  withForeignPtrs2 (\fun' mat' -> c_sxFunctionGetOutputsSX fun' (fromIntegral idx) mat') (sxFunRaw fun) mat
---  return (SXM mat)
-
-
-------------------------- AD -----------------------
---sxFunctionGradientAt :: SXFunction -> Int -> SXM
---{-# NOINLINE sxFunctionGradientAt #-}
---sxFunctionGradientAt fun idxInput = unsafePerformIO $ do
---  -- don't take gradient with respect to non-existant input
---  if idxInput >= sxFunNumInputs fun
---    then error $ printf "Error in sxFunctionGradientAt - requested gradient index: %d >= numInputs fun: %d" idxInput (sxFunNumInputs fun)
---    else do return ()
---
---  -- don't take gradient of vector valued function
---  if (1,1) /= head (sxFunOutputDims fun)
---    then error $ printf "Error in sxFunctionGradientAt - requested gradient of non-scalar"
---    else do return ()
---
---  SXM mat <- sxMatrixNewZeros (1::Int,1::Int)
---  withForeignPtrs2 (\fun' mat' -> c_sxFunctionGradient fun' (fromIntegral idxInput) mat') (sxFunRaw fun) mat
---  return $ (SXM mat)
---
---
---sxFunctionGradients :: SXFunction -> [SXM]
---sxFunctionGradients fun = map (sxFunctionGradientAt fun) $ take (sxFunNumInputs fun) [0..]
---
---
---sxFunctionJacobianAt :: SXFunction -> (Int, Int) -> SXM
---{-# NOINLINE sxFunctionJacobianAt #-}
---sxFunctionJacobianAt fun (idx0, idx1) = unsafePerformIO $ do
---  -- don't take jacobian with respect to non-existant output
---  if idx0 >= sxFunNumOutputs fun
---    then error $ printf "Error in sxFunctionJacobianAt - requested jacobian index: (%d,%d) is outside numOutputs fun: %d" idx0 idx1 (sxFunNumOutputs fun)
---    else do return ()
---
---  -- don't take jacobian with respect to non-existant input
---  if idx1 >= sxFunNumOutputs fun
---    then error $ printf "Error in sxFunctionJacobianAt - requested jacobian index: (%d,%d) is outside numInputs fun: %d" idx0 idx1 (sxFunNumInputs fun)
---    else do return ()
---
---  SXM mat <- sxMatrixNewZeros (1::Int,1::Int)
---  withForeignPtrs2 (\fun' mat' -> c_sxFunctionJacobian fun' (fromIntegral idx0) (fromIntegral idx1) mat') (sxFunRaw fun) mat
---  return $ (SXM mat)
---
---
---sxFunctionHessianAt :: SXFunction -> (Int, Int) -> SXM
---{-# NOINLINE sxFunctionHessianAt #-}
---sxFunctionHessianAt fun (idx0, idx1) = unsafePerformIO $ do
---  -- don't take hessian with respect to non-existant input
---  if any (\x -> x >= sxFunNumInputs fun) [idx0, idx1]
---    then error $ printf "Error in sxFunctionHessianAt - requested hessian index: (%d,%d) >= numInputs fun: %d" idx0 idx1 (sxFunNumInputs fun)
---    else do return ()
---
---  -- don't take hessian of vector valued function
---  if (1,1) /= head (sxFunOutputDims fun)
---    then error $ printf "Error in sxFunctionHessianAt - requested hessian of non-scalar"
---    else do return ()
---
---  SXM mat <- sxMatrixNewZeros (1::Int,1::Int)
---  withForeignPtrs2 (\fun' mat' -> c_sxFunctionHessian fun' (fromIntegral idx0) (fromIntegral idx1) mat') (sxFunRaw fun) mat
---  return $ (SXM mat)
-
+sxFunctionOutputSize, sxFunctionOutputSize1, sxFunctionOutputSize2 :: SXFunction -> Int -> IO Int
+sxFunctionOutputSize  (SXFunction f) k =
+  mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionOutputSize  (fromIntegral k))
+sxFunctionOutputSize1 (SXFunction f) k =
+  mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionOutputSize1 (fromIntegral k))
+sxFunctionOutputSize2 (SXFunction f) k =
+  mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionOutputSize2 (fromIntegral k))
 
 ------------------------- evaluate -----------------------------
---sxFunctionEvaluate :: SXFunction -> [(Ptr Double, Int)] -> IO [(Ptr Double,Int)]
---sxFunctionEvaluate fun inputs = do
---  let inputPtrs :: [Ptr Double]
---      inputPtrs = map fst inputs
---
---  outputs <- mapM newZeros (sxFunOutputDims fun)
---  let unsafeOutputPtrs :: [Ptr Double]
---      unsafeOutputPtrs = map (\m -> unsafeForeignPtrToPtr (getForeignPtr m)) outputs
---  
---  inputPtrArray <- newArray unsafeInputPtrs
---  outputPtrArray <- newArray unsafeOutputPtrs
---  
---  let nIn = fromIntegral $ length inputs
---      nOut = fromIntegral$ length outputs
---
---  let eval :: CInt -> Ptr (Ptr c) -> CInt -> Ptr (Ptr c) -> Ptr SXFunctionRaw -> IO ()
---      eval = c_sxFunctionEvaluate (head inputs)
---  withForeignPtr (sxFunRaw fun) (eval nIn inputPtrArray nOut outputPtrArray)
---  
---  mapM_ (\d -> touchForeignPtr (getForeignPtr d)) inputs
---  mapM_ (\d -> touchForeignPtr (getForeignPtr d)) outputs
---  
---  return outputs
+-- | provide pointers to input data and output data (along with the number of doubles in each)
+sxFunctionUnsafeEval :: SXFunction -> [(Ptr CDouble, Int)] -> [(Ptr CDouble, Int)] -> IO (Maybe Int)
+sxFunctionUnsafeEval (SXFunction rawFun) inputs outputs = do
+  let (inputPtrs,inputSizes) = unzip inputs
+      numInputs = length inputs
 
+      (outputPtrs,outputSizes) = unzip outputs
+      numOutputs = length outputs
+
+  inputPtrArray  <- newArray inputPtrs
+  outputPtrArray <- newArray outputPtrs
+
+  inputSizesArray  <- newArray (map fromIntegral inputSizes)
+  outputSizesArray <- newArray (map fromIntegral outputSizes)
+
+  ret <- withForeignPtr rawFun $ c_sxFunctionEvalDouble
+         (fromIntegral numInputs)   inputPtrArray  inputSizesArray
+         (fromIntegral numOutputs) outputPtrArray outputSizesArray
+
+  free inputPtrArray
+  free outputPtrArray
+
+  free inputSizesArray
+  free outputSizesArray
+
+  return $ case ret of
+    0 -> Nothing
+    n -> Just (fromIntegral n)
+
+sxFunctionEval :: SXFunction -> [(Ptr CDouble, Int)] -> IO [(ForeignPtr CDouble, Int)]
+sxFunctionEval fun inputs = do
+  numOutputs <- sxFunctionNumOutputs fun
+  outputSizes <- mapM (sxFunctionOutputSize fun) (take numOutputs [0..])
+  outputPtrs <- mapM mallocArray outputSizes
+  ret <- sxFunctionUnsafeEval fun inputs (zip outputPtrs outputSizes)
+  outputs <- mapM (newForeignPtr finalizerFree) outputPtrs
+
+  return $ case ret of
+    Nothing -> zip outputs outputSizes
+    Just n -> error $ "sxFunctionUnsafeEval returned error code " ++ show n
 
 --sxFunctionEvaluateLists :: SXFunction -> [[[Double]]] -> [[[Double]]]
 --{-# NOINLINE sxFunctionEvaluateLists #-}

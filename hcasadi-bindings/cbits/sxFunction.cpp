@@ -113,9 +113,9 @@ static void sxFunctionAssertGoodDimensions(int numInputs, const SXMatrix * input
         throw 1;
 }
 
-int sxFunctionEvaluateDouble( const int numInputs, const double * inputs[], const int inputDims[],
-                              const int numOutputs, double * outputs[], const int outputDims[],
-                              FX & fun ){
+int sxFunctionEvalDouble( const int numInputs, const double * inputs[], const int inputSizes[],
+                          const int numOutputs, double * outputs[], const int outputSizes[],
+                          FX & fun ){
     if (numInputs != fun.getNumInputs()){
         cerr << "(cpp) sxFunctionEvaluateDouble got numInputs: " << numInputs
              << " but fun.getNumInputs() is: " << fun.getNumInputs() << endl;
@@ -128,11 +128,11 @@ int sxFunctionEvaluateDouble( const int numInputs, const double * inputs[], cons
     }
 
     for (int k=0; k<numInputs; k++){
-        if (fun.input(k).size() == inputDims[k])
+        if (fun.input(k).size() == inputSizes[k])
             fun.setInput( inputs[k], k );
         else {
             cerr << "(cpp) sxFunctionEvaluateDouble got fun.input(" << k << ").size(): " << fun.input(k).size()
-                 << "but inputDims[" << k << "] is: " << inputDims[k] << endl;
+                 << "but inputSizes[" << k << "] is: " << inputSizes[k] << endl;
             return 3;
         }
     }
@@ -140,11 +140,11 @@ int sxFunctionEvaluateDouble( const int numInputs, const double * inputs[], cons
     fun.evaluate();
 
     for (int k=0; k<numOutputs; k++){
-        if (fun.output(k).size() == outputDims[k])
+        if (fun.output(k).size() == outputSizes[k])
             fun.getOutput( outputs[k], k );
         else {
             cerr << "(cpp) sxFunctionEvaluateDouble got fun.output(" << k << ").size(): " << fun.output(k).size()
-                 << "but outputDims[" << k << "] is: " << outputDims[k] << endl;
+                 << "but outputSizes[" << k << "] is: " << outputSizes[k] << endl;
             return 4;
         }
     }
