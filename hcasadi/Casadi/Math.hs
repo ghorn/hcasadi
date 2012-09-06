@@ -22,6 +22,10 @@ module Casadi.Math ( -- * unary
                    , sxmMM
                    , sxmTranspose
                    , sxmInv
+                     -- * AD
+                   , sxmGradient
+                   , sxmHessian
+                   , sxmJacobian
                    ) where
 
 import Foreign.Ptr
@@ -30,7 +34,7 @@ import Control.Exception(mask_)
 
 import Casadi.Bindings.SXM
 import Casadi.Bindings.Math
-import Casadi.SXM
+import Casadi.SXM ( SXM(..) )
 import Casadi.CasadiInterfaceUtils ( withForeignPtrs2 )
 
 sxmWrapBinary :: (Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)) -> SXM -> SXM -> IO SXM
@@ -72,3 +76,9 @@ sxmMM = sxmWrapBinary c_sxmMM
 sxmTranspose, sxmInv :: SXM -> IO SXM
 sxmTranspose = sxmWrapUnary c_sxmTranspose
 sxmInv       = sxmWrapUnary c_sxmInv
+
+----------------------- AD --------------------
+sxmGradient,sxmHessian,sxmJacobian :: SXM -> SXM -> IO SXM
+sxmGradient = sxmWrapBinary c_sxmGradient
+sxmHessian  = sxmWrapBinary c_sxmHessian
+sxmJacobian = sxmWrapBinary c_sxmJacobian

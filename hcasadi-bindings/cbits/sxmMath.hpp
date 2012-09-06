@@ -40,6 +40,10 @@ extern "C"{
     SXMatrix * sxmTranspose(const SXMatrix & sxm);
     SXMatrix * sxmInv(const SXMatrix & sxm);
 
+    // differentiation
+    SXMatrix * sxmGradient(const SX & expression, const SXMatrix & arguments);
+    SXMatrix * sxmHessian(const SX & expression, const SXMatrix & arguments);
+    SXMatrix * sxmJacobian(const SXMatrix & expression, const SXMatrix & arguments);
 
 #ifdef __cplusplus
 }

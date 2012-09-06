@@ -108,3 +108,24 @@ SXMatrix * sxmTranspose(const SXMatrix & sxm){
 SXMatrix * sxmInv(const SXMatrix & sxm){
     return new SXMatrix(inv(sxm));
 }
+
+// differentiation
+SXMatrix * sxmGradient(const SX & expression, const SXMatrix & arguments){
+    SXMatrix output = gradient(expression, arguments);
+    makeDense(output);
+    return new SXMatrix(output);
+}
+
+SXMatrix * sxmHessian(const SX & expression, const SXMatrix & arguments){
+    SXMatrix theGradient = gradient(expression, arguments);
+    makeDense( theGradient );
+    SXMatrix output = jacobian( theGradient, arguments );
+    makeDense( output );
+    return new SXMatrix( output );
+}
+
+SXMatrix * sxmJacobian(const SXMatrix & expression, const SXMatrix & arguments){
+    SXMatrix output = jacobian(expression, arguments);
+    makeDense(output);
+    return new SXMatrix( output );
+}

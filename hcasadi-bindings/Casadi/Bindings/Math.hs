@@ -23,6 +23,10 @@ module Casadi.Bindings.Math ( -- * unary
                             , c_sxmMM
                             , c_sxmTranspose
                             , c_sxmInv
+                              -- * AD
+                            , c_sxmGradient
+                            , c_sxmHessian
+                            , c_sxmJacobian
                             ) where
 
 import Casadi.Bindings.SXM ( SXMRaw )
@@ -52,3 +56,8 @@ foreign import ccall unsafe "sxmMath.hpp sxmArctan" c_sxmArctan :: Ptr SXMRaw ->
 foreign import ccall unsafe "sxmMath.hpp sxmMM"        c_sxmMM :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmMath.hpp sxmTranspose" c_sxmTranspose :: Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmMath.hpp sxmInv"       c_sxmInv       :: Ptr SXMRaw -> IO (Ptr SXMRaw)
+
+--------------------- AD -------------------
+foreign import ccall unsafe "sxmMath.hpp sxmGradient" c_sxmGradient :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMath.hpp sxmHessian"  c_sxmHessian  :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMath.hpp sxmJacobian" c_sxmJacobian :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)
