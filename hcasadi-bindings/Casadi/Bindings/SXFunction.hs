@@ -14,9 +14,13 @@ module Casadi.Bindings.SXFunction ( SXFunctionRaw
                                   , c_sxFunctionOutputSize1
                                   , c_sxFunctionOutputSize2
                                   , c_sxFunctionEvalDouble
+                                  , c_sxFunctionSetOptionDouble
+                                  , c_sxFunctionSetOptionString
+                                  , c_sxFunctionSetOptionInt
+                                  , c_sxFunctionSetOptionBool
                                   ) where
 
-import Foreign.C ( CDouble(..), CInt(..) )
+import Foreign.C ( CDouble(..), CInt(..), CChar(..) )
 import Foreign.Ptr ( FunPtr, Ptr )
 
 import Casadi.Bindings.SXM
@@ -52,17 +56,16 @@ foreign import ccall unsafe "sxFunction.hpp sxFunctionEvalDouble" c_sxFunctionEv
      CInt -> Ptr (Ptr CDouble) -> Ptr CInt ->
      Ptr SXFunctionRaw -> IO CInt
 
---foreign import ccall unsafe "sxFunctionGetInputsSX" c_sxFunctionGetInputsSX
---  :: Ptr SXFunctionRaw -> CInt -> Ptr SXMRaw -> IO ()
---foreign import ccall unsafe "sxFunctionGetOutputsSX" c_sxFunctionGetOutputsSX
---  :: Ptr SXFunctionRaw -> CInt -> Ptr SXMRaw -> IO ()
---foreign import ccall unsafe "sxFunctionGradient" c_sxFunctionGradient
---  :: Ptr SXFunctionRaw -> CInt -> Ptr SXMRaw -> IO ()
---foreign import ccall unsafe "sxFunctionJacobian" c_sxFunctionJacobian
---  :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMRaw -> IO ()
---foreign import ccall unsafe "sxFunctionHessian" c_sxFunctionHessian
---  :: Ptr SXFunctionRaw -> CInt -> CInt -> Ptr SXMRaw -> IO ()
---
+----------------- set options -----------------
+foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionDouble" c_sxFunctionSetOptionDouble
+  :: Ptr CChar -> CDouble -> Ptr SXFunctionRaw -> IO ()
+foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionString" c_sxFunctionSetOptionString
+  :: Ptr CChar -> Ptr CChar -> Ptr SXFunctionRaw -> IO ()
+foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionInt" c_sxFunctionSetOptionInt
+  :: Ptr CChar -> CInt -> Ptr SXFunctionRaw -> IO ()
+foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionBool" c_sxFunctionSetOptionBool
+  :: Ptr CChar -> CInt -> Ptr SXFunctionRaw -> IO ()
+
 --foreign import ccall unsafe "generateCCode" c_generateCCode
 --  :: Ptr CChar -> Ptr SXFunctionRaw -> IO CDouble
 --foreign import ccall unsafe "createExternalFunction" c_createExternalFunction

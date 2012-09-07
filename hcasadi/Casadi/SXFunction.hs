@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# Language TypeSynonymInstances #-}
+{-# Language FlexibleInstances #-}
 
 module Casadi.SXFunction ( SXFunction(..)
                          , sxFunctionCreate
@@ -12,6 +14,7 @@ module Casadi.SXFunction ( SXFunction(..)
                          , sxFunctionOutputSize2
                          , sxFunctionUnsafeEval
                          , sxFunctionEval
+                         , sxFunctionUnsafeSetOption
 
 --                         , sxFunctionEvaluate
 --                         , sxFunctionEvaluateLists
@@ -26,7 +29,7 @@ module Casadi.SXFunction ( SXFunction(..)
 
 import Control.Applicative ( (<$>) )
 
-import Foreign.C ( CDouble(..) )
+import Foreign.C ( CDouble(..), newCString )
 import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchForeignPtr )
 import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
 import Foreign.Ptr ( Ptr )
@@ -135,13 +138,33 @@ sxFunctionEval fun inputs = do
     Nothing -> zip outputs outputSizes
     Just n -> error $ "sxFunctionUnsafeEval returned error code " ++ show n
 
---sxFunctionEvaluateLists :: SXFunction -> [[[Double]]] -> [[[Double]]]
---{-# NOINLINE sxFunctionEvaluateLists #-}
---sxFunctionEvaluateLists fun inputs = unsafePerformIO $ do
---  let outNew = map toLists $ sxFunctionEvaluate fun $ (map fromLists inputs :: [DMatrix])
---  return outNew
---
---
+class SXFunctionOption a where
+  sxFunctionUnsafeSetOption :: SXFunction -> String -> a -> IO ()
+
+instance SXFunctionOption Double where
+  sxFunctionUnsafeSetOption (SXFunction rawFun) name' val = do
+    name <- newCString name'
+    withForeignPtr rawFun (c_sxFunctionSetOptionDouble name (realToFrac val))
+    free name
+instance SXFunctionOption String where
+  sxFunctionUnsafeSetOption (SXFunction rawFun) name' val' = do
+    name <- newCString name'
+    val <- newCString val'
+    withForeignPtr rawFun (c_sxFunctionSetOptionString name val)
+    free name
+    free val
+instance SXFunctionOption Int where
+  sxFunctionUnsafeSetOption (SXFunction rawFun) name' val = do
+    name <- newCString name'
+    withForeignPtr rawFun (c_sxFunctionSetOptionInt name (fromIntegral val))
+    free name
+instance SXFunctionOption Bool where
+  sxFunctionUnsafeSetOption (SXFunction rawFun) name' val = do
+    name <- newCString name'
+    let intVal = if val then 1 else 0
+    withForeignPtr rawFun (c_sxFunctionSetOptionBool name intVal)
+    free name
+
 --getMd5 :: String -> IO String
 --getMd5 filename = do
 --  (_, hStdout, _, p) <- runInteractiveCommand $ "md5sum " ++ filename

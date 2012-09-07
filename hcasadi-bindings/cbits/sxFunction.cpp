@@ -167,3 +167,18 @@ void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],
     for (int k=0; k<numOutputs; k++)
         *(outputs[k]) = outputVec.at(k);
 }
+
+// set options (unsafe!!)
+void sxFunctionSetOptionDouble(const char name[], const double val, SXFunction & fun){
+    fun.setOption(name, val);
+}
+void sxFunctionSetOptionString(const char name[], const char val[], SXFunction & fun){
+    fun.setOption(name, val);
+}
+void sxFunctionSetOptionInt(const char name[], const int val, SXFunction & fun){
+    fun.setOption(name, val);
+}
+void sxFunctionSetOptionBool(const char name[], const int val, SXFunction & fun){
+    if (val) fun.setOption(name, true);
+    else     fun.setOption(name, false);
+}

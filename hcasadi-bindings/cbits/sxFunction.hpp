@@ -35,6 +35,12 @@ extern "C"{
                                     int numOutputs, SXMatrix * outputs[],
                                     SXFunction & fun);
 
+    // options
+    void sxFunctionSetOptionDouble(const char name[], const double val, SXFunction & fun);
+    void sxFunctionSetOptionString(const char name[], const char val[], SXFunction & fun);
+    void sxFunctionSetOptionInt(const char name[], const int val, SXFunction & fun);
+    void sxFunctionSetOptionBool(const char name[], const int val, SXFunction & fun);
+
 #ifdef __cplusplus
 }
 #endif
