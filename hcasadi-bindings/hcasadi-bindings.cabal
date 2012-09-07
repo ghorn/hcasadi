@@ -16,7 +16,7 @@ Extra-source-files: cbits
 
 Library
   Exposed-modules:  Casadi.Bindings.Math
-                    Casadi.Bindings.NLP
+                    Casadi.Bindings.NLPSolver
                     Casadi.Bindings.SXM
                     Casadi.Bindings.SXFunction
 

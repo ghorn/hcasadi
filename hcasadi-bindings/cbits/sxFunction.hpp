@@ -14,6 +14,7 @@ extern "C"{
     // memory management
     SXFunction * sxFunctionCreate(const SXMatrix * sxIn[], int numInputs, const SXMatrix * sxOut[], int numOutputs);
     void sxFunctionDelete(SXFunction * const fun);
+    void sxFunctionInit(FX & fun);
 
     // getters
     int sxFunctionGetNumInputs(const FX & fun);
@@ -42,6 +43,9 @@ extern "C"{
     // options
     void sxFunctionSetOptionDouble(const char name[], const double val, SXFunction & fun);
     void sxFunctionSetOptionString(const char name[], const char val[], SXFunction & fun);
+    void sxFunctionSetOptionStringList( const char name[],
+                                        const int numStrings, const char * const val[],
+                                        SXFunction & fun );
     void sxFunctionSetOptionInt(const char name[], const int val, SXFunction & fun);
     void sxFunctionSetOptionBool(const char name[], const int val, SXFunction & fun);
 

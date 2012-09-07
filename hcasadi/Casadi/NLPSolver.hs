@@ -2,15 +2,14 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE EmptyDataDecls #-}
 
-module Casadi.NLP ( NLPSolver
-                  , NLPInput
-                  , NLPOutput
-                  , createIpoptSolver
-                  , solveNlp
-                  , nlpSolverUnsafeSetOption
-                  , nlpSolverUnsafeSetInput
-                  , nlpSolverUnsafeGetOutput
-                  ) where
+module Casadi.NLPSolver ( NLPSolver(..)
+                        , NLPInput
+                        , NLPOutput
+                        , createIpoptSolver
+                        , solveNlp
+                        , nlpSolverUnsafeSetInput
+                        , nlpSolverUnsafeGetOutput
+                        ) where
 
 import Foreign.C ( CDouble(..) )
 import Foreign.Marshal ( finalizerFree, malloc, mallocArray )
@@ -22,11 +21,13 @@ import Unsafe.Coerce ( unsafeCoerce )
 import Data.Vector.Storable ( Vector )
 import qualified Data.Vector.Storable as V
 
-import Casadi.Bindings.NLP
+import Casadi.Bindings.NLPSolver
+import Casadi.Bindings.SXFunction ( c_sxFunctionInit )
 import Casadi.SXM
 import Casadi.SXFunction
-
-data NLPSolver = NLPSolver (ForeignPtr NLPSolverRaw)
+import Casadi.NLPSolverOptions ( NLPSolverOption )
+import Casadi.NLPSolverOptionsInternal ( nlpSolverUnsafeSetOption )
+import Casadi.Types ( NLPSolver(..), SXFunction(..) )
 
 data NLPInput = NLP_X_INIT -- Decision variables initial guess (n x 1)  [x_init]
               | NLP_LBX -- Decision variables lower bound (n x 1), default -inf [lbx]
@@ -62,23 +63,23 @@ enumNLPOutputToInt NLP_LAMBDA_X = 3
 enumNLPOutputToInt NLP_G        = 4
 enumNLPOutputToInt NLP_NUM_OUT  = 5
 
-nlpSolverUnsafeSetOption :: SXFunctionOption a => NLPSolver -> String -> a -> IO ()
-nlpSolverUnsafeSetOption (NLPSolver solver) name val =
-  sxFunctionUnsafeSetOption (SXFunction (unsafeCoerce solver)) name val
-
-createIpoptSolver :: SXM -> SXM -> SXM -> IO NLPSolver
-createIpoptSolver (SXM designVars') (SXM objectiveFun') (SXM constraints') = do
+createIpoptSolver :: SXM -> SXM -> SXM -> [NLPSolverOption] -> IO NLPSolver
+createIpoptSolver (SXM designVars') (SXM objectiveFun') (SXM constraints') options = do
   let designVars   = unsafeForeignPtrToPtr designVars'
       objectiveFun = unsafeForeignPtrToPtr objectiveFun'
       constraints  = unsafeForeignPtrToPtr constraints'
   
-  solver <- c_createIpoptSolver designVars objectiveFun constraints >>= newForeignPtr c_deleteSolver
+  solverRaw <- c_createIpoptSolver designVars objectiveFun constraints >>= newForeignPtr c_deleteSolver
 
   touchForeignPtr designVars'
   touchForeignPtr objectiveFun'
   touchForeignPtr constraints'
 
-  return (NLPSolver solver)
+  let solver = NLPSolver solverRaw
+  mapM_ (nlpSolverUnsafeSetOption solver) options
+  withForeignPtr (unsafeCoerce solverRaw) c_sxFunctionInit
+
+  return solver
 
 nlpSolverUnsafeSetInput :: NLPSolver -> NLPInput -> Vector CDouble -> IO (Maybe Int)
 nlpSolverUnsafeSetInput (NLPSolver solver) idx val =

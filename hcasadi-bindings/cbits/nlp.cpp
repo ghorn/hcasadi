@@ -32,9 +32,6 @@ NLPSolver * createIpoptSolver( const SXMatrix & designVariables,
 
     IpoptSolver * solver = new IpoptSolver(ffcn,gfcn);
 
-    // initialize the solver
-    solver->init();
-
     return solver;
 }
 

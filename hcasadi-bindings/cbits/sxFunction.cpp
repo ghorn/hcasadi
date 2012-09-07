@@ -35,7 +35,6 @@ SXFunction * sxFunctionCreate(const SXMatrix * sxIn[], int numInputs, const SXMa
         outputs.at(k) = *(sxOut[k]);
 
     SXFunction * fun = new SXFunction(inputs, outputs);
-    fun->init();
 
 #ifdef COUT_MEMORY_MANAGEMENT
     cout << "(cpp) sxFunctionCreate {address: " << fun << "}\n";
@@ -44,6 +43,9 @@ SXFunction * sxFunctionCreate(const SXMatrix * sxIn[], int numInputs, const SXMa
     return fun;
 }
 
+void sxFunctionInit(FX & fun){
+    fun.init();
+}
 
 /*************** getters *****************/
 int sxFunctionGetNumInputs(const FX & fun){
@@ -188,6 +190,15 @@ void sxFunctionSetOptionDouble(const char name[], const double val, SXFunction &
 }
 void sxFunctionSetOptionString(const char name[], const char val[], SXFunction & fun){
     fun.setOption(name, val);
+}
+void sxFunctionSetOptionStringList( const char name[],
+                                    const int numStrings, const char * const val[],
+                                    SXFunction & fun )
+{
+    vector<string> strings;
+    for (int k=0; k<numStrings; k++)
+        strings.push_back( string(val[k]) );
+    fun.setOption(name, strings);
 }
 void sxFunctionSetOptionInt(const char name[], const int val, SXFunction & fun){
     fun.setOption(name, val);

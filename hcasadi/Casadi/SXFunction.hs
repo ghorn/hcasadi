@@ -1,10 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# Language TypeSynonymInstances #-}
-{-# Language FlexibleInstances #-}
 
-module Casadi.SXFunction ( SXFunction(..)
-                         , SXFunctionOption
-                         , sxFunctionCreate
+module Casadi.SXFunction ( sxFunctionCreate
                          , sxFunctionNumInputs
                          , sxFunctionNumOutputs
                          , sxFunctionInputSize
@@ -17,7 +13,6 @@ module Casadi.SXFunction ( SXFunction(..)
                          , sxFunctionUnsafeGetOutput
                          , sxFunctionUnsafeEval
                          , sxFunctionEval
-                         , sxFunctionUnsafeSetOption
 --                         , sxFunctionCompile
                          ) where
 
@@ -25,7 +20,7 @@ import Control.Applicative ( (<$>) )
 import Control.Exception ( mask_ )
 import Data.Vector.Storable ( Vector )
 import qualified Data.Vector.Storable as V
-import Foreign.C ( CDouble(..), newCString )
+import Foreign.C ( CDouble(..) )
 import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchForeignPtr )
 import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
 import Foreign.Ptr ( Ptr )
@@ -41,13 +36,14 @@ import Foreign.Marshal ( newArray, mallocArray, free, finalizerFree )
 import Casadi.Bindings.SXM
 import Casadi.Bindings.SXFunction
 import Casadi.WithForeignPtrs
-import Casadi.SXM
-
-newtype SXFunction = SXFunction (ForeignPtr SXFunctionRaw)
+import Casadi.SXM ( SXM(..) )
+import Casadi.SXFunctionOptions ( SXFunctionOption )
+import Casadi.SXFunctionOptionsInternal ( sxFunctionUnsafeSetOption )
+import Casadi.Types ( SXFunction(..) )
 
 -- | create SXFunction from list of inputs and ouputs
-sxFunctionCreate :: [SXM] -> [SXM] -> IO SXFunction
-sxFunctionCreate inputs outputs = mask_ $ do
+sxFunctionCreate :: [SXM] -> [SXM] -> [SXFunctionOption] -> IO SXFunction
+sxFunctionCreate inputs outputs options = mask_ $ do
   -- turn input/output SXM lists into [Ptr SXMRaw]
   let unsafeInputPtrs :: [Ptr SXMRaw]
       unsafeInputPtrs = map (\(SXM mat) -> unsafeForeignPtrToPtr mat) inputs
@@ -68,8 +64,12 @@ sxFunctionCreate inputs outputs = mask_ $ do
   -- touch all [ForeignPtr SXMRaw] for unsafeForeignPtrToPtr safety
   mapM_ (\(SXM d) -> touchForeignPtr d) inputs
   mapM_ (\(SXM d) -> touchForeignPtr d) outputs
+
+  let fun = SXFunction funRaw
+  mapM_ (sxFunctionUnsafeSetOption fun) options
+  withForeignPtr funRaw c_sxFunctionInit
   
-  return $ SXFunction funRaw
+  return fun
   
 --------------------- getters -----------------------
 sxFunctionNumInputs, sxFunctionNumOutputs :: SXFunction -> IO Int
@@ -152,33 +152,6 @@ sxFunctionEval fun inputs = do
   return $ case ret of
     Nothing -> zip outputs outputSizes
     Just n -> error $ "sxFunctionUnsafeEval returned error code " ++ show n
-
-class SXFunctionOption a where
-  sxFunctionUnsafeSetOption :: SXFunction -> String -> a -> IO ()
-
-instance SXFunctionOption Double where
-  sxFunctionUnsafeSetOption (SXFunction rawFun) name' val = do
-    name <- newCString name'
-    withForeignPtr rawFun (c_sxFunctionSetOptionDouble name (realToFrac val))
-    free name
-instance SXFunctionOption String where
-  sxFunctionUnsafeSetOption (SXFunction rawFun) name' val' = do
-    name <- newCString name'
-    val <- newCString val'
-    withForeignPtr rawFun (c_sxFunctionSetOptionString name val)
-    free name
-    free val
-instance SXFunctionOption Int where
-  sxFunctionUnsafeSetOption (SXFunction rawFun) name' val = do
-    name <- newCString name'
-    withForeignPtr rawFun (c_sxFunctionSetOptionInt name (fromIntegral val))
-    free name
-instance SXFunctionOption Bool where
-  sxFunctionUnsafeSetOption (SXFunction rawFun) name' val = do
-    name <- newCString name'
-    let intVal = if val then 1 else 0
-    withForeignPtr rawFun (c_sxFunctionSetOptionBool name intVal)
-    free name
 
 --getMd5 :: String -> IO String
 --getMd5 filename = do

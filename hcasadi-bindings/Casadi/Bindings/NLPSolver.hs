@@ -2,11 +2,11 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE EmptyDataDecls #-}
 
-module Casadi.Bindings.NLP ( NLPSolverRaw
-                           , c_deleteSolver
-                           , c_createIpoptSolver
-                           , c_solve
-                           ) where
+module Casadi.Bindings.NLPSolver ( NLPSolverRaw
+                                 , c_deleteSolver
+                                 , c_createIpoptSolver
+                                 , c_solve
+                                 ) where
 
 import Foreign.Ptr ( FunPtr, Ptr )
 
