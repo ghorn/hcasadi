@@ -113,6 +113,20 @@ static void sxFunctionAssertGoodDimensions(int numInputs, const SXMatrix * input
         throw 1;
 }
 
+int sxFunctionGetOutput ( const int outputIdx, const int valSize, const double val[], FX & fun ) {
+    if (fun.output(outputIdx).size() != valSize)
+        return fun.output(outputIdx).size();
+    fun.setOutput( val, outputIdx );
+    return -1;
+}
+
+int sxFunctionSetInput ( const int inputIdx, const int valSize, const double val[], FX & fun ) {
+    if (fun.input(inputIdx).size() != valSize)
+        return fun.input(inputIdx).size();
+    fun.setInput( val, inputIdx );
+    return -1;
+}
+
 int sxFunctionEvalDouble( const int numInputs, const double * inputs[], const int inputSizes[],
                           const int numOutputs, double * outputs[], const int outputSizes[],
                           FX & fun ){

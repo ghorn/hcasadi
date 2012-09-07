@@ -128,6 +128,6 @@ SXMatrix * sxmHorzCat(const SXMatrix * inputs[], int numInputs){
 }
 
 //// UNSAFE!!!!!!
-//void sxMatrixSet(const SX & sx, int n, int m, SXMatrix & mat){
+//void sxMatrixSet(const SXMatrix & sx, int n, int m, SXMatrix & mat){
 //    mat[n,m] = sx;
 //}

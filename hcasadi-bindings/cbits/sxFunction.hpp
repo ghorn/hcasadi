@@ -26,6 +26,10 @@ extern "C"{
     int sxFunctionOutputSize( int idx, const SXFunction & fun );
     int sxFunctionOutputSize1( int idx, const SXFunction & fun );
     int sxFunctionOutputSize2( int idx, const SXFunction & fun );
+    int sxFunctionGetOutput ( const int outputIdx, const int valSize, const double val[], FX & fun );
+
+    // setters
+    int sxFunctionSetInput ( const int inputIdx, const int valSize, const double val[], FX & fun );
 
     // evaluate
     int sxFunctionEvalDouble( const int numInputs, const double * inputs[], const int inputSizes[],

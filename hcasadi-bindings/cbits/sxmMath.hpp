@@ -41,8 +41,8 @@ extern "C"{
     SXMatrix * sxmInv(const SXMatrix & sxm);
 
     // differentiation
-    SXMatrix * sxmGradient(const SX & expression, const SXMatrix & arguments);
-    SXMatrix * sxmHessian(const SX & expression, const SXMatrix & arguments);
+    SXMatrix * sxmGradient(const SXMatrix & expression, const SXMatrix & arguments);
+    SXMatrix * sxmHessian(const SXMatrix & expression, const SXMatrix & arguments);
     SXMatrix * sxmJacobian(const SXMatrix & expression, const SXMatrix & arguments);
 
 #ifdef __cplusplus

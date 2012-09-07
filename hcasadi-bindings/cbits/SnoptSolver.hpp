@@ -31,7 +31,7 @@ class SnoptSolver
 {
 public:
     ~SnoptSolver(void);
-    SnoptSolver(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints);
+    SnoptSolver(const SXMatrix & designVariables, const SXMatrix & objFun, const SXMatrix & constraints);
 
     void setGuess(const DMatrix & _xGuess);
     void setXBounds(const DMatrix & _xlb, const DMatrix & _xub);

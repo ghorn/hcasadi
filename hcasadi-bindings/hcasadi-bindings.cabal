@@ -16,30 +16,51 @@ Extra-source-files: cbits
 
 Library
   Exposed-modules:  Casadi.Bindings.Math
+                    Casadi.Bindings.NLP
                     Casadi.Bindings.SXM
                     Casadi.Bindings.SXFunction
 
   Build-depends: base >= 4 && < 5
   
 --  pkgconfig-depends:   casadi
-  Extra-libraries: casadi
+  Extra-libraries:
+                   -- casadi stuff:
+                   casadi
+                   ipopt_interface
+                   -- ipopt stuff:
+                   ipopt
+                   lapack
+                   dl
+                   coinmumps
+                   pthread
+                   coinhsl
+                   blas
+                   gfortran
+                   m
+                   gcc_s
+                   quadmath
+                   coinmetis  
                    stdc++
+                   m
   Extra-lib-dirs:  
-                   /home/ghorn/casadi/distribute-static/lib
---                   /home/ghorn/casadi/distribute-shared/lib
+                   /home/ghorn/casadi/deploy-static/lib
+--                   /home/ghorn/casadi/deploy-shared/lib
 --                   /usr/local/lib
+                   /home/ghorn/CoinIpopt/deploy-static/lib
+--                   /home/ghorn/CoinIpopt/deploy-shared/lib
   Include-dirs: 
 --                cbits
-                /home/ghorn/casadi/distribute-static/include/casadi
---                /home/ghorn/casadi/distribute-shared/include/casadi
+                /home/ghorn/casadi/deploy-static/include/casadi
+--                /home/ghorn/casadi/deploy-shared/include/casadi
 --                /usr/local/include/casadi
 --  Ghc-options: -pgml g++
 
-  C-sources:         cbits/sxm.cpp
+  C-sources:         cbits/nlp.cpp
+                     cbits/sxm.cpp
                      cbits/sxmMath.cpp
                      cbits/sxFunction.cpp
 
-  Install-includes:  cbits/sxm.hpp
+  Install-includes:  cbits/nlp.hpp
+                     cbits/sxm.hpp
                      cbits/sxmMath.hpp
                      cbits/sxFunction.hpp
-

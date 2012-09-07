@@ -82,7 +82,7 @@ SnoptSolver::getSolution(DMatrix & _xOpt){
 }
 
 
-SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SX & objFun, const SXMatrix & constraints)
+SnoptSolver::SnoptSolver(const SXMatrix & designVariables, const SXMatrix & objFun, const SXMatrix & constraints)
 {
     // make sure mempy is ok for copying doublereal to double
     if (sizeof(double) != sizeof(doublereal)){

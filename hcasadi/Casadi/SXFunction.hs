@@ -3,6 +3,7 @@
 {-# Language FlexibleInstances #-}
 
 module Casadi.SXFunction ( SXFunction(..)
+                         , SXFunctionOption
                          , sxFunctionCreate
                          , sxFunctionNumInputs
                          , sxFunctionNumOutputs
@@ -12,29 +13,23 @@ module Casadi.SXFunction ( SXFunction(..)
                          , sxFunctionOutputSize
                          , sxFunctionOutputSize1
                          , sxFunctionOutputSize2
+                         , sxFunctionUnsafeSetInput
+                         , sxFunctionUnsafeGetOutput
                          , sxFunctionUnsafeEval
                          , sxFunctionEval
                          , sxFunctionUnsafeSetOption
-
---                         , sxFunctionEvaluate
---                         , sxFunctionEvaluateLists
---                         , sxFunctionGetInputsSX
---                         , sxFunctionGetOutputsSX
---                         , sxFunctionGradientAt
---                         , sxFunctionGradients
---                         , sxFunctionJacobianAt
---                         , sxFunctionHessianAt
 --                         , sxFunctionCompile
                          ) where
 
 import Control.Applicative ( (<$>) )
-
+import Control.Exception ( mask_ )
+import Data.Vector.Storable ( Vector )
+import qualified Data.Vector.Storable as V
 import Foreign.C ( CDouble(..), newCString )
 import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchForeignPtr )
 import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
 import Foreign.Ptr ( Ptr )
 import Foreign.Marshal ( newArray, mallocArray, free, finalizerFree )
-import Control.Exception ( mask_ )
 --import System.IO.Unsafe(unsafePerformIO)
 --import System.IO
 --import Text.Printf
@@ -45,6 +40,7 @@ import Control.Exception ( mask_ )
 
 import Casadi.Bindings.SXM
 import Casadi.Bindings.SXFunction
+import Casadi.WithForeignPtrs
 import Casadi.SXM
 
 newtype SXFunction = SXFunction (ForeignPtr SXFunctionRaw)
@@ -95,6 +91,25 @@ sxFunctionOutputSize1 (SXFunction f) k =
   mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionOutputSize1 (fromIntegral k))
 sxFunctionOutputSize2 (SXFunction f) k =
   mask_ $ fromIntegral <$> withForeignPtr f (c_sxFunctionOutputSize2 (fromIntegral k))
+
+-- | tries to get output, returns Nothing on success or Just k on failure where
+--   k is the __expected__ size of the output
+sxFunctionUnsafeGetOutput :: SXFunction -> Int -> (ForeignPtr CDouble, Int) -> IO (Maybe Int)
+sxFunctionUnsafeGetOutput (SXFunction fun) idx (val, valN) = do
+  ret <- withForeignPtrs2 val fun (c_sxFunctionGetOutput (fromIntegral idx) (fromIntegral valN))
+  return $ case ret of (-1) -> Nothing
+                       n -> Just (fromIntegral n)
+
+--------------------- setters -----------------------
+-- | tries to set input, returns Nothing on success or Just k on failure where
+--   k is the __expected__ size of the input
+sxFunctionUnsafeSetInput :: SXFunction -> Int -> Vector CDouble -> IO (Maybe Int)
+sxFunctionUnsafeSetInput (SXFunction fun) idx val' = do
+  let (val, valN) = V.unsafeToForeignPtr0 val'
+  ret <- withForeignPtrs2 val fun (c_sxFunctionSetInput (fromIntegral idx) (fromIntegral valN))
+  return $ case ret of (-1) -> Nothing
+                       n -> Just (fromIntegral n)
+                       
 
 ------------------------- evaluate -----------------------------
 -- | provide pointers to input data and output data (along with the number of doubles in each)
