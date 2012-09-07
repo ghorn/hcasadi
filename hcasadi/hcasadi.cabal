@@ -19,7 +19,7 @@ Library
     Casadi.SXFunction
 
   Other-modules:
-    Casadi.CasadiInterfaceUtils
+    Casadi.WithForeignPtrs
 
   Build-depends: base >= 4 && < 5,
                  hcasadi-bindings

@@ -30,16 +30,16 @@ module Casadi.Math ( -- * unary
 
 import Foreign.Ptr
 import Foreign.ForeignPtr hiding (unsafeForeignPtrToPtr)
-import Control.Exception(mask_)
+import Control.Exception ( mask_ )
 
 import Casadi.Bindings.SXM
 import Casadi.Bindings.Math
 import Casadi.SXM ( SXM(..) )
-import Casadi.CasadiInterfaceUtils ( withForeignPtrs2 )
+import Casadi.WithForeignPtrs ( withForeignPtrs2 )
 
 sxmWrapBinary :: (Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)) -> SXM -> SXM -> IO SXM
 sxmWrapBinary c_fun (SXM sxm0Raw) (SXM sxm1Raw) = mask_ $ do
-  smxOutRaw <- withForeignPtrs2 c_fun sxm0Raw sxm1Raw >>= newForeignPtr c_sxmDelete
+  smxOutRaw <- withForeignPtrs2 sxm0Raw sxm1Raw c_fun >>= newForeignPtr c_sxmDelete
   return $ SXM smxOutRaw
 
 sxmWrapUnary :: (Ptr SXMRaw -> IO (Ptr SXMRaw)) -> SXM -> IO SXM
