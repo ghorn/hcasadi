@@ -13,6 +13,9 @@ module Casadi.Bindings.Math ( -- * unary
                             , c_sxmArcsin
                             , c_sxmArccos
                             , c_sxmArctan
+                            , c_sxmSinh
+                            , c_sxmCosh
+                            , c_sxmTanh
                               -- * binary
                             , c_sxmPlus
                             , c_sxmMinus
@@ -51,6 +54,9 @@ foreign import ccall unsafe "sxmMath.hpp sxmTan"    c_sxmTan    :: Ptr SXMRaw ->
 foreign import ccall unsafe "sxmMath.hpp sxmArcsin" c_sxmArcsin :: Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmMath.hpp sxmArccos" c_sxmArccos :: Ptr SXMRaw -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxmMath.hpp sxmArctan" c_sxmArctan :: Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMath.hpp sxmSinh"   c_sxmSinh   :: Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMath.hpp sxmCosh"   c_sxmCosh   :: Ptr SXMRaw -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxmMath.hpp sxmTanh"   c_sxmTanh   :: Ptr SXMRaw -> IO (Ptr SXMRaw)
 
 --------------------- matrix -------------------
 foreign import ccall unsafe "sxmMath.hpp sxmMM"        c_sxmMM :: Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)

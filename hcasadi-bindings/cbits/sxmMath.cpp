@@ -96,6 +96,17 @@ SXMatrix * sxmArctan(const SXMatrix & sxm){
     return new SXMatrix(atan(sxm));
 }
 
+SXMatrix * sxmSinh(const SXMatrix & sxm){
+    return new SXMatrix(sinh(sxm));
+}
+SXMatrix * sxmCosh(const SXMatrix & sxm){
+    return new SXMatrix(cosh(sxm));
+}
+SXMatrix * sxmTanh(const SXMatrix & sxm){
+    return new SXMatrix(tanh(sxm));
+}
+
+
 // matrix
 SXMatrix * sxmMM(const SXMatrix & m0, const SXMatrix & m1){
     return new SXMatrix(mul(m0, m1));

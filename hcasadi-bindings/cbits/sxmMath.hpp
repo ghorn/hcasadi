@@ -34,6 +34,9 @@ extern "C"{
     SXMatrix * sxmArcsin(const SXMatrix & sxm);
     SXMatrix * sxmArccos(const SXMatrix & sxm);
     SXMatrix * sxmArctan(const SXMatrix & sxm);
+    SXMatrix * sxmSinh(const SXMatrix & sxm);
+    SXMatrix * sxmCosh(const SXMatrix & sxm);
+    SXMatrix * sxmTanh(const SXMatrix & sxm);
 
     // matrix
     SXMatrix * sxmMM(const SXMatrix & m0, const SXMatrix & m1);

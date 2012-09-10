@@ -9,6 +9,9 @@ module Casadi.Math ( -- * unary
                    , sxmSin
                    , sxmCos
                    , sxmTan
+                   , sxmSinh
+                   , sxmCosh
+                   , sxmTanh
                    , sxmArcsin
                    , sxmArccos
                    , sxmArctan
@@ -56,7 +59,7 @@ sxmDivide = sxmWrapBinary c_sxmDivide
 sxmPow    = sxmWrapBinary c_sxmPow
 
 ---------------------- unary ----------------------
-sxmNegate, sxmAbs, sxmExp, sxmSqrt, sxmLog, sxmSin, sxmCos, sxmTan, sxmArcsin, sxmArccos, sxmArctan :: SXM -> IO SXM
+sxmNegate, sxmAbs, sxmExp, sxmSqrt, sxmLog, sxmSin, sxmCos, sxmTan, sxmArcsin, sxmArccos, sxmArctan, sxmSinh, sxmCosh, sxmTanh  :: SXM -> IO SXM
 sxmNegate = sxmWrapUnary c_sxmNegate
 sxmAbs    = sxmWrapUnary c_sxmAbs
 sxmExp    = sxmWrapUnary c_sxmExp
@@ -68,6 +71,9 @@ sxmTan    = sxmWrapUnary c_sxmTan
 sxmArcsin = sxmWrapUnary c_sxmArcsin
 sxmArccos = sxmWrapUnary c_sxmArccos
 sxmArctan = sxmWrapUnary c_sxmArctan
+sxmSinh   = sxmWrapUnary c_sxmSinh
+sxmCosh   = sxmWrapUnary c_sxmCosh
+sxmTanh   = sxmWrapUnary c_sxmTanh
 
 --------------------- matrix -------------------
 sxmMM :: SXM -> SXM -> IO SXM
