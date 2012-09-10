@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE EmptyDataDecls #-}
 
-module Casadi.NLPSolver ( NLPSolver(..)
+module Casadi.NLPSolver ( NLPSolver
                         , NLPInput
                         , NLPOutput
                         , createIpoptSolver

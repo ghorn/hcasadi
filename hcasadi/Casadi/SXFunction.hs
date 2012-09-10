@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 
-module Casadi.SXFunction ( sxFunctionCreate
+module Casadi.SXFunction ( SXFunction
+                         , sxFunctionCreate
                          , sxFunctionCreate'
                          , sxFunctionNumInputs
                          , sxFunctionNumOutputs

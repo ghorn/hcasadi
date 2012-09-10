@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 
-module Casadi.SXM( SXM(..)
+module Casadi.SXM( SXM
                  , sxmNewDouble
                  , sxmNewIntegral
                  , sxmShow
@@ -16,22 +16,15 @@ module Casadi.SXM( SXM(..)
                  , sxmToList
                  ) where
 
-import Foreign.C ( CInt(..), newCString, newCStringLen, peekCString )
+import Foreign.C ( CInt(..), newCString )
 import Control.Exception ( mask_ )
-import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchForeignPtr )
+import Foreign.ForeignPtr ( newForeignPtr, withForeignPtr, touchForeignPtr )
 import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
 import Foreign.Marshal ( newArray )
 import Foreign.Ptr ( Ptr )
-import System.IO.Unsafe ( unsafePerformIO )
 
 import Casadi.Bindings.SXM
-
--- the SX data type
-newtype SXM = SXM (ForeignPtr SXMRaw)
-
-instance Show SXM where
-  {-# NOINLINE show #-}
-  show s = unsafePerformIO $ sxmShow s
+import Casadi.Types ( SXM(..), sxmShow )
 
 ------------------- create symbolic -------------------------------
 sxmSym :: String -> IO SXM
@@ -65,13 +58,6 @@ sxmNewIntegral val
     withinCIntBounds x = and [fromIntegral x <= maxCInt, fromIntegral x >= minCInt]
     maxCInt = toInteger (maxBound :: CInt)
     minCInt = toInteger (minBound :: CInt)
-
---------- show --------
-sxmShow :: SXM -> IO String
-sxmShow (SXM s) = do
-  (stringRef, stringLength) <- newCStringLen $ replicate 512 ' '
-  withForeignPtr s $ c_sxmShow stringRef (fromIntegral stringLength)
-  peekCString stringRef
 
 --------- size -------
 -- | get (rows,cols)
