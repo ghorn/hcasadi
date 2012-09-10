@@ -71,7 +71,7 @@ sxFunctionCreate' inputs outputs options = mask_ $ do
 
   -- create the array telling c_sxFunctionCreate whether the input is empty or not
   inputsEmpty  <- newArray $  map isEmpty inputs
-  outputsEmpty <- newArray $  map isEmpty inputs
+  outputsEmpty <- newArray $  map isEmpty outputs
   
   -- turn [Ptr SXMRaw] into Ptr (Ptr SXMRaw)
   inputPtrArray <- newArray unsafeInputPtrs
