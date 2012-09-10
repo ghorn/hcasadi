@@ -99,7 +99,7 @@ int sxmSize2(const SXMatrix & sxm){
 
 // access
 SXMatrix * sxmAt(const SXMatrix & sxm, int n, int m){
-    return new SXMatrix(sxm[n,m]);
+    return new SXMatrix(sxm(n,m));
 }
 
 // concatenate

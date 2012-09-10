@@ -12,9 +12,8 @@ module Casadi.SXM( SXM(..)
                  , sxmVecCat
                  , sxmVertCat
                  , sxmHorzCat
-                   -- * internal
-                 , SXMRaw
-                 , c_sxmDelete
+                 , sxmToLists
+                 , sxmToList
                  ) where
 
 import Foreign.C ( CInt(..), newCString, newCStringLen, peekCString )
@@ -23,15 +22,16 @@ import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchFore
 import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
 import Foreign.Marshal ( newArray )
 import Foreign.Ptr ( Ptr )
+import System.IO.Unsafe ( unsafePerformIO )
 
 import Casadi.Bindings.SXM
 
 -- the SX data type
 newtype SXM = SXM (ForeignPtr SXMRaw)
---instance Show SXM where
---  {-# NOINLINE show #-}
---  show s = unsafePerformIO $ sxShow s
 
+instance Show SXM where
+  {-# NOINLINE show #-}
+  show s = unsafePerformIO $ sxmShow s
 
 ------------------- create symbolic -------------------------------
 sxmSym :: String -> IO SXM
@@ -82,9 +82,9 @@ sxmSize (SXM sxm) = mask_ $ do
   return (fromIntegral s1, fromIntegral s2)
 
 -- | look up scalar
-sxmAt :: SXM -> IO SXM
-sxmAt (SXM sxm) = mask_ $ do
-  s1 <- withForeignPtr sxm c_sxmAt >>= newForeignPtr c_sxmDelete
+sxmAt :: SXM -> (Int,Int) -> IO SXM
+sxmAt (SXM sxm) (row,col) = mask_ $ do
+  s1 <- withForeignPtr sxm (\s -> c_sxmAt s (fromIntegral row) (fromIntegral col)) >>= newForeignPtr c_sxmDelete
   return (SXM s1)
 
 ------------ to/from lists ------------
@@ -106,7 +106,22 @@ wrapSXMList c_fun inputs = mask_ $ do
   mapM_ (\(SXM d) -> touchForeignPtr d) inputs
   return (SXM out)
 
+-- from lists
 sxmVecCat, sxmVertCat, sxmHorzCat :: [SXM] -> IO SXM
 sxmVecCat  = wrapSXMList c_sxmVecCat
 sxmVertCat = wrapSXMList c_sxmVertCat
 sxmHorzCat = wrapSXMList c_sxmHorzCat
+
+-- to lists
+sxmToLists :: SXM -> IO [[SXM]]
+sxmToLists mat = do
+  (rows,cols) <- sxmSize mat
+  mapM sequence [[sxmAt mat (r,c) | c <- [0..cols-1]] | r <- [0..rows-1]]
+
+sxmToList :: SXM -> IO [SXM]
+sxmToList vec = do
+  rowsCols <- sxmSize vec
+  case rowsCols of
+    (n,1) -> sequence [sxmAt vec (r,0) | r <- [0..n-1]]
+    (1,n) -> sequence [sxmAt vec (0,c) | c <- [0..n-1]]
+    _ -> error $ "sxmToList got matrix with dimensions: " ++ show rowsCols

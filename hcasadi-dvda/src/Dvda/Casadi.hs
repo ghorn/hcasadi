@@ -31,10 +31,10 @@ fgToCasadi fg = do
   (insMVS, outsMVS) <- fgToCasadi' fg
   let catMVS :: MVS SXM -> IO SXM
       catMVS (Sca x) = return x
-      catMVS (Vec xs) = sxmVertCat xs
+      catMVS (Vec xs) = sxmVecCat xs
       catMVS (Mat xs) = do
-        cols <- mapM sxmHorzCat xs
-        sxmVertCat cols
+        cols <- mapM sxmVecCat xs
+        sxmHorzCat cols >>= sxmTranspose
   ins <- mapM catMVS insMVS
   outs <- mapM catMVS outsMVS
   return (ins, outs)
