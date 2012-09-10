@@ -24,15 +24,23 @@ void sxFunctionDelete(SXFunction * const fun){
     delete fun;
 }
 
-SXFunction * sxFunctionCreate(const SXMatrix * sxIn[], int numInputs, const SXMatrix * sxOut[], int numOutputs){
+SXFunction * sxFunctionCreate(const SXMatrix * sxIn[],  const int emptyInput[],  int numInputs,
+                              const SXMatrix * sxOut[], const int emptyOutput[], int numOutputs)
+{
     vector<SXMatrix> inputs(numInputs);
     vector<SXMatrix> outputs(numOutputs);
 
     for (int k=0; k<numInputs; k++)
-        inputs.at(k) = *(sxIn[k]);
+        if (emptyInput[k])
+            inputs.at(k) = SXMatrix();
+        else
+            inputs.at(k) = *(sxIn[k]);
 
     for (int k=0; k<numOutputs; k++)
-        outputs.at(k) = *(sxOut[k]);
+        if (emptyOutput[k])
+            outputs.at(k) = SXMatrix();
+        else
+            outputs.at(k) = *(sxOut[k]);
 
     SXFunction * fun = new SXFunction(inputs, outputs);
 

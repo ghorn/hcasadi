@@ -12,7 +12,8 @@ extern "C"{
 #endif
 
     // memory management
-    SXFunction * sxFunctionCreate(const SXMatrix * sxIn[], int numInputs, const SXMatrix * sxOut[], int numOutputs);
+    SXFunction * sxFunctionCreate(const SXMatrix * sxIn[],  const int emptyInput[],  int numInputs,
+                                  const SXMatrix * sxOut[], const int emptyOutput[], int numOutputs);
     void sxFunctionDelete(SXFunction * const fun);
     void sxFunctionInit(FX & fun);
 

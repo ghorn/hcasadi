@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 
 module Casadi.SXFunction ( sxFunctionCreate
+                         , sxFunctionCreate'
                          , sxFunctionNumInputs
                          , sxFunctionNumOutputs
                          , sxFunctionInputSize
@@ -20,10 +21,10 @@ import Control.Applicative ( (<$>) )
 import Control.Exception ( mask_ )
 import Data.Vector.Storable ( Vector )
 import qualified Data.Vector.Storable as V
-import Foreign.C ( CDouble(..) )
+import Foreign.C ( CDouble(..), CInt(..) )
 import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchForeignPtr )
 import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
-import Foreign.Ptr ( Ptr )
+import Foreign.Ptr ( Ptr, nullPtr )
 import Foreign.Marshal ( newArray, mallocArray, free, finalizerFree )
 --import System.IO.Unsafe(unsafePerformIO)
 --import System.IO
@@ -41,36 +42,65 @@ import Casadi.SXFunctionOptions ( SXFunctionOption )
 import Casadi.SXFunctionOptionsInternal ( sxFunctionUnsafeSetOption )
 import Casadi.Types ( SXFunction(..) )
 
--- | create SXFunction from list of inputs and ouputs
+-- | Create SXFunction from list of inputs and ouputs.
+--   Inputs/outputs must not be empty
 sxFunctionCreate :: [SXM] -> [SXM] -> [SXFunctionOption] -> IO SXFunction
-sxFunctionCreate inputs outputs options = mask_ $ do
+sxFunctionCreate inputs outputs = sxFunctionCreate' (map Just inputs) (map Just outputs)
+
+-- | Create SXFunction from list of inputs and ouputs.
+--   Inputs/outputs may be empty
+sxFunctionCreate' :: [Maybe SXM] -> [Maybe SXM] -> [SXFunctionOption] -> IO SXFunction
+sxFunctionCreate' inputs outputs options = mask_ $ do
   -- turn input/output SXM lists into [Ptr SXMRaw]
-  let unsafeInputPtrs :: [Ptr SXMRaw]
-      unsafeInputPtrs = map (\(SXM mat) -> unsafeForeignPtrToPtr mat) inputs
+  let maybeToPtr :: Maybe SXM -> Ptr SXMRaw
+      maybeToPtr (Just (SXM mat)) = unsafeForeignPtrToPtr mat
+      maybeToPtr Nothing = nullPtr
+      
+      unsafeInputPtrs :: [Ptr SXMRaw]
+      unsafeInputPtrs = map maybeToPtr inputs
       
       unsafeOutputPtrs :: [Ptr SXMRaw]
-      unsafeOutputPtrs = map (\(SXM mat) -> unsafeForeignPtrToPtr mat) outputs
+      unsafeOutputPtrs = map maybeToPtr outputs
       
       nIn  = fromIntegral $ length inputs
       nOut = fromIntegral $ length outputs
+
+      isEmpty :: Maybe SXM -> CInt
+      isEmpty Nothing = 1
+      isEmpty (Just _) = 0
+
+  -- create the array telling c_sxFunctionCreate whether the input is empty or not
+  inputsEmpty  <- newArray $  map isEmpty inputs
+  outputsEmpty <- newArray $  map isEmpty inputs
   
   -- turn [Ptr SXMRaw] into Ptr (Ptr SXMRaw)
   inputPtrArray <- newArray unsafeInputPtrs
   outputPtrArray <- newArray unsafeOutputPtrs
   
   -- create SXFunction
-  funRaw <- c_sxFunctionCreate inputPtrArray nIn outputPtrArray nOut  >>= newForeignPtr c_sxFunctionDelete
-  
+  funRaw <- c_sxFunctionCreate
+            inputPtrArray  inputsEmpty  nIn
+            outputPtrArray outputsEmpty nOut  >>= newForeignPtr c_sxFunctionDelete
+
+  -- free arrays
+  free inputPtrArray
+  free outputPtrArray
+
+  free inputsEmpty
+  free outputsEmpty
+
   -- touch all [ForeignPtr SXMRaw] for unsafeForeignPtrToPtr safety
-  mapM_ (\(SXM d) -> touchForeignPtr d) inputs
-  mapM_ (\(SXM d) -> touchForeignPtr d) outputs
+  let maybeTouchForeignPtr (Just (SXM d)) = touchForeignPtr d
+      maybeTouchForeignPtr Nothing = return ()
+  mapM_ maybeTouchForeignPtr inputs
+  mapM_ maybeTouchForeignPtr outputs
 
   let fun = SXFunction funRaw
   mapM_ (sxFunctionUnsafeSetOption fun) options
   withForeignPtr funRaw c_sxFunctionInit
   
   return fun
-  
+
 --------------------- getters -----------------------
 sxFunctionNumInputs, sxFunctionNumOutputs :: SXFunction -> IO Int
 sxFunctionNumInputs  (SXFunction f) = mask_ $ fromIntegral <$> withForeignPtr f c_sxFunctionNumInputs
