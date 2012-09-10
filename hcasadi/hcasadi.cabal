@@ -14,19 +14,20 @@ synopsis:      Wrapper for CasADi C++ Automatic Differentiation libraries
 
 Library
   Exposed-modules:
-    Casadi.SXM
+    Casadi.DAE
     Casadi.Math
     Casadi.NLPSolver
     Casadi.NLPSolverOptions
     Casadi.SXFunction
     Casadi.SXFunctionOptions
+    Casadi.SXM
 
   Other-modules:
-    Casadi.WithForeignPtrs
-    Casadi.Options
     Casadi.NLPSolverOptionsInternal
+    Casadi.Options
     Casadi.SXFunctionOptionsInternal
     Casadi.Types
+    Casadi.WithForeignPtrs
 
   Build-depends: base >= 4 && < 5,
                  hcasadi-bindings,
