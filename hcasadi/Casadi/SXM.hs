@@ -4,9 +4,9 @@ module Casadi.SXM( SXM(..)
                  , sxmNewDouble
                  , sxmNewIntegral
                  , sxmShow
-                 , sym
-                 , symVec
-                 , symMat
+                 , sxmSym
+                 , sxmSymVec
+                 , sxmSymMat
                  , sxmSize
                  , sxmAt
                  , sxmVecCat
@@ -34,14 +34,14 @@ newtype SXM = SXM (ForeignPtr SXMRaw)
 
 
 ------------------- create symbolic -------------------------------
-sym :: String -> IO SXM
-sym = symMat (1,1)
+sxmSym :: String -> IO SXM
+sxmSym = sxmSymMat (1,1)
 
-symVec :: Int -> String -> IO SXM
-symVec n = symMat (n,1)
+sxmSymVec :: Int -> String -> IO SXM
+sxmSymVec n = sxmSymMat (n,1)
 
-symMat :: (Int,Int) -> String -> IO SXM
-symMat (n,m) name = mask_ $ do
+sxmSymMat :: (Int,Int) -> String -> IO SXM
+sxmSymMat (n,m) name = mask_ $ do
   cName <- newCString name
   sym' <- c_sxmCreateSymbolic (fromIntegral n) (fromIntegral m) cName >>= newForeignPtr c_sxmDelete
   return $ SXM sym'
