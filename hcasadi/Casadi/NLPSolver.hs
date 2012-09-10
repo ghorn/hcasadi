@@ -22,11 +22,10 @@ import qualified Data.Vector.Storable as V
 
 import Casadi.Bindings.NLPSolver
 import Casadi.Bindings.SXFunction ( c_sxFunctionInit )
-import Casadi.SXM
 import Casadi.SXFunction
 import Casadi.NLPSolverOptions ( NLPSolverOption )
 import Casadi.NLPSolverOptionsInternal ( nlpSolverUnsafeSetOption )
-import Casadi.Types ( NLPSolver(..), SXFunction(..) )
+import Casadi.Types ( NLPSolver(..), SXFunction(..), SXM(..) )
 
 data NLPInput = NLP_X_INIT -- Decision variables initial guess (n x 1)  [x_init]
               | NLP_LBX -- Decision variables lower bound (n x 1), default -inf [lbx]

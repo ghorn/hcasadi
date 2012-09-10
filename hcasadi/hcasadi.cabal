@@ -15,6 +15,7 @@ synopsis:      Wrapper for CasADi C++ Automatic Differentiation libraries
 Library
   Exposed-modules:
     Casadi.DAE
+    Casadi.Integrator
     Casadi.Math
     Casadi.NLPSolver
     Casadi.NLPSolverOptions

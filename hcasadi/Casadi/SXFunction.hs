@@ -38,10 +38,9 @@ import Foreign.Marshal ( newArray, mallocArray, free, finalizerFree )
 import Casadi.Bindings.SXM
 import Casadi.Bindings.SXFunction
 import Casadi.WithForeignPtrs
-import Casadi.SXM ( SXM(..) )
 import Casadi.SXFunctionOptions ( SXFunctionOption )
 import Casadi.SXFunctionOptionsInternal ( sxFunctionUnsafeSetOption )
-import Casadi.Types ( SXFunction(..) )
+import Casadi.Types ( SXFunction(..), SXM(..) )
 
 -- | Create SXFunction from list of inputs and ouputs.
 --   Inputs/outputs must not be empty

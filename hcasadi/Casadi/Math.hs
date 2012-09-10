@@ -37,7 +37,7 @@ import Control.Exception ( mask_ )
 
 import Casadi.Bindings.SXM
 import Casadi.Bindings.Math
-import Casadi.SXM ( SXM(..) )
+import Casadi.Types ( SXM(..) )
 import Casadi.WithForeignPtrs ( withForeignPtrs2 )
 
 sxmWrapBinary :: (Ptr SXMRaw -> Ptr SXMRaw -> IO (Ptr SXMRaw)) -> SXM -> SXM -> IO SXM

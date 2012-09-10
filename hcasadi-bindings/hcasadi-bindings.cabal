@@ -15,7 +15,8 @@ synopsis:      Raw bindings to CasADi C++ Automatic Differentiation libraries
 Extra-source-files: cbits
 
 Library
-  Exposed-modules:  Casadi.Bindings.Math
+  Exposed-modules:  Casadi.Bindings.Integrator
+                    Casadi.Bindings.Math
                     Casadi.Bindings.NLPSolver
                     Casadi.Bindings.SXM
                     Casadi.Bindings.SXFunction
@@ -55,12 +56,14 @@ Library
 --                /usr/local/include/casadi
 --  Ghc-options: -pgml g++
 
-  C-sources:         cbits/nlp.cpp
+  C-sources:         cbits/integrator.cpp
+                     cbits/nlp.cpp
                      cbits/sxm.cpp
                      cbits/sxmMath.cpp
                      cbits/sxFunction.cpp
 
-  Install-includes:  cbits/nlp.hpp
+  Install-includes:  cbits/integrator.hpp
+                     cbits/nlp.hpp
                      cbits/sxm.hpp
                      cbits/sxmMath.hpp
                      cbits/sxFunction.hpp
