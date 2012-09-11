@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# Language TypeFamilies #-}
 
-module Dvda.Casadi ( toCasadi
+module Casadi.Dvda ( toCasadi
                    ) where
 
 import Control.Monad ( foldM )

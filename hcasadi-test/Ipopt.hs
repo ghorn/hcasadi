@@ -5,7 +5,7 @@ module Main ( main ) where
 import qualified Data.Vector.Storable as V
 
 import Dvda
-import Dvda.Casadi
+import Casadi.Dvda
 import Casadi.SXM ( SXM, sxmToList )
 import Casadi.NLPSolver
 import Casadi.NLPSolverOptions

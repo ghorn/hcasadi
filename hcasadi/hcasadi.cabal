@@ -15,6 +15,7 @@ synopsis:      Wrapper for CasADi C++ Automatic Differentiation libraries
 Library
   Exposed-modules:
     Casadi.DAE
+    Casadi.Dvda
     Casadi.Integrator
     Casadi.Math
     Casadi.NLPSolver
@@ -31,6 +32,9 @@ Library
     Casadi.WithForeignPtrs
 
   Build-depends: base >= 4 && < 5,
+                 dvda,
+                 containers,
+                 unordered-containers,
                  hcasadi-bindings,
                  vector
 -- time, hmatrix, deepseq, process
