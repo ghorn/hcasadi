@@ -1,82 +1,63 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# Language TypeFamilies #-}
 
 module Casadi.Dvda ( toCasadi
+                   , toSXFunction
                    ) where
 
+
+import Data.Vector.Storable ( Vector )
+import Foreign.C ( CDouble )
 import Control.Monad ( foldM )
-import Data.HashMap.Lazy ( HashMap )
-import qualified Data.HashMap.Lazy as HM
 import Data.IntMap ( IntMap )
 import qualified Data.IntMap as IM
 import Data.Maybe ( fromMaybe )
-import qualified Data.Traversable as Traversable
+import Data.Traversable ( Traversable )
 
-import Dvda.Expr ( GExpr(..), Nums(..), Fractionals(..), Floatings(..) )
-import Dvda.FunGraph ( FunGraph(..), MVS(..), ToFunGraph(..), toFunGraph, topSort )
+import Dvda.Expr ( Expr, GExpr(..), Nums(..), Fractionals(..), Floatings(..) )
+import Dvda.FunGraph ( FunGraph(..), exprsToFunGraph, topSort )
+import Dvda.HList ( (:*)(..) )
 
 import Casadi.SXM
+import Casadi.SXFunction
+import Casadi.SXFunctionOptions
 import Casadi.Math
 
 -- turn Dvda inputs/outputs into native casadi nodes,
 -- using casadi functions to appropriately return casadi scalars/vectors/matrices
-toCasadi :: (ToFunGraph a, ToFunGraph b, NumT a ~ Double, NumT b ~ Double)
-            => a -> b -> IO ([SXM], [SXM])
-toCasadi ins outs = toFunGraph ins outs >>= fgToCasadi
+toCasadi :: Traversable f => f (Expr Double) -> IO (f SXM)
+toCasadi ins = exprsToFunGraph ins >>= fgToCasadi
 
--- turn a FunGraph into native casadi nodes,
--- using casadi functions to appropriately return casadi scalars/vectors/matrices
-fgToCasadi :: FunGraph Double -> IO ([SXM],[SXM])
-fgToCasadi fg = do
-  (insMVS, outsMVS) <- fgToCasadi' fg
-  let catMVS :: MVS SXM -> IO SXM
-      catMVS (Sca x) = return x
-      catMVS (Vec xs) = sxmVecCat xs
-      catMVS (Mat xs) = do
-        cols <- mapM sxmVecCat xs
-        sxmHorzCat cols >>= sxmTranspose
-  ins <- mapM catMVS insMVS
-  outs <- mapM catMVS outsMVS
-  return (ins, outs)
+toSXFunction :: (Traversable f, Traversable g) =>
+                f (Expr Double) -> g (Expr Double) -> [SXFunctionOption]
+                -> IO (f (Vector CDouble) -> IO (g (Vector CDouble)))
+toSXFunction ins outs options = do
+  (sxIns :* sxOuts) <- toCasadi (ins :* outs)
+  sxFunctionCreateCallable' sxIns sxOuts options
 
 -- turn a FunGraph into native casadi nodes (all operations scalar)
-fgToCasadi' :: FunGraph Double -> IO ([MVS SXM],[MVS SXM])
-fgToCasadi' fg = do
-  let mkCasadi :: (HashMap (GExpr Double Int) SXM, IntMap SXM)
-                  -> Int
-                  -> IO (HashMap (GExpr Double Int) SXM, IntMap SXM)
-      mkCasadi (hm,im) k
+fgToCasadi :: Functor g => FunGraph Double [] g -> IO (g SXM)
+fgToCasadi fg = do
+  let mkCasadi :: IntMap SXM -> Int -> IO (IntMap SXM)
+      mkCasadi im k
         | k `IM.member` im = error $ "toCasadi tried to insert node " ++ show k ++ " ("++show gexpr++") twice"
         | otherwise = do
           sxm <- gexprToCasadi im gexpr
-          let newIm = IM.insert k sxm im
-              newHm = case gexpr of
-                (GSym _) -> HM.insert gexpr sxm hm
-                _ -> hm
-          return (newHm, newIm)
+          return $ IM.insert k sxm im
         where
           gexpr = fromMaybe err (fgLookupGExpr fg k)
             where
               err = error $ "fgLookupGExpr "++show k++" returned Nothing"
         
-  (gsymMap, nodes) <- foldM mkCasadi (HM.empty, IM.empty) (reverse $ topSort fg)
+  nodes <- foldM mkCasadi IM.empty (reverse $ topSort fg)
 
-  let outputs = map (fmap f) (fgOutputs fg)
+  let outputs = (fmap f) (fgOutputs fg)
         where
           f :: Int -> SXM
           f k = fromMaybe (error msg) $ IM.lookup k nodes
             where
               msg = "fgToCasadi: output " ++ show k ++ " not found in node graph"
 
-      -- if this input isn't a parent of any output, make a new SXM, otherwise return the existing SXM
-      maybeNewSym :: GExpr Double Int -> IO SXM
-      maybeNewSym gexpr@(GSym s) = case HM.lookup gexpr gsymMap of
-        Just sxm -> return sxm
-        Nothing -> sxmSym (show s)
-      maybeNewSym gexpr = error $ "fgToCasadi maybeNewSym: got non-GSym: " ++ show gexpr
-  inputs <- mapM (Traversable.mapM maybeNewSym) (fgInputs fg)
-
-  return (inputs, outputs)
+  return outputs
 
 binary :: IntMap SXM -> (SXM -> SXM -> IO SXM) -> Int -> Int -> IO SXM
 binary im op kx ky = case (IM.lookup kx im, IM.lookup ky im) of

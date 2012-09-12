@@ -153,7 +153,8 @@ int sxFunctionEvalDouble( const int numInputs, const double * inputs[], const in
 
     for (int k=0; k<numInputs; k++){
         if (fun.input(k).size() == inputSizes[k])
-            fun.setInput( inputs[k], k );
+            if (inputSizes[k])
+                fun.setInput( inputs[k], k );
         else {
             cerr << "(cpp) sxFunctionEvaluateDouble got fun.input(" << k << ").size(): " << fun.input(k).size()
                  << "but inputSizes[" << k << "] is: " << inputSizes[k] << endl;
@@ -165,7 +166,8 @@ int sxFunctionEvalDouble( const int numInputs, const double * inputs[], const in
 
     for (int k=0; k<numOutputs; k++){
         if (fun.output(k).size() == outputSizes[k])
-            fun.getOutput( outputs[k], k );
+            if (outputSizes[k])
+                fun.getOutput( outputs[k], k );
         else {
             cerr << "(cpp) sxFunctionEvaluateDouble got fun.output(" << k << ").size(): " << fun.output(k).size()
                  << "but outputSizes[" << k << "] is: " << outputSizes[k] << endl;

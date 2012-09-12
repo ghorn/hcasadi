@@ -1,8 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# Language TypeOperators #-}
+{-# Language TypeFamilies #-}
+{-# Language FlexibleInstances #-}
 
-module Casadi.SXFunction ( SXFunction
+module Casadi.SXFunction ( -- * external
+                           SXFunction
+                         , sxFunctionCreateCallable
+                         , sxFunctionCreateCallable'
+                           -- * internal
                          , sxFunctionCreate
-                         , sxFunctionCreate'
+                         , sxFunctionMakeCallable
+                         , sxFunctionMakeCallable'
                          , sxFunctionNumInputs
                          , sxFunctionNumOutputs
                          , sxFunctionInputSize
@@ -13,13 +21,18 @@ module Casadi.SXFunction ( SXFunction
                          , sxFunctionOutputSize2
                          , sxFunctionUnsafeSetInput
                          , sxFunctionUnsafeGetOutput
-                         , sxFunctionUnsafeEval
-                         , sxFunctionEval
---                         , sxFunctionCompile
+                         , sxFunctionUnsafeEvalMaybes
+                         , sxFunctionEvalMaybes
                          ) where
 
 import Control.Applicative ( (<$>) )
+import Control.Arrow ( first )
 import Control.Exception ( mask_ )
+import Data.Foldable ( Foldable )
+import qualified Data.Foldable as F
+import Data.Maybe ( fromMaybe )
+import Data.Traversable ( Traversable )
+import qualified Data.Traversable as T
 import Data.Vector.Storable ( Vector )
 import qualified Data.Vector.Storable as V
 import Foreign.C ( CDouble(..), CInt(..) )
@@ -27,13 +40,6 @@ import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchFore
 import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
 import Foreign.Ptr ( Ptr, nullPtr )
 import Foreign.Marshal ( newArray, mallocArray, free, finalizerFree )
---import System.IO.Unsafe(unsafePerformIO)
---import System.IO
---import Text.Printf
---import System.Process
---import System.Exit(ExitCode(..))
---import Debug.Trace
---import Data.Time.Clock
 
 import Casadi.Bindings.SXM
 import Casadi.Bindings.SXFunction
@@ -42,15 +48,82 @@ import Casadi.SXFunctionOptions ( SXFunctionOption )
 import Casadi.SXFunctionOptionsInternal ( sxFunctionUnsafeSetOption )
 import Casadi.Types ( SXFunction(..), SXM(..) )
 
--- | Create SXFunction from list of inputs and ouputs.
---   Inputs/outputs must not be empty
-sxFunctionCreate :: [SXM] -> [SXM] -> [SXFunctionOption] -> IO SXFunction
-sxFunctionCreate inputs outputs = sxFunctionCreate' (map Just inputs) (map Just outputs)
+sxFunctionCreateCallable' :: (Functor f, Foldable f, Traversable g)
+                             => f SXM -> g SXM
+                             -> [SXFunctionOption]
+                             -> IO (f (Vector CDouble) -> IO (g (Vector CDouble)))
+sxFunctionCreateCallable' inputs outputs options = do
+  fun <- sxFunctionCreate (fmap Just inputs) (fmap Just outputs) options
+  sxFunctionMakeCallable' fun inputs outputs
+
+sxFunctionCreateCallable :: (Foldable f, Traversable g)
+                            => f (Maybe SXM) -> g (Maybe SXM)
+                            -> [SXFunctionOption]
+                            -> IO (f (Maybe (Vector CDouble)) -> IO (g (Maybe (Vector CDouble))))
+sxFunctionCreateCallable inputs outputs options = do
+  fun <- sxFunctionCreate inputs outputs options
+  sxFunctionMakeCallable fun inputs outputs
+
+sxFunctionCreate :: (Foldable f, Traversable g)
+                    => f (Maybe SXM) -> g (Maybe SXM)
+                    -> [SXFunctionOption]
+                    -> IO SXFunction
+sxFunctionCreate inputs outputs options = do
+  let inputList = F.toList inputs
+      outputList = F.toList outputs
+  sxFunctionCreateFromLists inputList outputList options
+
+
+sxFunctionMakeCallable' :: (Functor f, Foldable f, Traversable g)
+                           => SXFunction -> f SXM -> g SXM
+                           -> IO (f (Vector CDouble) -> IO (g (Vector CDouble)))
+sxFunctionMakeCallable' fun inputs outputs = do
+  f <- sxFunctionMakeCallable fun (fmap Just inputs) (fmap Just outputs)
+  return $ \userInputs -> do
+    outs <- f (fmap Just userInputs)
+    let err = error "sxFunctionCreateCallable': should get only Just, no Nothing..."
+    return $ fmap (fromMaybe err) outs
+
+sxFunctionMakeCallable :: (Foldable f, Traversable g) =>
+                          SXFunction -> f (Maybe SXM) -> g (Maybe SXM)
+                          -> IO (f (Maybe (Vector CDouble)) -> IO (g (Maybe (Vector CDouble))))
+sxFunctionMakeCallable fun inputs outputs = do
+  let inputList = F.toList inputs
+      outputList = F.toList outputs
+  
+  outputSizes <- mapM (sxFunctionOutputSize fun) [0..(length outputList - 1)]
+      
+  return $ \userInputs -> do
+    let -- make sure userInputs has Nothing/Just in the same places as the original SXM inputs
+        -- and convert the userInputs to a list of [Maybe (ForeignPtr CDouble, Int)]
+        inputForeignPtrsLen :: [Maybe (ForeignPtr CDouble, Int)]
+        inputForeignPtrsLen = zipWith f inputList (F.toList userInputs)
+          where
+            f :: Maybe SXM -> Maybe (Vector CDouble) ->  Maybe (ForeignPtr CDouble, Int)
+            f (Just _) (Just v) = Just $ V.unsafeToForeignPtr0 v
+            f Nothing Nothing = Nothing
+            f (Just _) Nothing = error "you passed Nothing into a sxFunction which you created with Just"
+            f Nothing (Just _) = error "you passed Just into a sxFunction which you created with Nothing"
+            
+        inputPtrsLen :: [Maybe (Ptr CDouble, Int)]
+        inputPtrsLen = map (fmap (first unsafeForeignPtrToPtr)) inputForeignPtrsLen
+    outputVecs <- map (uncurry V.unsafeFromForeignPtr0 <$>) <$> sxFunctionEvalMaybes fun outputSizes inputPtrsLen
+    mapM_ (F.mapM_ (touchForeignPtr . fst)) inputForeignPtrsLen
+
+    let -- make sure userOutputs has Nothing/Just in the same places as original SXM inputs
+        f (Just x:xs) (Just _) = (xs, Just x)
+        f (Nothing:xs) Nothing = (xs, Nothing)
+        f (Nothing:_) (Just _) = error "sxFunctionCreate returned Nothing with Just SXM input"
+        f (Just _:_) Nothing = error "sxFunctionCreate returned Just with Nothing SXM input"
+        f [] _ = error "after evaluating sxFunction, got too few inputs"
+    return $ case T.mapAccumL f outputVecs outputs of
+      ([], ret) -> ret
+      _ -> error "after evaluating sxFunction, got too many outputs"
 
 -- | Create SXFunction from list of inputs and ouputs.
 --   Inputs/outputs may be empty
-sxFunctionCreate' :: [Maybe SXM] -> [Maybe SXM] -> [SXFunctionOption] -> IO SXFunction
-sxFunctionCreate' inputs outputs options = mask_ $ do
+sxFunctionCreateFromLists :: [Maybe SXM] -> [Maybe SXM] -> [SXFunctionOption] -> IO SXFunction
+sxFunctionCreateFromLists inputs outputs options = mask_ $ do
   -- turn input/output SXM lists into [Ptr SXMRaw]
   let maybeToPtr :: Maybe SXM -> Ptr SXMRaw
       maybeToPtr (Just (SXM mat)) = unsafeForeignPtrToPtr mat
@@ -139,16 +212,17 @@ sxFunctionUnsafeSetInput (SXFunction fun) idx val' = do
   ret <- withForeignPtrs2 val fun (c_sxFunctionSetInput (fromIntegral idx) (fromIntegral valN))
   return $ case ret of (-1) -> Nothing
                        n -> Just (fromIntegral n)
-                       
+
 
 ------------------------- evaluate -----------------------------
--- | provide pointers to input data and output data (along with the number of doubles in each)
-sxFunctionUnsafeEval :: SXFunction -> [(Ptr CDouble, Int)] -> [(Ptr CDouble, Int)] -> IO (Maybe Int)
-sxFunctionUnsafeEval (SXFunction rawFun) inputs outputs = do
-  let (inputPtrs,inputSizes) = unzip inputs
+-- | provide pointers and the length of their respective arrays
+--   to input data (which won't be changed) and output data (which will be changed)
+sxFunctionUnsafeEvalMaybes :: SXFunction -> [Maybe (Ptr CDouble, Int)] -> [Maybe (Ptr CDouble, Int)] -> IO (Maybe Int)
+sxFunctionUnsafeEvalMaybes (SXFunction rawFun) inputs outputs = do
+  let (inputPtrs,inputSizes) = unzip $ map (fromMaybe (nullPtr,0)) inputs
       numInputs = length inputs
 
-      (outputPtrs,outputSizes) = unzip outputs
+      (outputPtrs,outputSizes) = unzip $ map (fromMaybe (nullPtr,0)) outputs
       numOutputs = length outputs
 
   inputPtrArray  <- newArray inputPtrs
@@ -171,79 +245,20 @@ sxFunctionUnsafeEval (SXFunction rawFun) inputs outputs = do
     0 -> Nothing
     n -> Just (fromIntegral n)
 
-sxFunctionEval :: SXFunction -> [(Ptr CDouble, Int)] -> IO [(ForeignPtr CDouble, Int)]
-sxFunctionEval fun inputs = do
-  numOutputs <- sxFunctionNumOutputs fun
-  outputSizes <- mapM (sxFunctionOutputSize fun) (take numOutputs [0..])
-  outputPtrs <- mapM mallocArray outputSizes
-  ret <- sxFunctionUnsafeEval fun inputs (zip outputPtrs outputSizes)
-  outputs <- mapM (newForeignPtr finalizerFree) outputPtrs
+sxFunctionEvalMaybes :: SXFunction -> [Int] -> [Maybe (Ptr CDouble, Int)] -> IO [Maybe (ForeignPtr CDouble, Int)]
+sxFunctionEvalMaybes fun outputSizes inputs = do
+  let f :: Int -> IO (Maybe (Ptr CDouble, Int))
+      f 0 = return Nothing
+      f k = (\p -> Just (p,k)) <$> mallocArray k
+  outputPtrs <- mapM f outputSizes
+  ret <- sxFunctionUnsafeEvalMaybes fun inputs outputPtrs
 
+  let g :: Maybe (Ptr CDouble, Int) -> IO (Maybe (ForeignPtr CDouble, Int))
+      g (Just (p,k)) = do
+        fp <- newForeignPtr finalizerFree p
+        return (Just (fp,k))
+      g Nothing = return Nothing
+  outputs <- mapM g outputPtrs
   return $ case ret of
-    Nothing -> zip outputs outputSizes
-    Just n -> error $ "sxFunctionUnsafeEval returned error code " ++ show n
-
---getMd5 :: String -> IO String
---getMd5 filename = do
---  (_, hStdout, _, p) <- runInteractiveCommand $ "md5sum " ++ filename
---  exitCode <- waitForProcess p
---  md5Out <- hGetContents hStdout
---  if exitCode == ExitSuccess
---    then do return $ head (lines md5Out)
---    else do error $ "getMd5 couldn't read \"" ++ filename ++ "\""
---
------------------------- code gen ---------------------
---sxFunctionCompile :: SXFunction -> String -> ([DMatrix] -> [DMatrix])
---sxFunctionCompile fun name = unsafePerformIO $ do
---  
---  let srcname = name ++ ".c"
---      objname  = name ++ ".so"
---      hashname  = name ++ ".so.md5"
---
---  cSrcname <- newCString srcname
---  cObjname  <- newCString objname
---
---  let funPtr = unsafeForeignPtrToPtr (sxFunRaw fun)
---
---  -- generate code
---  genTime <- c_generateCCode cSrcname funPtr
---  touchForeignPtr (sxFunRaw fun)
---  putStrLn $ "Generated " ++ srcname ++ " in " ++ show (realToFrac genTime::Double) ++ " seconds"
---
---  -- check md5
---  let getOldMd5 = do Control.Exception.catch (readFile ("./" ++ hashname)) $ \(_::IOError) -> do return $ hashname ++ " does not exist"
---  
---  oldMd5 <- getOldMd5
---  newMd5 <- getMd5 srcname
---  putStrLn $ "oldMd5: \"" ++ oldMd5 ++ "\""
---  putStrLn $ "newMd5: \"" ++ newMd5 ++ "\""
---  
---  if oldMd5 /= newMd5
---    -- compile new object
---    then do let compileString = "gcc -O1 -fPIC -shared " ++ srcname ++ " -o " ++ objname
---            putStrLn compileString
---            p <- runCommand compileString
---            exitCode <- timeComputation "compiled in " $ waitForProcess p
---            if exitCode /= ExitSuccess
---              then do error "compilation failure"
---              else do writeFile ("./" ++ hashname) newMd5
---                      return ()
---    -- use old object
---    else do putStrLn $ "md5 of " ++ srcname ++ " matches " ++ hashname ++ " - reusing " ++ objname
---
---  extFun <- c_createExternalFunction cObjname >>= newForeignPtr c_sxFunctionDelete
---              
---  return $ sxFunctionEvaluate $ SXFunction { sxFunRaw = extFun
---                                           , sxFunNumInputs  = sxFunNumInputs fun
---                                           , sxFunNumOutputs = sxFunNumOutputs fun
---                                           , sxFunInputDims  = sxFunInputDims  fun
---                                           , sxFunOutputDims = sxFunOutputDims fun}
---
---timeComputation :: String -> IO t -> IO t
---timeComputation msg a = do
---    start <- getCurrentTime
---    v <- a
---    end   <- getCurrentTime
---    let diffTime = (realToFrac $ diffUTCTime end start)::Double
---    putStrLn $ msg ++ show diffTime ++ " seconds"
---    return v
+    Nothing -> outputs
+    Just n -> error $ "sxFunctionUnsafeEvalMaybes returned error code " ++ show n

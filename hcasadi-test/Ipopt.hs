@@ -6,12 +6,12 @@ import qualified Data.Vector.Storable as V
 
 import Dvda
 import Casadi.Dvda
-import Casadi.SXM ( SXM, sxmToList )
+import Casadi.SXM
 import Casadi.NLPSolver
 import Casadi.NLPSolverOptions
 
-model :: IO ([SXM], [SXM])
-model = toCasadi [x,y,z] (sqr (x+0.3) + sqr (x+0.6) + sqr (x+0.9))
+model :: IO [SXM]
+model = toCasadi [x,y,z, sqr (x+0.3) + sqr (y+0.6) + sqr (z+0.9)]
   where
     x = sym "x"
     y = sym "y"
@@ -20,8 +20,8 @@ model = toCasadi [x,y,z] (sqr (x+0.3) + sqr (x+0.6) + sqr (x+0.9))
 
 main :: IO ()
 main = do
-  ([dvs], [objFun]) <- model
-  [x,y,z] <- sxmToList dvs
+  [x,y,z,objFun] <- model
+  dvs <- sxmVecCat [x,y,z]
 
   let constraints = x
   --  constraints <- sxmVecCat []
