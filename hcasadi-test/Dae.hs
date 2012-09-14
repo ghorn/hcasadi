@@ -2,16 +2,15 @@
 
 --module Main ( main ) where
 
---import qualified Data.Vector.Storable as V
 import qualified Data.Traversable as T
 import qualified Data.Vector.Storable as V
 
 import Dvda
 import Casadi.Dvda
 import Casadi.SXM
-import Casadi.SXFunctionOptions
 import Casadi.DAE
 import Casadi.Integrator
+import Casadi.IdasOptions
 
 model :: (:*) DAEIn DAEOut (Maybe [Expr Double])
 model = daeIn :* daeOut
@@ -69,7 +68,11 @@ main = do
   putStrLn "creating model"
   (daeIn:*daeOut) <- toCasadi model >>= T.traverse (T.traverse sxmVecCat)
   putStrLn "creating integrator"
-  int <- createIdasIntegrator daeIn daeOut [Name "ffcn internal"] [Name "myIntegrator"]
+  let integratorOptions = [ Reltol 1e-4
+                          , Abstol 1e-6
+                          , T0 0
+                          ]
+  int <- createIdasIntegrator daeIn daeOut [] integratorOptions
 
   let x0 = V.fromList [1,2,3,4]
       p = V.fromList [1]

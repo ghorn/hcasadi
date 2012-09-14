@@ -14,7 +14,10 @@ typeNameToHS = { 'OT_STRING':'String',
                  'OT_SPARSITYGENERATOR':None,
                  'OT_REAL':"Double",
                  'OT_VOIDPTR':None,
-                 'OT_FX':None
+                 'OT_REALVECTOR':'[Double]',
+                 'OT_INTEGERVECTOR':'[Int]',
+                 'OT_LINEARSOLVER':None,
+                 'OT_DICTIONARY':None
 #                 'OT_UNKNOWN':None
                  }
 
@@ -66,3 +69,16 @@ for line in nlps[0]:
 for line in nlps[1]:
     print line
 
+s = casadi.IdasIntegrator(f)
+nlps = writeADT("IdasOption","idasUnsafeSetOption","SXFunction",s)
+for line in nlps[0]:
+    print line
+for line in nlps[1]:
+    print line
+
+s = casadi.CVodesIntegrator(f)
+nlps = writeADT("CvodesOption","cvodesUnsafeSetOption","SXFunction",s)
+for line in nlps[0]:
+    print line
+for line in nlps[1]:
+    print line

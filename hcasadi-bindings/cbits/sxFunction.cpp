@@ -199,6 +199,24 @@ void sxFunctionSetOptionDouble(const char name[], const double val, SXFunction &
 void sxFunctionSetOptionString(const char name[], const char val[], SXFunction & fun){
     fun.setOption(name, val);
 }
+void sxFunctionSetOptionDoubleList( const char name[],
+                                    const int numDoubles, const double val[],
+                                    SXFunction & fun )
+{
+    vector<double> doubles;
+    for (int k=0; k<numDoubles; k++)
+        doubles.push_back( double(val[k]) );
+    fun.setOption(name, doubles);
+}
+void sxFunctionSetOptionIntList( const char name[],
+                                 const int numInts, const int val[],
+                                 SXFunction & fun )
+{
+    vector<int> ints;
+    for (int k=0; k<numInts; k++)
+        ints.push_back( int(val[k]) );
+    fun.setOption(name, ints);
+}
 void sxFunctionSetOptionStringList( const char name[],
                                     const int numStrings, const char * const val[],
                                     SXFunction & fun )

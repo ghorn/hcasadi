@@ -19,6 +19,8 @@ module Casadi.Bindings.SXFunction ( SXFunctionRaw
                                   , c_sxFunctionEvalDouble
                                   , c_sxFunctionSetOptionDouble
                                   , c_sxFunctionSetOptionString
+                                  , c_sxFunctionSetOptionDoubleList
+                                  , c_sxFunctionSetOptionIntList
                                   , c_sxFunctionSetOptionStringList
                                   , c_sxFunctionSetOptionInt
                                   , c_sxFunctionSetOptionBool
@@ -74,6 +76,10 @@ foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionDouble" c_sxFunct
   :: Ptr CChar -> CDouble -> Ptr SXFunctionRaw -> IO ()
 foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionString" c_sxFunctionSetOptionString
   :: Ptr CChar -> Ptr CChar -> Ptr SXFunctionRaw -> IO ()
+foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionDoubleList" c_sxFunctionSetOptionDoubleList
+  :: Ptr CChar -> CInt -> Ptr CDouble -> Ptr SXFunctionRaw -> IO ()
+foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionIntList" c_sxFunctionSetOptionIntList
+  :: Ptr CChar -> CInt -> Ptr CInt -> Ptr SXFunctionRaw -> IO ()
 foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionStringList" c_sxFunctionSetOptionStringList
   :: Ptr CChar -> CInt -> Ptr (Ptr CChar) -> Ptr SXFunctionRaw -> IO ()
 foreign import ccall unsafe "sxFunction.hpp sxFunctionSetOptionInt" c_sxFunctionSetOptionInt

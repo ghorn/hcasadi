@@ -17,6 +17,8 @@ Library
     Casadi.DAE
     Casadi.Dvda
     Casadi.Integrator
+    Casadi.IdasOptions
+    Casadi.CvodesOptions
     Casadi.Math
     Casadi.NLPSolver
     Casadi.NLPSolverOptions
@@ -25,6 +27,7 @@ Library
     Casadi.SXM
 
   Other-modules:
+    Casadi.IntegratorOptionsInternal
     Casadi.NLPSolverOptionsInternal
     Casadi.Options
     Casadi.SXFunctionOptionsInternal

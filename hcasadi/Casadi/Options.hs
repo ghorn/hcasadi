@@ -27,6 +27,13 @@ instance Option String where
     withForeignPtr rawFun (c_sxFunctionSetOptionString name val)
     free name
     free val
+instance Option [Double] where
+  unsafeSetOption (SXFunction rawFun) name' vals' = do
+    name <- newCString name'
+    valArray <- newArray (map realToFrac vals')
+    withForeignPtr rawFun (c_sxFunctionSetOptionDoubleList name (fromIntegral (length vals')) valArray)
+    free name
+    free valArray
 instance Option [String] where
   unsafeSetOption (SXFunction rawFun) name' vals' = do
     name <- newCString name'
@@ -36,6 +43,13 @@ instance Option [String] where
     free name
     free valArray
     mapM_ free vals
+instance Option [Int] where
+  unsafeSetOption (SXFunction rawFun) name' vals' = do
+    name <- newCString name'
+    valArray <- newArray (map fromIntegral vals')
+    withForeignPtr rawFun (c_sxFunctionSetOptionIntList name (fromIntegral (length vals')) valArray)
+    free name
+    free valArray
 instance Option Int where
   unsafeSetOption (SXFunction rawFun) name' val = do
     name <- newCString name'
