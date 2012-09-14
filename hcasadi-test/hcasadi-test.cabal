@@ -28,4 +28,5 @@ executable dae
   build-depends:       base ==4.6.*,
                        hcasadi,
                        dvda,
-                       vector
+                       vector,
+                       gloss

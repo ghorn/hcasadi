@@ -5,6 +5,8 @@
 import qualified Data.Traversable as T
 import qualified Data.Vector.Storable as V
 
+import Graphics.Gloss.Interface.IO.Simulate
+
 import Dvda
 import Casadi.Dvda
 import Casadi.SXM
@@ -35,7 +37,7 @@ model = daeIn :* daeOut
     x'' = sym "x''"
     z'' = sym "z''"
 
-    -- lagrange multiplier
+    -- algebraic states
     lambda = sym "lambda"
     
     daeX = [x,z,x',z']
@@ -49,7 +51,8 @@ model = daeIn :* daeOut
              , x' - xDot
              , z' - zDot
              ]
-    daeALG = [ x*x'' + z*z'' + (x'*x' + z'*z') ]
+    daeALG = [ x*x'' + z*z'' + (x'*x' + z'*z')
+             ]
 
     daeIn = DAEIn { dae_X = Just daeX
                   , dae_Z = Just daeZ
@@ -67,28 +70,34 @@ main :: IO ()
 main = do
   putStrLn "creating model"
   (daeIn:*daeOut) <- toCasadi model >>= T.traverse (T.traverse sxmVecCat)
+
+  let stepsPerSecond = 100
   putStrLn "creating integrator"
-  let integratorOptions = [ Reltol 1e-4
-                          , Abstol 1e-6
+  let integratorOptions = [ Reltol 1e-6
+                          , Abstol 1e-8
                           , T0 0
+                          , Tf (1/(fromIntegral stepsPerSecond))
                           ]
   int <- createIdasIntegrator daeIn daeOut [] integratorOptions
 
-  let x0 = V.fromList [1,2,3,4]
+  let x0 = V.fromList [0.5/sqrt(2), 0.5/sqrt(2),0,0]
       p = V.fromList [1]
   putStrLn "running integrator"
-  xf <- int x0 (Just p)
-  print xf
 
---main :: IO ()
---main = do
---  let x = sym "x" :: Expr Double
---      y = sym "y"
---
---  putStrLn "creating function"
---  [x',y',xy'] <- toCasadi [x,y,x*y]
---  f <- sxFunctionCreateCallable [Just x', Just y'] [Just xy'] []
---  
---  putStrLn "calling function"
---  g <- f $ map Just [V.singleton 2, V.singleton 3]
---  print g
+  let draw (xvec,ts) = do
+        let state@[x',z',_,_] = V.toList xvec
+            r = 200
+            x = realToFrac $ r*x'
+            z = realToFrac $ -(r*z')
+            heights = [180,160..]
+        return $ Pictures $
+          [ Color green $ Line [(0,0), (x,z)]
+          , Color blue $ Translate x z $ Circle 10
+          ] ++ zipWith3 (\h s n -> Color white $ Translate (-190) h $ Scale 0.1 0.1 $ Text (n ++ ": " ++ s)) heights
+          (map show state ++ [show ts])
+          ["x","z","vx","vz","timestep"]
+
+      sim _ ts (x,_) = do
+        xf <- int x (Just p)
+        return (xf,ts)
+  simulateIO (InWindow "woo" (400,400) (700,600)) black stepsPerSecond (x0,0) draw sim
