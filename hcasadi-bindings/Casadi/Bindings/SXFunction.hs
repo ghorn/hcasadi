@@ -32,8 +32,8 @@ import Casadi.Bindings.SXM
 data SXFunctionRaw
 
 foreign import ccall unsafe "sxFunction.hpp sxFunctionCreate" c_sxFunctionCreate
-  :: Ptr (Ptr SXMRaw) -> Ptr CInt -> CInt ->
-     Ptr (Ptr SXMRaw) -> Ptr CInt -> CInt -> IO (Ptr SXFunctionRaw)
+  :: Ptr (Ptr SXMRaw) -> CInt ->
+     Ptr (Ptr SXMRaw) -> CInt -> IO (Ptr SXFunctionRaw)
 foreign import ccall unsafe "sxFunction.hpp &sxFunctionDelete" c_sxFunctionDelete
   :: FunPtr (Ptr SXFunctionRaw -> IO ())
 foreign import ccall unsafe "sxFunction.hpp sxFunctionInit" c_sxFunctionInit

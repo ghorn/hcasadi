@@ -63,6 +63,13 @@ SXMatrix * newInt(int in){
     return sxm;
 }
 
+SXMatrix * newEmpty(void){
+#ifdef COUT_MEMORY_MANAGEMENT
+    cout << "(cpp) new sx matrix empty at " << sxm << ", val: " << *sxm << endl;
+#endif
+    return new SXMatrix();
+}
+
 //SXMatrix * newZeros(int n, int m){
 //    SXMatrix * out = new SXMatrix( SXMatrix::zeros(n,m) );
 //#ifdef COUT_MEMORY_MANAGEMENT

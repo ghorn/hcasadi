@@ -7,6 +7,7 @@ module Casadi.Bindings.SXM ( SXMRaw
                            , c_sxmCreateSymbolic
                            , c_sxmNewDouble
                            , c_sxmNewInt
+                           , c_sxmNewEmpty
                            , c_sxmShow
                            , c_sxmSize1
                            , c_sxmSize2
@@ -26,6 +27,7 @@ foreign import ccall unsafe "sxm.hpp &sxmDelete" c_sxmDelete :: FunPtr (Ptr SXMR
 foreign import ccall unsafe "sxm.hpp createSymbolic" c_sxmCreateSymbolic :: CInt -> CInt -> Ptr CChar -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxm.hpp newDouble"  c_sxmNewDouble :: CDouble -> IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxm.hpp newInt"     c_sxmNewInt :: CInt -> IO (Ptr SXMRaw)
+foreign import ccall unsafe "sxm.hpp newEmpty"   c_sxmNewEmpty :: IO (Ptr SXMRaw)
 foreign import ccall unsafe "sxm.hpp sxmShow"    c_sxmShow :: Ptr CChar -> CInt -> (Ptr SXMRaw) -> IO ()
 foreign import ccall unsafe "sxm.hpp sxmSize1"    c_sxmSize1 :: Ptr SXMRaw -> IO CInt
 foreign import ccall unsafe "sxm.hpp sxmSize2"    c_sxmSize2 :: Ptr SXMRaw -> IO CInt

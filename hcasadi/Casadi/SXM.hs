@@ -3,6 +3,7 @@
 module Casadi.SXM( SXM
                  , sxmNewDouble
                  , sxmNewIntegral
+                 , sxmNewEmpty
                  , sxmShow
                  , sxmSym
                  , sxmSymVec
@@ -39,7 +40,7 @@ sxmSymMat (n,m) name = mask_ $ do
   sym' <- c_sxmCreateSymbolic (fromIntegral n) (fromIntegral m) cName >>= newForeignPtr c_sxmDelete
   return $ SXM sym'
 
----------------------- create numeric -----------------------
+---------------------- create -----------------------
 sxmNewDouble :: Double -> IO SXM
 sxmNewDouble val = mask_ $ do
     f <- c_sxmNewDouble (realToFrac val) >>= newForeignPtr c_sxmDelete
@@ -58,6 +59,11 @@ sxmNewIntegral val
     withinCIntBounds x = and [fromIntegral x <= maxCInt, fromIntegral x >= minCInt]
     maxCInt = toInteger (maxBound :: CInt)
     minCInt = toInteger (minBound :: CInt)
+
+sxmNewEmpty :: IO SXM
+sxmNewEmpty = mask_ $ do
+    f <- c_sxmNewEmpty >>= newForeignPtr c_sxmDelete
+    return $ SXM f
 
 --------- size -------
 -- | get (rows,cols)

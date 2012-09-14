@@ -16,6 +16,7 @@ extern "C"{
     //SXMatrix * sxMatrixDuplicate(const SXMatrix & old);
     SXMatrix * newDouble(double in);
     SXMatrix * newInt(int in);
+    SXMatrix * newEmpty(void);
 //    SXMatrix * newZeros(int n, int m);
 
     // show

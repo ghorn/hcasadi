@@ -21,3 +21,11 @@ executable ipopt
                        hcasadi,
                        dvda,
                        vector
+
+executable dae
+  main-is:             Dae.hs
+  -- other-modules:       
+  build-depends:       base ==4.6.*,
+                       hcasadi,
+                       dvda,
+                       vector

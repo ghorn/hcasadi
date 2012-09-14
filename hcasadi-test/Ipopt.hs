@@ -13,7 +13,7 @@ import Casadi.NLPSolverOptions
 model :: IO [SXM]
 model = toCasadi [x,y,z, sqr (x+0.3) + sqr (y+0.6) + sqr (z+0.9)]
   where
-    x = sym "x"
+    x = sym "x" :: Expr Double
     y = sym "y"
     z = sym "z"
     sqr w = w*w

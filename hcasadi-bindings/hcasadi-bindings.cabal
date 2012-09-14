@@ -26,8 +26,12 @@ Library
 --  pkgconfig-depends:   casadi
   Extra-libraries:
                    -- casadi stuff:
+                   integration
                    casadi
+--                   csparse
+--                   csparse_interface
                    ipopt_interface
+                   sundials_interface
                    -- ipopt stuff:
                    ipopt
                    lapack
@@ -43,18 +47,34 @@ Library
                    coinmetis  
                    stdc++
                    m
+                   -- sundials stuff:
+--                   sundials_cvode
+                   sundials_fkinsol
+                   sundials_idas
+                   sundials_cvodes
+                   sundials_fnvecparallel
+                   sundials_kinsol
+                   sundials_fcvode
+                   sundials_fnvecserial
+                   sundials_nvecparallel
+                   sundials_fida
+--                   sundials_ida
+                   sundials_nvecserial
+
   Extra-lib-dirs:  
-                   /home/ghorn/casadi/deploy-static/lib
---                   /home/ghorn/casadi/deploy-shared/lib
+--                   /home/ghorn/casadi/deploy-static/lib
+                   /home/ghorn/casadi/deploy-shared/lib
 --                   /usr/local/lib
-                   /home/ghorn/CoinIpopt/deploy-static/lib
---                   /home/ghorn/CoinIpopt/deploy-shared/lib
+--                   /home/ghorn/CoinIpopt/deploy-static/lib
+                   /home/ghorn/CoinIpopt/deploy-shared/lib
+                   /home/ghorn/sundials-2.5.0/distribute/lib
   Include-dirs: 
 --                cbits
-                /home/ghorn/casadi/deploy-static/include/casadi
---                /home/ghorn/casadi/deploy-shared/include/casadi
+--                /home/ghorn/casadi/deploy-static/include/casadi
+                /home/ghorn/casadi/deploy-shared/include/casadi
 --                /usr/local/include/casadi
 --  Ghc-options: -pgml g++
+--  cc-options: -Wall -Wextra
 
   C-sources:         cbits/integrator.cpp
                      cbits/nlp.cpp

@@ -24,23 +24,17 @@ void sxFunctionDelete(SXFunction * const fun){
     delete fun;
 }
 
-SXFunction * sxFunctionCreate(const SXMatrix * sxIn[],  const int emptyInput[],  int numInputs,
-                              const SXMatrix * sxOut[], const int emptyOutput[], int numOutputs)
+SXFunction * sxFunctionCreate(const SXMatrix * sxIn[],  int numInputs,
+                              const SXMatrix * sxOut[], int numOutputs)
 {
     vector<SXMatrix> inputs(numInputs);
     vector<SXMatrix> outputs(numOutputs);
 
     for (int k=0; k<numInputs; k++)
-        if (emptyInput[k])
-            inputs.at(k) = SXMatrix();
-        else
-            inputs.at(k) = *(sxIn[k]);
+        inputs.at(k) = *(sxIn[k]);
 
     for (int k=0; k<numOutputs; k++)
-        if (emptyOutput[k])
-            outputs.at(k) = SXMatrix();
-        else
-            outputs.at(k) = *(sxOut[k]);
+        outputs.at(k) = *(sxOut[k]);
 
     SXFunction * fun = new SXFunction(inputs, outputs);
 
@@ -141,39 +135,43 @@ int sxFunctionEvalDouble( const int numInputs, const double * inputs[], const in
                           const int numOutputs, double * outputs[], const int outputSizes[],
                           FX & fun ){
     if (numInputs != fun.getNumInputs()){
-        cerr << "(cpp) sxFunctionEvaluateDouble got numInputs: " << numInputs
+        cerr << "(cpp) sxFunctionEvaluateDouble: SXFunction \"" << fun.getOption("name") << "\""
+             << " got numInputs: " << numInputs
              << " but fun.getNumInputs() is: " << fun.getNumInputs() << endl;
         return 1;
     }
     if (numOutputs != fun.getNumOutputs()){
-        cerr << "(cpp) sxFunctionEvaluateDouble got numOutputs: " << numOutputs
+        cerr << "(cpp) sxFunctionEvaluateDouble: SXFunction \"" << fun.getOption("name") << "\""
+             << " got numOutputs: " << numOutputs
              << " but fun.getNumOutputs() is: " << fun.getNumOutputs() << endl;
         return 2;
     }
 
-    for (int k=0; k<numInputs; k++){
-        if (fun.input(k).size() == inputSizes[k])
-            if (inputSizes[k])
+    for (int k=0; k<numInputs; k++)
+        if (inputSizes[k])
+            if (fun.input(k).size() == inputSizes[k])
                 fun.setInput( inputs[k], k );
-        else {
-            cerr << "(cpp) sxFunctionEvaluateDouble got fun.input(" << k << ").size(): " << fun.input(k).size()
-                 << "but inputSizes[" << k << "] is: " << inputSizes[k] << endl;
-            return 3;
-        }
-    }
+            else {
+                cerr << "(cpp) sxFunctionEvaluateDouble: SXFunction \"" << fun.getOption("name") << "\""
+                     << " got fun.input(" << k << ").size(): " << fun.input(k).size()
+                     << "but inputSizes[" << k << "] is: " << inputSizes[k] << endl;
+                return 3;
+            }
 
     fun.evaluate();
 
-    for (int k=0; k<numOutputs; k++){
-        if (fun.output(k).size() == outputSizes[k])
-            if (outputSizes[k])
+    for (int k=0; k<numOutputs; k++)
+        if (outputSizes[k])
+            if (fun.output(k).size() == outputSizes[k])
                 fun.getOutput( outputs[k], k );
-        else {
-            cerr << "(cpp) sxFunctionEvaluateDouble got fun.output(" << k << ").size(): " << fun.output(k).size()
-                 << "but outputSizes[" << k << "] is: " << outputSizes[k] << endl;
-            return 4;
-        }
-    }
+            else {
+                cerr << "(cpp) sxFunctionEvaluateDouble: SXFunction \"" << fun.getOption("name") << "\""
+                     << " got fun.output(" << k << ").size(): " << fun.output(k).size()
+                     << "but outputSizes[" << k << "] is: " << outputSizes[k] << endl;
+                return 4;
+            }
+
+    return 0;
 }
 
 void sxFunctionEvaluateSXMatrix(int numInputs, const SXMatrix * inputs[],

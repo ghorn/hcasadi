@@ -1,10 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# Language TypeFamilies #-}
+{-# Language FlexibleInstances #-}
 
-module Casadi.Dvda ( toCasadi
+module Casadi.Dvda ( ToCasadi(..)
                    , toSXFunction
                    ) where
 
-
+import Data.Functor.Compose ( Compose(..) )
 import Data.Vector.Storable ( Vector )
 import Foreign.C ( CDouble )
 import Control.Monad ( foldM )
@@ -22,10 +24,46 @@ import Casadi.SXFunction
 import Casadi.SXFunctionOptions
 import Casadi.Math
 
+class ToCasadi a where
+  type ToCasadiT a
+  toCasadi :: a -> IO (ToCasadiT a)
+
+instance ToCasadi (Expr Double) where
+  type ToCasadiT (Expr Double) = SXM
+  toCasadi x = fmap head $ toCasadi [x]
+
+instance Traversable f => ToCasadi (f (Expr Double)) where
+  type ToCasadiT (f (Expr Double)) = f SXM
+  toCasadi = toCasadi'
+
+instance (Traversable f, Traversable g) => ToCasadi (f (g (Expr Double))) where
+  type ToCasadiT (f (g (Expr Double))) = f (g SXM)
+  toCasadi x = fmap getCompose $ toCasadi (Compose x)
+
+instance (Traversable f, Traversable g, Traversable h) => ToCasadi (f (g (h (Expr Double)))) where
+  type ToCasadiT (f (g (h (Expr Double)))) = f (g (h SXM))
+  toCasadi x = fmap getCompose $ toCasadi (Compose x)
+
+instance (Traversable f, Traversable g, Traversable h, Traversable i) => ToCasadi (f (g (h (i (Expr Double))))) where
+  type ToCasadiT (f (g (h (i (Expr Double))))) = f (g (h (i SXM)))
+  toCasadi x = fmap getCompose $ toCasadi (Compose x)
+
+instance (Traversable f, Traversable g, Traversable h, Traversable i, Traversable j) => ToCasadi (f (g (h (i (j (Expr Double)))))) where
+  type ToCasadiT (f (g (h (i (j (Expr Double)))))) = f (g (h (i (j SXM))))
+  toCasadi x = fmap getCompose $ toCasadi (Compose x)
+
+instance (Traversable f, Traversable g, Traversable h, Traversable i, Traversable j, Traversable k) => ToCasadi (f (g (h (i (j (k (Expr Double))))))) where
+  type ToCasadiT (f (g (h (i (j (k (Expr Double))))))) = f (g (h (i (j (k SXM)))))
+  toCasadi x = fmap getCompose $ toCasadi (Compose x)
+
+instance (Traversable f, Traversable g, Traversable h, Traversable i, Traversable j, Traversable k, Traversable l) => ToCasadi (f (g (h (i (j (k (l (Expr Double)))))))) where
+  type ToCasadiT (f (g (h (i (j (k (l (Expr Double)))))))) = f (g (h (i (j (k (l SXM))))))
+  toCasadi x = fmap getCompose $ toCasadi (Compose x)
+
 -- turn Dvda inputs/outputs into native casadi nodes,
 -- using casadi functions to appropriately return casadi scalars/vectors/matrices
-toCasadi :: Traversable f => f (Expr Double) -> IO (f SXM)
-toCasadi ins = exprsToFunGraph ins >>= fgToCasadi
+toCasadi' :: Traversable f => f (Expr Double) -> IO (f SXM)
+toCasadi' ins = exprsToFunGraph ins >>= fgToCasadi
 
 toSXFunction :: (Traversable f, Traversable g) =>
                 f (Expr Double) -> g (Expr Double) -> [SXFunctionOption]

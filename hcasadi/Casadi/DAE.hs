@@ -24,7 +24,6 @@ data DAEOut a = DAEOut { dae_ODE  :: a --Right hand side of the implicit ODE [od
                        , dae_QUAD :: a --Right hand side of quadratures equations [quad].
                        } deriving (Functor, Foldable, Traversable, Show)
 
-
 data ControlDAEIn a =
   ControlDAEIn
   { control_dae_T        :: a -- Global physical time. (1-by-1) [t].

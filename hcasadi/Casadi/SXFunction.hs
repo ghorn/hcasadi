@@ -1,7 +1,4 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# Language TypeOperators #-}
-{-# Language TypeFamilies #-}
-{-# Language FlexibleInstances #-}
 
 module Casadi.SXFunction ( -- * external
                            SXFunction
@@ -35,15 +32,16 @@ import Data.Traversable ( Traversable )
 import qualified Data.Traversable as T
 import Data.Vector.Storable ( Vector )
 import qualified Data.Vector.Storable as V
-import Foreign.C ( CDouble(..), CInt(..) )
+import Foreign.C ( CDouble(..) )
 import Foreign.ForeignPtr ( ForeignPtr, newForeignPtr, withForeignPtr, touchForeignPtr )
 import Foreign.ForeignPtr.Unsafe ( unsafeForeignPtrToPtr )
 import Foreign.Ptr ( Ptr, nullPtr )
 import Foreign.Marshal ( newArray, mallocArray, free, finalizerFree )
 
-import Casadi.Bindings.SXM
+import Casadi.Bindings.SXM ( SXMRaw )
 import Casadi.Bindings.SXFunction
-import Casadi.WithForeignPtrs
+import Casadi.WithForeignPtrs ( withForeignPtrs2 )
+import Casadi.SXM ( sxmNewEmpty )
 import Casadi.SXFunctionOptions ( SXFunctionOption )
 import Casadi.SXFunctionOptionsInternal ( sxFunctionUnsafeSetOption )
 import Casadi.Types ( SXFunction(..), SXM(..) )
@@ -69,10 +67,10 @@ sxFunctionCreate :: (Foldable f, Traversable g)
                     -> [SXFunctionOption]
                     -> IO SXFunction
 sxFunctionCreate inputs outputs options = do
-  let inputList = F.toList inputs
-      outputList = F.toList outputs
+  empty <- sxmNewEmpty
+  let inputList  = map (fromMaybe empty) $ F.toList inputs
+      outputList = map (fromMaybe empty) $ F.toList outputs
   sxFunctionCreateFromLists inputList outputList options
-
 
 sxFunctionMakeCallable' :: (Functor f, Foldable f, Traversable g)
                            => SXFunction -> f SXM -> g SXM
@@ -121,52 +119,34 @@ sxFunctionMakeCallable fun inputs outputs = do
       _ -> error "after evaluating sxFunction, got too many outputs"
 
 -- | Create SXFunction from list of inputs and ouputs.
---   Inputs/outputs may be empty
-sxFunctionCreateFromLists :: [Maybe SXM] -> [Maybe SXM] -> [SXFunctionOption] -> IO SXFunction
+sxFunctionCreateFromLists :: [SXM] -> [SXM] -> [SXFunctionOption] -> IO SXFunction
 sxFunctionCreateFromLists inputs outputs options = mask_ $ do
   -- turn input/output SXM lists into [Ptr SXMRaw]
-  let maybeToPtr :: Maybe SXM -> Ptr SXMRaw
-      maybeToPtr (Just (SXM mat)) = unsafeForeignPtrToPtr mat
-      maybeToPtr Nothing = nullPtr
-      
-      unsafeInputPtrs :: [Ptr SXMRaw]
-      unsafeInputPtrs = map maybeToPtr inputs
+  let unsafeInputPtrs :: [Ptr SXMRaw]
+      unsafeInputPtrs = map (\(SXM p) -> unsafeForeignPtrToPtr p) inputs
       
       unsafeOutputPtrs :: [Ptr SXMRaw]
-      unsafeOutputPtrs = map maybeToPtr outputs
+      unsafeOutputPtrs = map (\(SXM p) -> unsafeForeignPtrToPtr p) outputs
       
       nIn  = fromIntegral $ length inputs
       nOut = fromIntegral $ length outputs
 
-      isEmpty :: Maybe SXM -> CInt
-      isEmpty Nothing = 1
-      isEmpty (Just _) = 0
-
-  -- create the array telling c_sxFunctionCreate whether the input is empty or not
-  inputsEmpty  <- newArray $  map isEmpty inputs
-  outputsEmpty <- newArray $  map isEmpty outputs
-  
   -- turn [Ptr SXMRaw] into Ptr (Ptr SXMRaw)
   inputPtrArray <- newArray unsafeInputPtrs
   outputPtrArray <- newArray unsafeOutputPtrs
   
   -- create SXFunction
   funRaw <- c_sxFunctionCreate
-            inputPtrArray  inputsEmpty  nIn
-            outputPtrArray outputsEmpty nOut  >>= newForeignPtr c_sxFunctionDelete
+            inputPtrArray  nIn
+            outputPtrArray nOut  >>= newForeignPtr c_sxFunctionDelete
 
   -- free arrays
   free inputPtrArray
   free outputPtrArray
 
-  free inputsEmpty
-  free outputsEmpty
-
   -- touch all [ForeignPtr SXMRaw] for unsafeForeignPtrToPtr safety
-  let maybeTouchForeignPtr (Just (SXM d)) = touchForeignPtr d
-      maybeTouchForeignPtr Nothing = return ()
-  mapM_ maybeTouchForeignPtr inputs
-  mapM_ maybeTouchForeignPtr outputs
+  mapM_ (\(SXM p) -> touchForeignPtr p) inputs
+  mapM_ (\(SXM p) -> touchForeignPtr p) outputs
 
   let fun = SXFunction funRaw
   mapM_ (sxFunctionUnsafeSetOption fun) options

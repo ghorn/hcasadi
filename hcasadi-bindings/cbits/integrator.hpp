@@ -9,8 +9,8 @@ using namespace CasADi;
 extern "C"{
 #endif
 
-    FX * cvodesIntegrator( FX & f );
-    FX * idasIntegrator( FX & f );
+    FX * createCvodes( FX & f );
+    FX * createIdas( FX & f );
 
 #ifdef __cplusplus
 }
